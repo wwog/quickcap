@@ -4,6 +4,7 @@ use std::{
 };
 
 use screencapturekit::{
+    cm::CVPixelBuffer,
     CMSampleBuffer,
     prelude::{PixelFormat, SCContentFilter, SCStreamConfiguration, SCStreamOutputType},
     stream::{SCStream, SCStreamOutput},
@@ -45,7 +46,7 @@ pub fn capture_screen(display_id: usize, show_cursor: bool) -> Result<CaptureRes
         .with_pixel_format(PixelFormat::BGRA);
 
     let handler = SingleFrameHandler::new();
-    let captured_data = handler.get_captured();
+    let captured_buffer = handler.get_captured();
 
     // 创建流
     let mut stream = SCStream::new(&filter, &stream_config);
@@ -61,23 +62,26 @@ pub fn capture_screen(display_id: usize, show_cursor: bool) -> Result<CaptureRes
 
     while wait_start.elapsed() < timeout {
         std::thread::sleep(Duration::from_millis(10));
-        if let Ok(data) = captured_data.lock() {
-            if data.is_some() {
+        if let Ok(buffer) = captured_buffer.lock() {
+            if buffer.is_some() {
                 frame_received = true;
                 break;
             }
         }
     }
-    // 停止流
     let _ = stream.stop_capture();
     if !frame_received {
         return Err(CaptureError::Timeout);
     }
-    let mut data = captured_data.lock().unwrap();
-    if let Some((data, width, height)) = data.take() {
-        log::info!("Capture screen success in {}ms", start_time.elapsed().as_millis());
+    
+    let mut buffer = captured_buffer.lock().unwrap();
+    if let Some(pixel_buffer) = buffer.take() {
+        let width = pixel_buffer.width();
+        let height = pixel_buffer.height();
+        
+        log::info!("Capture screen success in {}ms (zero-copy)", start_time.elapsed().as_millis());
         Ok(CaptureResult {
-            data,
+            pixel_buffer,
             width,
             height,
             display_id,
@@ -90,53 +94,38 @@ pub fn capture_screen(display_id: usize, show_cursor: bool) -> Result<CaptureRes
     }
 }
 
-/// 单帧捕获处理器
+/// 单帧捕获处理器（零拷贝）
 struct SingleFrameHandler {
-    captured_data: Arc<Mutex<Option<(Vec<u8>, usize, usize)>>>,
+    captured_buffer: Arc<Mutex<Option<CVPixelBuffer>>>,
 }
 
 impl SingleFrameHandler {
     fn new() -> Self {
         Self {
-            captured_data: Arc::new(Mutex::new(None)),
+            captured_buffer: Arc::new(Mutex::new(None)),
         }
     }
 
-    fn get_captured(&self) -> Arc<Mutex<Option<(Vec<u8>, usize, usize)>>> {
-        Arc::clone(&self.captured_data)
+    fn get_captured(&self) -> Arc<Mutex<Option<CVPixelBuffer>>> {
+        Arc::clone(&self.captured_buffer)
     }
 }
 
 impl SCStreamOutput for SingleFrameHandler {
     fn did_output_sample_buffer(&self, sample: CMSampleBuffer, of_type: SCStreamOutputType) {
-        if of_type == SCStreamOutputType::Screen {
-            if let Ok(mut data) = self.captured_data.lock() {
-                // 只捕获第一帧
-                if data.is_none() {
-                    if let Some(buffer) = sample.image_buffer() {
-                        // 锁定基地址（只读模式）
-                        if let Ok(_lock) = buffer.lock_base_address(false) {
-                            let width = buffer.width();
-                            let height = buffer.height();
-                            let bytes_per_row = buffer.bytes_per_row();
+        if of_type != SCStreamOutputType::Screen {
+            return;
+        }
 
-                            if let Some(base_address) = buffer.base_address() {
-                                // 复制图像数据
-                                let length = height * bytes_per_row;
-                                let mut rgb_data = vec![0u8; length];
-                                unsafe {
-                                    std::ptr::copy_nonoverlapping(
-                                        base_address as *const u8,
-                                        rgb_data.as_mut_ptr(),
-                                        length,
-                                    );
-                                }
-                                *data = Some((rgb_data, width, height));
-                            }
-                            // _lock 在这里自动解锁
-                        }
-                    }
-                }
+        let Some(buffer) = sample.image_buffer() else {
+            return;
+        };
+
+        // 零拷贝：只克隆 CVPixelBuffer（增加引用计数，不拷贝数据）
+        if let Ok(mut data) = self.captured_buffer.lock() {
+            if data.is_none() {
+                *data = Some(buffer.clone()); 
+                log::debug!("Captured frame buffer (zero-copy)");
             }
         }
     }
