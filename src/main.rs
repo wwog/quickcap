@@ -8,5 +8,5 @@ fn main() {
         .init();
     log::info!("Starting QuickCap");
     let app = App::new();
-    // app.run();
+    app.run();
 }
