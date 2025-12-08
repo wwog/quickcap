@@ -1,4 +1,8 @@
+use crate::app;
+use crate::cap::ScreenCapture;
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::thread::{self, spawn};
 
 use super::window::AppWindow;
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
@@ -9,7 +13,7 @@ use tao::window::{WindowBuilder, WindowId};
 
 pub struct App {
     event_loop: EventLoop<()>,
-    windows: HashMap<WindowId, AppWindow>,
+    windows: HashMap<WindowId, Arc<AppWindow>>,
     monitors: Vec<MonitorHandle>,
 }
 
@@ -65,10 +69,12 @@ impl App {
                             *control_flow = ControlFlow::Exit;
                         }
                     }
-                    _ => if let Some(window) = self.windows.get(&window_id) {
-                        // 如果窗口有耗时事件存在，则考虑异步或者多线程
-                        window.handle_event(&event);
-                    },
+                    _ => {
+                        if let Some(window) = self.windows.get(&window_id) {
+                            // 如果窗口有耗时事件存在，则考虑异步或者多线程
+                            window.handle_event(&event);
+                        }
+                    }
                 },
                 _ => (),
             }
@@ -96,8 +102,14 @@ impl App {
                 .build(&self.event_loop)
                 .unwrap();
             let window_id = window.id();
-            // 每个窗口都有自己的事件通道和处理线程
-            let app_window = AppWindow::new(window, index);
+            
+            let app_window = Arc::new(AppWindow::new(window, index));
+            let app_window_clone = Arc::clone(&app_window);
+            let handle = thread::Builder::new()
+                .name(format!("capture-screen-{}", index))
+                .spawn(move || {
+                    app_window_clone.capture_screen(true).unwrap();
+                });
             self.windows.insert(window_id, app_window);
         }
     }

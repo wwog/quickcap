@@ -8,25 +8,22 @@ pub use result::CaptureResult;
 
 // 平台特定实现
 #[cfg(target_os = "macos")]
-mod macos;
-#[cfg(target_os = "macos")]
-use macos as platform;
+pub mod macos;
 
 #[cfg(target_os = "windows")]
-mod windows;
-#[cfg(target_os = "windows")]
-use windows as platform;
+pub mod windows;
 
-// 统一的公共 API
-/// 截取指定显示器的屏幕
-///
-/// # 参数
-/// * `display_id` - 显示器索引（从 0 开始）
-/// * `show_cursor` - 是否在截图中显示鼠标光标
-///
-/// # 返回
-/// 返回包含图像数据的 `CaptureResult`，或者截屏失败时的 `CaptureError`
-pub fn capture_screen(display_id: usize, show_cursor: bool) -> Result<CaptureResult, CaptureError> {
-    platform::capture_screen(display_id, show_cursor)
+/// 屏幕截取 trait
+/// 
+/// 实现此 trait 的类型可以进行屏幕截取
+pub trait ScreenCapture {
+    /// 截取屏幕
+    ///
+    /// # 参数
+    /// * `show_cursor` - 是否在截图中显示鼠标光标
+    ///
+    /// # 返回
+    /// 返回包含图像数据的 `CaptureResult`，或者截屏失败时的 `CaptureError`
+    fn capture_screen(&self, show_cursor: bool) -> Result<CaptureResult, CaptureError>;
 }
 
