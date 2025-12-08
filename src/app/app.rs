@@ -97,7 +97,7 @@ impl App {
                 .unwrap();
             let window_id = window.id();
             // 每个窗口都有自己的事件通道和处理线程
-            let app_window = AppWindow::new(window);
+            let app_window = AppWindow::new(window, index);
             self.windows.insert(window_id, app_window);
         }
     }

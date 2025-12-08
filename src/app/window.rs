@@ -1,18 +1,28 @@
-use std::thread::spawn;
+use super::super::cap::capture_screen;
+use std::{io::Error, thread::{self, JoinHandle}};
 
 use tao::{event::WindowEvent, window::Window};
 
 #[allow(dead_code)]
 pub struct AppWindow {
     window: Window,
+    display_id: usize,
+    handle: Result<JoinHandle<()>, Error>,
 }
 
 impl AppWindow {
-    pub fn new(window: Window) -> Self {
-        spawn(|| {
-            
-        });
-        Self { window }
+    pub fn new(window: Window, display_id: usize) -> Self {
+        let handle = thread::Builder::new()
+            .name(format!("capture-screen-{}", display_id))
+            .spawn(move || {
+                capture_screen(display_id, true).unwrap();
+            });
+
+        Self {
+            window,
+            display_id,
+            handle,
+        }
     }
 
     // 处理窗口事件

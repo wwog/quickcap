@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct CaptureResult {
     /// RGB/RGBA 数据
