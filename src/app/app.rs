@@ -41,14 +41,12 @@ impl App {
         self.event_loop.run(move |event, _target, control_flow| {
             *control_flow = ControlFlow::Wait;
 
-            // println!("{:?}", event);
-
             match event {
-                // Event::NewEvents(start_cause) => todo!(),
                 Event::WindowEvent {
                     window_id, event, ..
                 } => match event {
                     WindowEvent::CloseRequested => {
+                        log::info!("App Exited Reason: {:?}", format!("WindowEvent::CloseRequested for window: {:?}", window_id));
                         self.windows.clear();
                         *control_flow = ControlFlow::Exit;
                     }
@@ -61,30 +59,26 @@ impl App {
                             },
                         ..
                     } => {
-                        log::info!("Keyboard input: {:?}", logical_key);
-                        if logical_key == Key::Escape {
-                            self.windows.remove(&window_id);
-                            log::info!("Window closed: {:?}", window_id);
+                        match logical_key {
+                            Key::Escape => {
+                                log::info!("App Exited Reason: {:?}", format!("KeyboardEvent::Escape for window: {:?}", window_id));
+                                self.windows.clear();
+                                *control_flow = ControlFlow::Exit;
+                            }
+                            _ => (),
                         }
                     }
                     _ => (),
                 },
-                // Event::DeviceEvent { device_id, event } => todo!(),
-                // Event::UserEvent(_) => todo!(),
-                // Event::Suspended => todo!(),
-                // Event::Resumed => todo!(),
-                // Event::MainEventsCleared => todo!(),
-                // Event::RedrawRequested(window_id) => todo!(),
-                // Event::RedrawEventsCleared => todo!(),
-                // Event::LoopDestroyed => todo!(),
-                // Event::Opened { urls } => todo!(),
-                // Event::Reopen { has_visible_windows } => todo!(),
                 _ => (),
             }
         })
     }
+}
 
-    pub fn create_window(&mut self) -> () {
+// Private methods
+impl App {
+    fn create_window(&mut self) -> () {
         for (index, monitor) in self.monitors.iter().enumerate() {
             let title = format!("quickcap-{}", index);
             log::info!("Creating window for monitor: {:?}", title);
