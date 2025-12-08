@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::mpsc;
 
 use super::window::AppWindow;
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
@@ -25,11 +26,12 @@ impl App {
                 monitor.size()
             );
         }
+        let windows = HashMap::with_capacity(monitors.len());
         event_loop.set_device_event_filter(DeviceEventFilter::Never);
 
         Self {
             event_loop,
-            windows: HashMap::new(),
+            windows,
             monitors,
         }
     }
@@ -45,30 +47,27 @@ impl App {
                 Event::WindowEvent {
                     window_id, event, ..
                 } => match event {
-                    WindowEvent::CloseRequested => {
-                        log::info!("App Exited Reason: {:?}", format!("WindowEvent::CloseRequested for window: {:?}", window_id));
-                        self.windows.clear();
-                        *control_flow = ControlFlow::Exit;
-                    }
-                    WindowEvent::KeyboardInput {
+                    WindowEvent::CloseRequested
+                    | WindowEvent::Destroyed
+                    | WindowEvent::KeyboardInput {
                         event:
                             KeyEvent {
-                                logical_key,
+                                logical_key: Key::Escape,
                                 state: ElementState::Pressed,
                                 ..
                             },
                         ..
                     } => {
-                        match logical_key {
-                            Key::Escape => {
-                                log::info!("App Exited Reason: {:?}", format!("KeyboardEvent::Escape for window: {:?}", window_id));
-                                self.windows.clear();
-                                *control_flow = ControlFlow::Exit;
-                            }
-                            _ => (),
-                        }
+                        log::info!(
+                            "App Exited Reason: {:?}",
+                            format!("WindowEvent::CloseRequested for window: {:?}", window_id)
+                        );
+                        self.windows.clear();
+                        *control_flow = ControlFlow::Exit;
                     }
-                    _ => (),
+                    _ => if let Some(window) = self.windows.get(&window_id) {
+                        window.channel.0.send(event);
+                    },
                 },
                 _ => (),
             }
@@ -79,6 +78,7 @@ impl App {
 // Private methods
 impl App {
     fn create_window(&mut self) -> () {
+        let channel = mpsc::channel();
         for (index, monitor) in self.monitors.iter().enumerate() {
             let title = format!("quickcap-{}", index);
             log::info!("Creating window for monitor: {:?}", title);
@@ -96,7 +96,7 @@ impl App {
                 .build(&self.event_loop)
                 .unwrap();
             let window_id = window.id();
-            let app_window = AppWindow::new(window);
+            let app_window = AppWindow::new(window, channel);
             self.windows.insert(window_id, app_window);
         }
     }
