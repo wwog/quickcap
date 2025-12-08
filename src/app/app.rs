@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use super::window::AppWindow;
-use tao::dpi::PhysicalPosition;
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
 use tao::event_loop::{ControlFlow, DeviceEventFilter, EventLoop};
 use tao::keyboard::Key;
@@ -37,7 +36,7 @@ impl App {
 }
 
 impl App {
-    pub fn run(mut self) {
+    pub fn run(mut self) -> ! {
         self.create_window();
         self.event_loop.run(move |event, _target, control_flow| {
             *control_flow = ControlFlow::Wait;
@@ -50,8 +49,8 @@ impl App {
                     window_id, event, ..
                 } => match event {
                     WindowEvent::CloseRequested => {
-                        self.windows.remove(&window_id);
-                        log::info!("Window closed: {:?}", window_id);
+                        self.windows.clear();
+                        *control_flow = ControlFlow::Exit;
                     }
                     WindowEvent::KeyboardInput {
                         event:

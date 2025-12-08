@@ -6,7 +6,7 @@ fn main() {
     env_logger::Builder::from_default_env()
         .filter_level(LevelFilter::Info)
         .init();
-    log::info!("Starting QuickCap");
+    log::info!("QuickCap started");
     let app = App::new();
     app.run();
 }
