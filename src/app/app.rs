@@ -58,12 +58,12 @@ impl App {
                             },
                         ..
                     } => {
-                        log::info!(
-                            "App Exited Reason: {:?}",
-                            format!("WindowEvent::CloseRequested for window: {:?}", window_id)
-                        );
-                        self.windows.clear();
-                        *control_flow = ControlFlow::Exit;
+                        // 只在第一次触发时打印日志并退出
+                        if !self.windows.is_empty() {
+                            log::info!("App Exit: window {:?}", window_id);
+                            self.windows.clear();
+                            *control_flow = ControlFlow::Exit;
+                        }
                     }
                     _ => if let Some(window) = self.windows.get(&window_id) {
                         // 如果窗口有耗时事件存在，则考虑异步或者多线程

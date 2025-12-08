@@ -1,3 +1,5 @@
+use std::thread::spawn;
+
 use tao::{event::WindowEvent, window::Window};
 
 #[allow(dead_code)]
@@ -7,6 +9,9 @@ pub struct AppWindow {
 
 impl AppWindow {
     pub fn new(window: Window) -> Self {
+        spawn(|| {
+            
+        });
         Self { window }
     }
 
