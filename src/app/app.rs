@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::mpsc;
 
 use super::window::AppWindow;
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
@@ -66,7 +65,8 @@ impl App {
                         *control_flow = ControlFlow::Exit;
                     }
                     _ => if let Some(window) = self.windows.get(&window_id) {
-                        window.channel.0.send(event);
+                        // 在主线程中处理窗口事件
+                        window.handle_event(&event);
                     },
                 },
                 _ => (),
@@ -78,7 +78,6 @@ impl App {
 // Private methods
 impl App {
     fn create_window(&mut self) -> () {
-        let channel = mpsc::channel();
         for (index, monitor) in self.monitors.iter().enumerate() {
             let title = format!("quickcap-{}", index);
             log::info!("Creating window for monitor: {:?}", title);
@@ -96,7 +95,8 @@ impl App {
                 .build(&self.event_loop)
                 .unwrap();
             let window_id = window.id();
-            let app_window = AppWindow::new(window, channel);
+            // 每个窗口都有自己的事件通道和处理线程
+            let app_window = AppWindow::new(window);
             self.windows.insert(window_id, app_window);
         }
     }
