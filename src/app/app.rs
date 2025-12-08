@@ -4,7 +4,9 @@ use std::thread;
 use super::window::AppWindow;
 use crate::cap::capture_screen;
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
-use tao::event_loop::{ControlFlow, DeviceEventFilter, EventLoop, EventLoopBuilder, EventLoopProxy};
+use tao::event_loop::{
+    ControlFlow, DeviceEventFilter, EventLoop, EventLoopBuilder, EventLoopProxy,
+};
 use tao::keyboard::Key;
 use tao::monitor::MonitorHandle;
 use tao::window::{WindowBuilder, WindowId};
@@ -100,11 +102,13 @@ impl App {
 // Private methods
 impl App {
     /// 创建 WebView IPC 处理器
-    fn create_ipc_handler(proxy: EventLoopProxy<AppEvent>) -> impl Fn(wry::http::Request<String>) + 'static {
+    fn create_ipc_handler(
+        proxy: EventLoopProxy<AppEvent>,
+    ) -> impl Fn(wry::http::Request<String>) + 'static {
         move |request: wry::http::Request<String>| {
             let body = request.body();
             log::info!("Received IPC message: {}", body);
-            
+
             // 处理来自 WebView 的消息
             match body.as_str() {
                 "escape_pressed" => {
@@ -198,7 +202,6 @@ impl App {
 
             let mut app_window = AppWindow::new(window, index);
 
-            // 为每个 WebView 克隆一个 proxy
             let proxy_clone = proxy.clone();
             let web_view = WebViewBuilder::new()
                 .with_transparent(true)
