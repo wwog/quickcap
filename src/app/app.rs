@@ -1,19 +1,18 @@
-use crate::app;
-use crate::cap::ScreenCapture;
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::thread::{self, spawn};
+use std::thread;
 
+use crate::cap::{capture_screen};
 use super::window::AppWindow;
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
 use tao::event_loop::{ControlFlow, DeviceEventFilter, EventLoop};
 use tao::keyboard::Key;
 use tao::monitor::MonitorHandle;
 use tao::window::{WindowBuilder, WindowId};
+use wry::WebViewBuilder;
 
 pub struct App {
     event_loop: EventLoop<()>,
-    windows: HashMap<WindowId, Arc<AppWindow>>,
+    windows: HashMap<WindowId, AppWindow>,
     monitors: Vec<MonitorHandle>,
 }
 
@@ -91,6 +90,25 @@ impl App {
             let position = monitor.position();
             let size = monitor.size();
 
+
+            let display_id = index;
+            thread::Builder::new()
+                .name(format!("capture-screen-{}", index))
+                .spawn(move || {
+                    match capture_screen(display_id, true) {
+                        Ok(_) => {
+                            log::info!("显示器 {} 截图初始化成功", display_id);
+                        }
+                        Err(e) => {
+                            log::error!("显示器 {} 截图初始化失败: {:?}", display_id, e);
+                        }
+                    }
+                })
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to spawn capture-screen thread: {}", e);
+                    panic!("Failed to spawn capture-screen thread");
+                });
+
             let window = WindowBuilder::new()
                 .with_title(title)
                 .with_background_color((0, 0, 0, 100))
@@ -102,14 +120,18 @@ impl App {
                 .build(&self.event_loop)
                 .unwrap();
             let window_id = window.id();
+
+            let mut app_window = AppWindow::new(window, index);
             
-            let app_window = Arc::new(AppWindow::new(window, index));
-            let app_window_clone = Arc::clone(&app_window);
-            let handle = thread::Builder::new()
-                .name(format!("capture-screen-{}", index))
-                .spawn(move || {
-                    app_window_clone.capture_screen(true).unwrap();
-                });
+            let web_view = WebViewBuilder::new()
+                .with_transparent(true)
+                .with_background_color((0, 0, 0, 0))
+                .with_html(r#"<html><body><h1 style="color: white;">Hello, World!</h1></body></html>"#)
+                .build(&app_window)
+                .unwrap();
+
+            app_window.set_webview(web_view);
+
             self.windows.insert(window_id, app_window);
         }
     }

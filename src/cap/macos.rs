@@ -1,28 +1,36 @@
 use screencapturekit::prelude::SCContentFilter;
 
-use super::{error::CaptureError, result::CaptureResult, ScreenCapture};
-use crate::app::AppWindow;
+use super::{error::CaptureError, result::CaptureResult};
 
-impl ScreenCapture for AppWindow {
-    fn capture_screen(&self, _show_cursor: bool) -> Result<CaptureResult, CaptureError> {
-        use screencapturekit::prelude::SCShareableContent;
 
-        let content = SCShareableContent::get()
-            .map_err(|e| CaptureError::ContentNotAvailable(e.to_string()))?;
+/// # 参数
+/// * `display_id` - 显示器索引
+/// * `show_cursor` - 是否显示光标
+pub fn capture_screen(
+    display_id: usize,
+    _show_cursor: bool,
+) -> Result<CaptureResult, CaptureError> {
+    use screencapturekit::prelude::SCShareableContent;
 
-        let displays = content.displays();
-        if displays.is_empty() {
-            return Err(CaptureError::ContentNotAvailable(
-                "No displays found".to_string(),
-            ));
-        }
-        let display = displays
-            .get(self.display_id)
-            .ok_or(CaptureError::DisplayNotFound(self.display_id))?;
+    log::info!("开始为显示器 {} 初始化截屏...", display_id);
+    
+    let content = SCShareableContent::get()
+        .map_err(|e| CaptureError::ContentNotAvailable(e.to_string()))?;
 
-        let _filter = SCContentFilter::builder().display(display).build();
-
-        // TODO: 实现实际的截屏逻辑
-        todo!()
+    let displays = content.displays();
+    if displays.is_empty() {
+        return Err(CaptureError::ContentNotAvailable(
+            "No displays found".to_string(),
+        ));
     }
+    let display = displays
+        .get(display_id)
+        .ok_or(CaptureError::DisplayNotFound(display_id))?;
+
+    let _filter = SCContentFilter::builder().display(display).build();
+
+    log::info!("显示器 {} 截屏初始化完成", display_id);
+    
+    // TODO: 实现实际的截屏逻辑
+    todo!()
 }
