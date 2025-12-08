@@ -6,6 +6,7 @@ use tao::event_loop::{ControlFlow, DeviceEventFilter, EventLoop};
 use tao::keyboard::Key;
 use tao::monitor::MonitorHandle;
 use tao::window::{WindowBuilder, WindowId};
+
 pub struct App {
     event_loop: EventLoop<()>,
     windows: HashMap<WindowId, AppWindow>,
@@ -65,7 +66,7 @@ impl App {
                         *control_flow = ControlFlow::Exit;
                     }
                     _ => if let Some(window) = self.windows.get(&window_id) {
-                        // 在主线程中处理窗口事件
+                        // 如果窗口有耗时事件存在，则考虑异步或者多线程
                         window.handle_event(&event);
                     },
                 },
