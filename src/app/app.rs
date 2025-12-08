@@ -97,10 +97,10 @@ impl App {
                 .spawn(move || {
                     match capture_screen(display_id, true) {
                         Ok(_) => {
-                            log::info!("显示器 {} 截图初始化成功", display_id);
+                            log::info!("Capture screen for display {} initialized successfully", display_id);
                         }
                         Err(e) => {
-                            log::error!("显示器 {} 截图初始化失败: {:?}", display_id, e);
+                            log::error!("Capture screen for display {} initialized failed: {:?}", display_id, e);
                         }
                     }
                 })

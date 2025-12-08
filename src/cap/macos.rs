@@ -19,7 +19,7 @@ pub fn capture_screen(display_id: usize, show_cursor: bool) -> Result<CaptureRes
     use screencapturekit::prelude::SCShareableContent;
 
     let start_time = Instant::now();
-    log::info!("开始为显示器 {} 初始化截屏...", display_id);
+    log::info!("Start to initialize capture screen for display {}", display_id);
 
     let content =
         SCShareableContent::get().map_err(|e| CaptureError::ContentNotAvailable(e.to_string()))?;
