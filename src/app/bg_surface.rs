@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use tao::window::Window;
 
+#[allow(dead_code)]
 pub struct BgSurface {
     window: Arc<Window>,
     surface: wgpu::Surface<'static>,
