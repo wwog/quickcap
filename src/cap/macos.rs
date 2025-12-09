@@ -68,7 +68,10 @@ pub fn capture_screen(
         ));
     }
     // 找到 display_native_id 对应的 display
-    let display = displays.iter().find(|d| d.display_id() == display_native_id).ok_or(CaptureError::DisplayNotFound(display_native_id))?;
+    let display = displays
+        .iter()
+        .find(|d| d.display_id() == display_native_id)
+        .ok_or(CaptureError::DisplayNotFound(display_native_id))?;
     log::info!("Display: {:?}", display);
     let (width, height) = get_native_resolution(display_native_id)?;
 
@@ -230,75 +233,39 @@ mod tests {
             .filter_level(log::LevelFilter::Info)
             .init();
 
-        println!("\n=== 测试截屏功能 ===\n");
-
-        // 测试逻辑分辨率
-        println!("1. 测试逻辑分辨率（use_native_resolution=false）:");
-        match capture_screen(0, true) {
-            Ok(capture) => {
-                println!("  ✓ 截屏成功");
-                println!("    分辨率: {}x{}", capture.width, capture.height);
-                println!("    显示器 ID: {}", capture.native_id);
-                println!("    是否显示鼠标: {}", capture.show_cursor);
-                let output_path = "test_screenshot_logic_res.png";
-                println!("    保存图片到: test_screenshot_logic_res.png");
-                match save_capture_as_png(&capture, output_path) {
-                    Ok(_) => {
-                        // 验证文件是否存在并显示大小
-                        if let Ok(metadata) = std::fs::metadata(output_path) {
-                            println!(
-                                "  ✓ 文件大小: {:.2} MB",
-                                metadata.len() as f64 / 1024.0 / 1024.0
-                            );
-                        } else {
-                            panic!("  ✗ 文件未找到");
+        //获取所有显示器
+        use core_graphics::display::CGDisplay;
+        let displays = CGDisplay::active_displays()
+            .map_err(|e| CaptureError::ContentNotAvailable(e.to_string())).unwrap();
+        for display in displays {
+            match capture_screen(display, true) {
+                Ok(capture) => {
+                    println!("  ✓ 截屏成功");
+                    println!("    分辨率: {}x{}", capture.width, capture.height);
+                    println!("    显示器 ID: {}", capture.native_id);
+                    println!("    是否显示鼠标: {}", capture.show_cursor);
+                    let output_path = format!("test_screenshot_{}.png", capture.native_id);
+                    match save_capture_as_png(&capture, &output_path) {
+                        Ok(_) => {
+                            // 验证文件是否存在并显示大小
+                            if let Ok(metadata) = std::fs::metadata(output_path) {
+                                println!(
+                                    "  ✓ 文件大小: {:.2} MB",
+                                    metadata.len() as f64 / 1024.0 / 1024.0
+                                );
+                            } else {
+                                panic!("  ✗ 文件未找到");
+                            }
+                        }
+                        Err(e) => {
+                            panic!("  ✗ 保存图片失败: {}", e);
                         }
                     }
-                    Err(e) => {
-                        panic!("  ✗ 保存图片失败: {}", e);
-                    }
+                }
+                Err(e) => {
+                    println!("  ✗ 截屏失败: {:?}", e);
                 }
             }
-            Err(e) => {
-                println!("  ✗ 截屏失败: {:?}", e);
-            }
         }
-
-        // 测试物理分辨率
-        println!("\n2. 测试物理分辨率（use_native_resolution=true）:");
-        match capture_screen(0, true) {
-            Ok(capture) => {
-                println!("  ✓ 截屏成功");
-                println!("    分辨率: {}x{}", capture.width, capture.height);
-                println!("    显示器 ID: {}", capture.native_id);
-
-                // 保存为 PNG
-                let output_path = "test_screenshot_native_res.png";
-                println!("\n3. 保存图片到: {}", output_path);
-                match save_capture_as_png(&capture, output_path) {
-                    Ok(_) => {
-                        println!("  ✓ 图片已保存");
-
-                        // 验证文件是否存在并显示大小
-                        if let Ok(metadata) = std::fs::metadata(output_path) {
-                            println!(
-                                "  ✓ 文件大小: {:.2} MB",
-                                metadata.len() as f64 / 1024.0 / 1024.0
-                            );
-                        } else {
-                            panic!("  ✗ 文件未找到");
-                        }
-                    }
-                    Err(e) => {
-                        panic!("  ✗ 保存图片失败: {}", e);
-                    }
-                }
-            }
-            Err(e) => {
-                panic!("  ✗ 截屏失败: {:?}", e);
-            }
-        }
-
-        println!("\n=== 测试完成 ===\n");
     }
 }
