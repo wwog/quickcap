@@ -168,7 +168,8 @@ impl App {
             let display_id = index;
             thread::Builder::new()
                 .name(format!("capture-screen-{}", index))
-                .spawn(move || match capture_screen(display_id, true) {
+                .spawn(move || match capture_screen(display_id, true, true) {
+                    // 参数：display_id, show_cursor=true, use_native_resolution=true
                     Ok(_) => {
                         log::info!(
                             "Capture screen for display {} initialized successfully",
