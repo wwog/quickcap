@@ -17,12 +17,12 @@ impl std::fmt::Display for CaptureError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             CaptureError::ContentNotAvailable(msg) => {
-                write!(f, "无法获取可共享内容: {}", msg)
+                write!(f, "Not available: {}", msg)
             }
-            CaptureError::DisplayNotFound(id) => write!(f, "显示器 {} 不存在", id),
-            CaptureError::StreamError(msg) => write!(f, "流错误: {}", msg),
-            CaptureError::Timeout => write!(f, "截屏超时"),
-            CaptureError::ImageProcessingError(msg) => write!(f, "图像处理错误: {}", msg),
+            CaptureError::DisplayNotFound(id) => write!(f, "Display {} not found", id),
+            CaptureError::StreamError(msg) => write!(f, "Stream error: {}", msg),
+            CaptureError::Timeout => write!(f, "Timeout"),
+            CaptureError::ImageProcessingError(msg) => write!(f, "Image processing error: {}", msg),
         }
     }
 }
