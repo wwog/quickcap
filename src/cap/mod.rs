@@ -1,6 +1,6 @@
 // 公共类型定义（跨平台通用）
 mod error;
-mod result;
+pub mod result;
 
 // 平台特定实现
 #[cfg(target_os = "macos")]

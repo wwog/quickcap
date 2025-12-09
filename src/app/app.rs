@@ -1,8 +1,9 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::thread;
 
 use super::window::AppWindow;
-use crate::cap::capture_screen;
+use crate::cap::{capture_screen, result::CaptureResult};
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
 use tao::event_loop::{
     ControlFlow, DeviceEventFilter, EventLoop, EventLoopBuilder, EventLoopProxy,
@@ -10,13 +11,17 @@ use tao::event_loop::{
 use tao::keyboard::Key;
 use tao::monitor::MonitorHandle;
 use tao::window::{WindowBuilder, WindowId};
-use wry::WebViewBuilder;
 
 /// 自定义应用事件
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum AppEvent {
     /// 请求退出应用
     Exit,
+    /// 截屏完成事件
+    ScreenCaptured {
+        display_id: usize,
+        capture: Arc<CaptureResult>,
+    },
 }
 
 pub struct App {
@@ -71,12 +76,42 @@ impl App {
                             *control_flow = ControlFlow::Exit;
                         }
                     }
+                    AppEvent::ScreenCaptured {
+                        display_id,
+                        capture,
+                    } => {
+                        // 查找对应 display_id 的窗口
+                        if let Some(window) = self
+                            .windows
+                            .values()
+                            .find(|w| w.display_id == display_id)
+                        {
+                            // 锁定像素数据并渲染
+                            match capture.lock_for_read() {
+                                Ok(guard) => {
+                                    let data = guard.as_slice();
+                                    let width = capture.width as u32;
+                                    let height = capture.height as u32;
+                                    let bytes_per_row = capture.bytes_per_row() as u32;
+                                    
+                                    window.render(data, width, height, bytes_per_row);
+                                    log::info!(
+                                        "Rendered screenshot for display {} ({}x{})",
+                                        display_id,
+                                        width,
+                                        height
+                                    );
+                                }
+                                Err(e) => {
+                                    log::error!("Failed to lock capture data: {:?}", e);
+                                }
+                            }
+                        }
+                    }
                 },
                 Event::RedrawRequested(window_id) => {
                     log::info!("Event::RedrawRequested: {:?}", window_id);
-                    if let Some(window) = self.windows.get(&window_id) {
-                        window.render();
-                    }
+                    // 不再渲染占位帧，等待真实截屏数据
                 }
                 Event::WindowEvent {
                     window_id, event, ..
@@ -178,15 +213,25 @@ impl App {
             let size = monitor.size();
 
             let display_id = index;
+            let proxy_for_capture = proxy.clone();
             thread::Builder::new()
                 .name(format!("capture-screen-{}", index))
-                .spawn(move || match capture_screen(display_id, true, true) {
+                .spawn(move || match capture_screen(display_id, false, true) {
                     // 参数：display_id, show_cursor=true, use_native_resolution=true
-                    Ok(_) => {
+                    Ok(capture) => {
                         log::info!(
-                            "Capture screen for display {} initialized successfully",
-                            display_id
+                            "Capture screen for display {} initialized successfully ({}x{})",
+                            display_id,
+                            capture.width,
+                            capture.height
                         );
+                        // 将截屏数据发送到主事件循环
+                        if let Err(e) = proxy_for_capture.send_event(AppEvent::ScreenCaptured {
+                            display_id,
+                            capture: Arc::new(capture),
+                        }) {
+                            log::error!("Failed to send screen capture event: {:?}", e);
+                        }
                     }
                     Err(e) => {
                         log::error!(
@@ -203,7 +248,6 @@ impl App {
 
             let window = WindowBuilder::new()
                 .with_title(title)
-                .with_background_color((0, 0, 0, 100))
                 .with_position(position)
                 .with_inner_size(size)
                 .with_resizable(false)
@@ -213,20 +257,7 @@ impl App {
                 .unwrap();
             let window_id = window.id();
 
-            let mut app_window = AppWindow::new(window, index);
-
-            let proxy_clone = proxy.clone();
-            // let web_view = WebViewBuilder::new()
-            //     .with_transparent(true)
-            //     .with_background_color((0, 0, 0, 0))
-            //     .with_html(Self::get_webview_html())
-            //     .with_ipc_handler(Self::create_ipc_handler(proxy_clone))
-            //     .with_hotkeys_zoom(false)
-            //     .build(&app_window)
-            //     .unwrap();
-
-            // app_window.set_webview(web_view);
-
+            let app_window = AppWindow::new(window, index);
             self.windows.insert(window_id, app_window);
         }
     }

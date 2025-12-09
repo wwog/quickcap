@@ -1,12 +1,9 @@
-use std::{
-    ops::{Deref, DerefMut},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use tao::{event::WindowEvent, rwh_06, window::Window};
 use wry::WebView;
 
-use crate::app::bg_surface::{self, BgSurface};
+use crate::app::bg_surface::BgSurface;
 
 #[allow(dead_code)]
 pub struct AppWindow {
@@ -40,8 +37,22 @@ impl AppWindow {
         }
     }
 
-    pub fn render(&self) {
-        self.bg_surface.render().unwrap();
+    pub fn render(
+        &self,
+        frame_data: &[u8],
+        frame_width: u32,
+        frame_height: u32,
+        bytes_per_row: u32,
+    ) {
+        self.bg_surface
+            .render(frame_data, frame_width, frame_height, bytes_per_row)
+            .unwrap();
+    }
+
+    pub fn render_blank(&self) {
+        // 1x1 透明像素的占位帧，便于后续替换为真实截图
+        const EMPTY_PIXEL: [u8; 4] = [0, 0, 0, 0];
+        self.render(&EMPTY_PIXEL, 1, 1, 4);
     }
 }
 
