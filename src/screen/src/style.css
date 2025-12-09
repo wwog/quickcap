@@ -1,0 +1,168 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: rgba(255, 255, 255, 0.87);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  /* display: flex;
+  justify-content: center;
+  align-items: center; */
+}
+#app img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+/* .mask {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate3d(0, 0, 0);
+} */
+.canvas-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 100;
+  user-select: none;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+.mask-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 200;
+}
+.select-rect {
+  position: absolute;
+  transform: translate3d(0, 0, 0);
+  z-index: 300;
+  border: 1px solid greenyellow;
+  cursor: move;
+}
+.canvas-container.edit-mode .select-rect {
+  display: none;
+}
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: greenyellow;
+  user-select: none;
+}
+.top-left {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+.top {
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.top-right {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+.right {
+  right: -5px;
+  top: 50%;
+  transform: translate(0, -50%);
+  cursor: ew-resize;
+}
+.bottom-right {
+  right: -5px;
+  bottom: -5px;
+  cursor: nwse-resize;
+}
+.bottom {
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.bottom-left {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+.left {
+  top: 50%;
+  left: -5px;
+  transform: translate(0, -50%);
+  cursor: ew-resize;
+}
+
+.edit-tool {
+  position: absolute;
+  z-index: 400;
+  bottom: 0;
+  right: 0;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  height: 32px;
+  padding: 0 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  visibility: hidden;
+  width: fit-content;
+}
+.edit-tool-item {
+  border-radius: 8px;
+  height: 28px;
+  width: 28px;
+  cursor: pointer;
+  color: #000000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.edit-tool-item:hover {
+  background-color: #F5F5F5;
+}
+
+.finish svg {
+  height: 16px;
+  width: 16px;
+}
+.cancel svg {
+  height: 16px;
+  width: 16px;
+}
