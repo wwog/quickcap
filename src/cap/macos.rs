@@ -4,8 +4,8 @@ use std::{
 };
 
 use screencapturekit::{
-    cm::CVPixelBuffer,
     CMSampleBuffer,
+    cm::CVPixelBuffer,
     prelude::{PixelFormat, SCContentFilter, SCStreamConfiguration, SCStreamOutputType},
     stream::{SCStream, SCStreamOutput},
 };
@@ -13,42 +13,43 @@ use screencapturekit::{
 use super::{error::CaptureError, result::CaptureResult};
 
 /// 获取显示器的原始物理分辨率
-/// 
+///
 /// 通过 Core Graphics API 获取显示器的 native mode（最高分辨率）
 fn get_native_resolution(display_id: usize) -> Result<(usize, usize), CaptureError> {
     use core_graphics::display::CGDisplay;
-    
+
     // 获取主显示器或指定显示器的 ID
     let display_ids = CGDisplay::active_displays()
         .map_err(|e| CaptureError::ContentNotAvailable(format!("获取显示器列表失败: {:?}", e)))?;
-    
+
     if display_id >= display_ids.len() {
         return Err(CaptureError::DisplayNotFound(display_id));
     }
-    
+
     let cg_display_id = display_ids[display_id];
     let display = CGDisplay::new(cg_display_id);
-    
+
     // 获取当前显示模式
     if let Some(current_mode) = display.display_mode() {
         // 获取像素宽度和高度（物理分辨率）
         let width = current_mode.pixel_width() as usize;
         let height = current_mode.pixel_height() as usize;
-        
+
         log::debug!(
-            "Display {} native resolution: {}x{}", 
-            display_id, 
-            width, 
+            "Display {} native resolution: {}x{}",
+            display_id,
+            width,
             height
         );
-        
+
         return Ok((width, height));
     }
-    
+
     // 如果无法获取，返回错误
-    Err(CaptureError::ContentNotAvailable(
-        format!("无法获取显示器 {} 的显示模式", display_id)
-    ))
+    Err(CaptureError::ContentNotAvailable(format!(
+        "无法获取显示器 {} 的显示模式",
+        display_id
+    )))
 }
 
 /// # 参数
@@ -56,16 +57,16 @@ fn get_native_resolution(display_id: usize) -> Result<(usize, usize), CaptureErr
 /// * `show_cursor` - 是否显示光标
 /// * `use_native_resolution` - 是否使用原始物理分辨率（true=物理分辨率，false=逻辑分辨率）
 pub fn capture_screen(
-    display_id: usize, 
-    show_cursor: bool, 
-    use_native_resolution: bool
+    display_id: usize,
+    show_cursor: bool,
+    use_native_resolution: bool,
 ) -> Result<CaptureResult, CaptureError> {
     use screencapturekit::prelude::SCShareableContent;
 
     let start_time = Instant::now();
     log::info!(
-        "Start to initialize capture screen for display {} (native_res: {})", 
-        display_id, 
+        "Start to initialize capture screen for display {} (native_res: {})",
+        display_id,
         use_native_resolution
     );
 
@@ -82,15 +83,12 @@ pub fn capture_screen(
         .get(display_id)
         .ok_or(CaptureError::DisplayNotFound(display_id))?;
 
-    // 获取分辨率
     let (width, height) = if use_native_resolution {
-        // 获取原始物理分辨率（使用 Core Graphics 的 native mode）
         get_native_resolution(display_id)?
     } else {
-        // 使用系统设置的逻辑分辨率
         (display.width() as usize, display.height() as usize)
     };
-    
+
     log::info!("Display {} resolution: {}x{}", display_id, width, height);
 
     let filter = SCContentFilter::builder().display(display).build();
@@ -129,13 +127,16 @@ pub fn capture_screen(
     if !frame_received {
         return Err(CaptureError::Timeout);
     }
-    
+
     let mut buffer = captured_buffer.lock().unwrap();
     if let Some(pixel_buffer) = buffer.take() {
         let width = pixel_buffer.width();
         let height = pixel_buffer.height();
-        
-        log::info!("Capture screen success in {}ms (zero-copy)", start_time.elapsed().as_millis());
+
+        log::info!(
+            "Capture screen success in {}ms (zero-copy)",
+            start_time.elapsed().as_millis()
+        );
         Ok(CaptureResult {
             pixel_buffer,
             width,
@@ -180,7 +181,7 @@ impl SCStreamOutput for SingleFrameHandler {
         // 零拷贝：只克隆 CVPixelBuffer（增加引用计数，不拷贝数据）
         if let Ok(mut data) = self.captured_buffer.lock() {
             if data.is_none() {
-                *data = Some(buffer.clone()); 
+                *data = Some(buffer.clone());
                 log::debug!("Captured frame buffer (zero-copy)");
             }
         }
@@ -190,7 +191,6 @@ impl SCStreamOutput for SingleFrameHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
 
     /// 保存截屏为 PNG 图片（仅用于测试）
     pub fn save_capture_as_png(capture: &CaptureResult, path: &str) -> Result<(), String> {
@@ -208,7 +208,7 @@ mod tests {
 
         // BGRA 转 RGBA
         let mut rgba_data = Vec::with_capacity((width * height * 4) as usize);
-        
+
         for y in 0..height as usize {
             let row_start = y * bytes_per_row;
             for x in 0..width as usize {
@@ -218,7 +218,7 @@ mod tests {
                     let g = data[pixel_start + 1];
                     let r = data[pixel_start + 2];
                     let a = data[pixel_start + 3];
-                    
+
                     rgba_data.push(r);
                     rgba_data.push(g);
                     rgba_data.push(b);
@@ -227,11 +227,11 @@ mod tests {
             }
         }
 
-        let img: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_raw(width, height, rgba_data)
-            .ok_or_else(|| "创建图像缓冲区失败".to_string())?;
+        let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
+            ImageBuffer::from_raw(width, height, rgba_data)
+                .ok_or_else(|| "创建图像缓冲区失败".to_string())?;
 
-        img.save(path)
-            .map_err(|e| format!("保存图片失败: {}", e))?;
+        img.save(path).map_err(|e| format!("保存图片失败: {}", e))?;
 
         Ok(())
     }
@@ -250,6 +250,26 @@ mod tests {
             Ok(capture) => {
                 println!("  ✓ 截屏成功");
                 println!("    分辨率: {}x{}", capture.width, capture.height);
+                println!("    显示器 ID: {}", capture.display_id);
+                println!("    是否显示鼠标: {}", capture.show_cursor);
+                let output_path = "test_screenshot_logic_res.png";
+                println!("    保存图片到: test_screenshot_logic_res.png");
+                match save_capture_as_png(&capture, output_path) {
+                    Ok(_) => {
+                        // 验证文件是否存在并显示大小
+                        if let Ok(metadata) = std::fs::metadata(output_path) {
+                            println!(
+                                "  ✓ 文件大小: {:.2} MB",
+                                metadata.len() as f64 / 1024.0 / 1024.0
+                            );
+                        } else {
+                            panic!("  ✗ 文件未找到");
+                        }
+                    }
+                    Err(e) => {
+                        panic!("  ✗ 保存图片失败: {}", e);
+                    }
+                }
             }
             Err(e) => {
                 println!("  ✗ 截屏失败: {:?}", e);
@@ -270,10 +290,13 @@ mod tests {
                 match save_capture_as_png(&capture, output_path) {
                     Ok(_) => {
                         println!("  ✓ 图片已保存");
-                        
+
                         // 验证文件是否存在并显示大小
                         if let Ok(metadata) = std::fs::metadata(output_path) {
-                            println!("  ✓ 文件大小: {:.2} MB", metadata.len() as f64 / 1024.0 / 1024.0);
+                            println!(
+                                "  ✓ 文件大小: {:.2} MB",
+                                metadata.len() as f64 / 1024.0 / 1024.0
+                            );
                         } else {
                             panic!("  ✗ 文件未找到");
                         }
@@ -287,7 +310,7 @@ mod tests {
                 panic!("  ✗ 截屏失败: {:?}", e);
             }
         }
-        
+
         println!("\n=== 测试完成 ===\n");
     }
 }
