@@ -57,6 +57,12 @@ impl App {
             *control_flow = ControlFlow::Wait;
 
             match event {
+                Event::NewEvents(event_type) => match event_type {
+                    tao::event::StartCause::Init => {
+                        log::info!("Event::NewEvents: Init");
+                    }
+                    _ => (),
+                },
                 Event::UserEvent(user_event) => match user_event {
                     AppEvent::Exit => {
                         if !self.windows.is_empty() {
@@ -66,6 +72,12 @@ impl App {
                         }
                     }
                 },
+                Event::RedrawRequested(window_id) => {
+                    log::info!("Event::RedrawRequested: {:?}", window_id);
+                    if let Some(window) = self.windows.get(&window_id) {
+                        window.render();
+                    }
+                }
                 Event::WindowEvent {
                     window_id, event, ..
                 } => match event {
@@ -204,16 +216,16 @@ impl App {
             let mut app_window = AppWindow::new(window, index);
 
             let proxy_clone = proxy.clone();
-            let web_view = WebViewBuilder::new()
-                .with_transparent(true)
-                .with_background_color((0, 0, 0, 0))
-                .with_html(Self::get_webview_html())
-                .with_ipc_handler(Self::create_ipc_handler(proxy_clone))
-                .with_hotkeys_zoom(false)
-                .build(&app_window)
-                .unwrap();
+            // let web_view = WebViewBuilder::new()
+            //     .with_transparent(true)
+            //     .with_background_color((0, 0, 0, 0))
+            //     .with_html(Self::get_webview_html())
+            //     .with_ipc_handler(Self::create_ipc_handler(proxy_clone))
+            //     .with_hotkeys_zoom(false)
+            //     .build(&app_window)
+            //     .unwrap();
 
-            app_window.set_webview(web_view);
+            // app_window.set_webview(web_view);
 
             self.windows.insert(window_id, app_window);
         }

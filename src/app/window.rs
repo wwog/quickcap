@@ -1,21 +1,30 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    ops::{Deref, DerefMut},
+    sync::Arc,
+};
 
 use tao::{event::WindowEvent, rwh_06, window::Window};
 use wry::WebView;
 
+use crate::app::bg_surface::{self, BgSurface};
+
 #[allow(dead_code)]
 pub struct AppWindow {
-    window: Window,
+    window: Arc<Window>,
     pub display_id: usize,
     webview: Option<WebView>,
+    bg_surface: BgSurface,
 }
 
 impl AppWindow {
     pub fn new(window: Window, display_id: usize) -> Self {
-        Self { 
-            window, 
+        let window = Arc::new(window);
+        let bg_surface = pollster::block_on(BgSurface::new(window.clone()));
+        Self {
+            window,
             display_id,
             webview: None,
+            bg_surface,
         }
     }
 
@@ -25,22 +34,14 @@ impl AppWindow {
 
     // 处理窗口事件
     pub fn handle_event(&self, event: &WindowEvent) {
-        // 处理窗口事件
-        log::debug!("Window event received: {:?}", event);
+        match event {
+           
+            _ => (),
+        }
     }
-}
 
-impl Deref for AppWindow {
-    type Target = Window;
-
-    fn deref(&self) -> &Self::Target {
-        &self.window
-    }
-}
-
-impl DerefMut for AppWindow {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.window
+    pub fn render(&self) {
+        self.bg_surface.render().unwrap();
     }
 }
 
