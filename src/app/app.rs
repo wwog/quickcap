@@ -10,6 +10,7 @@ use tao::event_loop::{
 };
 use tao::keyboard::Key;
 use tao::monitor::MonitorHandle;
+use tao::platform::macos::MonitorHandleExtMacOS;
 use tao::window::{WindowBuilder, WindowId};
 
 /// 自定义应用事件
@@ -19,7 +20,7 @@ pub enum AppEvent {
     Exit,
     /// 截屏完成事件
     ScreenCaptured {
-        display_id: usize,
+        display_native_id: u32,
         capture: Arc<CaptureResult>,
     },
 }
@@ -77,14 +78,14 @@ impl App {
                         }
                     }
                     AppEvent::ScreenCaptured {
-                        display_id,
+                        display_native_id,
                         capture,
                     } => {
                         // 查找对应 display_id 的窗口
                         if let Some(window) = self
                             .windows
                             .values()
-                            .find(|w| w.display_id == display_id)
+                            .find(|w| w.display_native_id == display_native_id)
                         {
                             // 锁定像素数据并渲染
                             match capture.lock_for_read() {
@@ -93,11 +94,11 @@ impl App {
                                     let width = capture.width as u32;
                                     let height = capture.height as u32;
                                     let bytes_per_row = capture.bytes_per_row() as u32;
-                                    
+
                                     window.render(data, width, height, bytes_per_row);
                                     log::info!(
                                         "Rendered screenshot for display {} ({}x{})",
-                                        display_id,
+                                        display_native_id,
                                         width,
                                         height
                                     );
@@ -208,26 +209,29 @@ impl App {
     fn create_window(&mut self, proxy: EventLoopProxy<AppEvent>) -> () {
         for (index, monitor) in self.monitors.iter().enumerate() {
             let title = format!("quickcap-{}", index);
-            log::info!("Creating window for monitor: {:?}", title);
+            let native_id = monitor.native_id();
+            log::info!(
+                "Creating window for monitor: {:?}, native_id: {:?}",
+                title,
+                native_id
+            );
             let position = monitor.position();
             let size = monitor.size();
 
-            let display_id = index;
             let proxy_for_capture = proxy.clone();
             thread::Builder::new()
                 .name(format!("capture-screen-{}", index))
-                .spawn(move || match capture_screen(display_id, false, true) {
-                    // 参数：display_id, show_cursor=true, use_native_resolution=true
+                .spawn(move || match capture_screen(native_id, false) {
                     Ok(capture) => {
                         log::info!(
                             "Capture screen for display {} initialized successfully ({}x{})",
-                            display_id,
+                            native_id,
                             capture.width,
                             capture.height
                         );
                         // 将截屏数据发送到主事件循环
                         if let Err(e) = proxy_for_capture.send_event(AppEvent::ScreenCaptured {
-                            display_id,
+                            display_native_id: native_id,
                             capture: Arc::new(capture),
                         }) {
                             log::error!("Failed to send screen capture event: {:?}", e);
@@ -236,7 +240,7 @@ impl App {
                     Err(e) => {
                         log::error!(
                             "Capture screen for display {} initialized failed: {:?}",
-                            display_id,
+                            native_id,
                             e
                         );
                     }
@@ -257,7 +261,7 @@ impl App {
                 .unwrap();
             let window_id = window.id();
 
-            let app_window = AppWindow::new(window, index);
+            let app_window = AppWindow::new(window, index, native_id);
             self.windows.insert(window_id, app_window);
         }
     }

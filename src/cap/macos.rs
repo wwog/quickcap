@@ -15,19 +15,10 @@ use super::{error::CaptureError, result::CaptureResult};
 /// 获取显示器的原始物理分辨率
 ///
 /// 通过 Core Graphics API 获取显示器的 native mode（最高分辨率）
-fn get_native_resolution(display_id: usize) -> Result<(usize, usize), CaptureError> {
+fn get_native_resolution(display_native_id: u32) -> Result<(usize, usize), CaptureError> {
     use core_graphics::display::CGDisplay;
 
-    // 获取主显示器或指定显示器的 ID
-    let display_ids = CGDisplay::active_displays()
-        .map_err(|e| CaptureError::ContentNotAvailable(format!("获取显示器列表失败: {:?}", e)))?;
-
-    if display_id >= display_ids.len() {
-        return Err(CaptureError::DisplayNotFound(display_id));
-    }
-
-    let cg_display_id = display_ids[display_id];
-    let display = CGDisplay::new(cg_display_id);
+    let display = CGDisplay::new(display_native_id);
 
     // 获取当前显示模式
     if let Some(current_mode) = display.display_mode() {
@@ -37,7 +28,7 @@ fn get_native_resolution(display_id: usize) -> Result<(usize, usize), CaptureErr
 
         log::debug!(
             "Display {} native resolution: {}x{}",
-            display_id,
+            display_native_id,
             width,
             height
         );
@@ -48,26 +39,23 @@ fn get_native_resolution(display_id: usize) -> Result<(usize, usize), CaptureErr
     // 如果无法获取，返回错误
     Err(CaptureError::ContentNotAvailable(format!(
         "无法获取显示器 {} 的显示模式",
-        display_id
+        display_native_id
     )))
 }
 
 /// # 参数
 /// * `display_id` - 显示器索引
 /// * `show_cursor` - 是否显示光标
-/// * `use_native_resolution` - 是否使用原始物理分辨率（true=物理分辨率，false=逻辑分辨率）
 pub fn capture_screen(
-    display_id: usize,
+    display_native_id: u32,
     show_cursor: bool,
-    use_native_resolution: bool,
 ) -> Result<CaptureResult, CaptureError> {
     use screencapturekit::prelude::SCShareableContent;
 
     let start_time = Instant::now();
     log::info!(
-        "Start to initialize capture screen for display {} (native_res: {})",
-        display_id,
-        use_native_resolution
+        "Start to initialize capture screen for (display_native_id: {})",
+        display_native_id
     );
 
     let content =
@@ -79,17 +67,17 @@ pub fn capture_screen(
             "No displays found".to_string(),
         ));
     }
-    let display = displays
-        .get(display_id)
-        .ok_or(CaptureError::DisplayNotFound(display_id))?;
+    // 找到 display_native_id 对应的 display
+    let display = displays.iter().find(|d| d.display_id() == display_native_id).ok_or(CaptureError::DisplayNotFound(display_native_id))?;
+    log::info!("Display: {:?}", display);
+    let (width, height) = get_native_resolution(display_native_id)?;
 
-    let (width, height) = if use_native_resolution {
-        get_native_resolution(display_id)?
-    } else {
-        (display.width() as usize, display.height() as usize)
-    };
-
-    log::info!("Display {} resolution: {}x{}", display_id, width, height);
+    log::info!(
+        "Display {} resolution: {}x{}",
+        display_native_id,
+        width,
+        height
+    );
 
     let filter = SCContentFilter::builder().display(display).build();
 
@@ -141,7 +129,7 @@ pub fn capture_screen(
             pixel_buffer,
             width,
             height,
-            display_id,
+            native_id: display_native_id,
             show_cursor,
         })
     } else {
@@ -246,11 +234,11 @@ mod tests {
 
         // 测试逻辑分辨率
         println!("1. 测试逻辑分辨率（use_native_resolution=false）:");
-        match capture_screen(0, true, false) {
+        match capture_screen(0, true) {
             Ok(capture) => {
                 println!("  ✓ 截屏成功");
                 println!("    分辨率: {}x{}", capture.width, capture.height);
-                println!("    显示器 ID: {}", capture.display_id);
+                println!("    显示器 ID: {}", capture.native_id);
                 println!("    是否显示鼠标: {}", capture.show_cursor);
                 let output_path = "test_screenshot_logic_res.png";
                 println!("    保存图片到: test_screenshot_logic_res.png");
@@ -278,11 +266,11 @@ mod tests {
 
         // 测试物理分辨率
         println!("\n2. 测试物理分辨率（use_native_resolution=true）:");
-        match capture_screen(0, true, true) {
+        match capture_screen(0, true) {
             Ok(capture) => {
                 println!("  ✓ 截屏成功");
                 println!("    分辨率: {}x{}", capture.width, capture.height);
-                println!("    显示器 ID: {}", capture.display_id);
+                println!("    显示器 ID: {}", capture.native_id);
 
                 // 保存为 PNG
                 let output_path = "test_screenshot_native_res.png";

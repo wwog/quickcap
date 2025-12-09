@@ -4,7 +4,7 @@ pub enum CaptureError {
     /// 无法获取可共享内容
     ContentNotAvailable(String),
     /// 指定的显示器不存在
-    DisplayNotFound(usize),
+    DisplayNotFound(u32),
     /// 流创建或启动失败
     StreamError(String),
     /// 超时未收到帧数据

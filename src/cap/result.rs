@@ -11,7 +11,7 @@ pub struct CaptureResult {
     /// 图像高度
     pub height: usize,
     /// 显示器 ID
-    pub display_id: usize,
+    pub native_id: u32,
     /// 是否显示鼠标
     pub show_cursor: bool,
 }

@@ -9,17 +9,19 @@ use crate::app::bg_surface::BgSurface;
 pub struct AppWindow {
     window: Arc<Window>,
     pub display_id: usize,
+    pub display_native_id: u32,
     webview: Option<WebView>,
     bg_surface: BgSurface,
 }
 
 impl AppWindow {
-    pub fn new(window: Window, display_id: usize) -> Self {
+    pub fn new(window: Window, display_id: usize, display_native_id: u32) -> Self {
         let window = Arc::new(window);
         let bg_surface = pollster::block_on(BgSurface::new(window.clone()));
         Self {
             window,
             display_id,
+            display_native_id,
             webview: None,
             bg_surface,
         }
