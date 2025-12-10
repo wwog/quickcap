@@ -1,9 +1,8 @@
+use crate::app::macos::capscreen;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::thread;
 
 use super::window::AppWindow;
-use crate::cap::{capture_screen, result::CaptureResult};
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
 use tao::event_loop::{
     ControlFlow, DeviceEventFilter, EventLoop, EventLoopBuilder, EventLoopProxy,
@@ -18,11 +17,6 @@ use tao::window::{WindowBuilder, WindowId};
 pub enum AppEvent {
     /// 请求退出应用
     Exit,
-    /// 截屏完成事件
-    ScreenCaptured {
-        display_native_id: u32,
-        capture: Arc<CaptureResult>,
-    },
 }
 
 pub struct App {
@@ -75,38 +69,6 @@ impl App {
                             log::info!("App Exit: user event");
                             self.windows.clear();
                             *control_flow = ControlFlow::Exit;
-                        }
-                    }
-                    AppEvent::ScreenCaptured {
-                        display_native_id,
-                        capture,
-                    } => {
-                        // 查找对应 display_id 的窗口
-                        if let Some(window) = self
-                            .windows
-                            .values()
-                            .find(|w| w.display_native_id == display_native_id)
-                        {
-                            // 锁定像素数据并渲染
-                            match capture.lock_for_read() {
-                                Ok(guard) => {
-                                    let data = guard.as_slice();
-                                    let width = capture.width as u32;
-                                    let height = capture.height as u32;
-                                    let bytes_per_row = capture.bytes_per_row() as u32;
-
-                                    window.render(data, width, height, bytes_per_row);
-                                    log::info!(
-                                        "Rendered screenshot for display {} ({}x{})",
-                                        display_native_id,
-                                        width,
-                                        height
-                                    );
-                                }
-                                Err(e) => {
-                                    log::error!("Failed to lock capture data: {:?}", e);
-                                }
-                            }
                         }
                     }
                 },
@@ -217,38 +179,14 @@ impl App {
             );
             let position = monitor.position();
             let size = monitor.size();
-
-            let proxy_for_capture = proxy.clone();
-            thread::Builder::new()
-                .name(format!("capture-screen-{}", index))
-                .spawn(move || match capture_screen(native_id, false) {
-                    Ok(capture) => {
-                        log::info!(
-                            "Capture screen for display {} initialized successfully ({}x{})",
-                            native_id,
-                            capture.width,
-                            capture.height
-                        );
-                        // 将截屏数据发送到主事件循环
-                        if let Err(e) = proxy_for_capture.send_event(AppEvent::ScreenCaptured {
-                            display_native_id: native_id,
-                            capture: Arc::new(capture),
-                        }) {
-                            log::error!("Failed to send screen capture event: {:?}", e);
-                        }
-                    }
-                    Err(e) => {
-                        log::error!(
-                            "Capture screen for display {} initialized failed: {:?}",
-                            native_id,
-                            e
-                        );
-                    }
-                })
-                .unwrap_or_else(|e| {
-                    log::error!("Failed to spawn capture-screen thread: {}", e);
-                    panic!("Failed to spawn capture-screen thread");
-                });
+            thread::spawn(move || {
+                let image = capscreen(native_id);
+                if let Ok(image) = image {
+                    
+                } else {
+                    return;
+                }
+            });
 
             let window = WindowBuilder::new()
                 .with_title(title)
