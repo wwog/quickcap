@@ -71,69 +71,75 @@ canvas {
   transform: translate3d(0, 0, 0);
   z-index: 300;
   border: 1px solid greenyellow;
+}
+.select-rect-wait-edit {
   cursor: move;
 }
 .canvas-container.edit-mode .select-rect {
   display: none;
 }
+
+/* resize-handle */
 .resize-handle {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 5px;
+  height: 5px;
   background-color: greenyellow;
   user-select: none;
 }
 .top-left {
-  top: -5px;
-  left: -5px;
+  top: -2.5px;
+  left: -2.5px;
   cursor: nwse-resize;
 }
 .top {
-  top: -5px;
+  top: -2.5px;
   left: 50%;
   transform: translateX(-50%);
   cursor: ns-resize;
 }
 .top-right {
-  top: -5px;
-  right: -5px;
+  top: -2.5px;
+  right: -2.5px;
   cursor: nesw-resize;
 }
 .right {
-  right: -5px;
+  right: -2.5px;
   top: 50%;
   transform: translate(0, -50%);
   cursor: ew-resize;
 }
 .bottom-right {
-  right: -5px;
-  bottom: -5px;
+  right: -2.5px;
+  bottom: -2.5px;
   cursor: nwse-resize;
 }
 .bottom {
-  bottom: -5px;
+  bottom: -2.5px;
   left: 50%;
   transform: translateX(-50%);
   cursor: ns-resize;
 }
 .bottom-left {
-  bottom: -5px;
-  left: -5px;
+  bottom: -2.5px;
+  left: -2.5px;
   cursor: nesw-resize;
 }
 .left {
   top: 50%;
-  left: -5px;
+  left: -2.5px;
   transform: translate(0, -50%);
   cursor: ew-resize;
 }
 
+/* edit-tool */
 .edit-tool {
+  user-select: none;
   position: absolute;
   z-index: 400;
   bottom: 0;
   right: 0;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-radius: 8px;
   height: 32px;
   padding: 0 8px;
@@ -155,7 +161,7 @@ canvas {
   align-items: center;
 }
 .edit-tool-item:hover {
-  background-color: #F5F5F5;
+  background-color: #f5f5f5;
 }
 
 .finish svg {
@@ -165,4 +171,22 @@ canvas {
 .cancel svg {
   height: 16px;
   width: 16px;
+}
+
+/* size-display */
+.size-display {
+  user-select: none;
+  position: absolute;
+  z-index: 400;
+  bottom: 0;
+  left: 0;
+  color: #ffffff;
+  height: 20px;
+  padding: 0 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  visibility: hidden;
+  width: fit-content;
 }

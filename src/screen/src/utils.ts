@@ -214,7 +214,7 @@ export const calcEditToolTop = (
     editTool.style.left = `${x + width - editTool.clientWidth}px`;
     const maxY = window.innerHeight;
     const maxX = window.innerWidth;
-    
+
     // under the selection area
     if (y + height + editToolHeight + editToolGap <= maxY) {
       editTool.style.top = `${y + height + editToolGap}px`;
@@ -229,4 +229,28 @@ export const calcEditToolTop = (
     // inner the selection area
     editTool.style.top = `${y + height - editToolHeight - editToolGap}px`;
   }
+};
+
+export const matchWindow = ({
+  x,
+  y,
+  windows,
+}: {
+  x: number;
+  y: number;
+  windows: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[];
+}) => {
+  return windows.find((window) => {
+    return (
+      x >= window.x &&
+      x <= window.x + window.width &&
+      y >= window.y &&
+      y <= window.y + window.height
+    );
+  });
 };

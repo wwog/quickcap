@@ -1,13 +1,16 @@
-import { resizeHandles } from "./const";
+import { resizeHandles } from "../const";
 import {
   bindDoubleClick,
   calcEditToolTop,
   calcFixedPoint,
   calcReactForResizing,
   calcStartAndMove,
-} from "./utils";
+  matchWindow,
+} from "../utils";
+import { SizeDisplay } from "./sizeDisplay";
 
 export class DrawScreen {
+  sizeDisplay: SizeDisplay;
   imgDom: HTMLImageElement;
   canvasContainer = document.createElement("div");
   baseCanvas = document.createElement("canvas");
@@ -50,6 +53,27 @@ export class DrawScreen {
   imgOffsetX = 0;
   imgOffsetY = 0;
 
+  windows = [
+    {
+      x: 20,
+      y: 148,
+      width: 799,
+      height: 521,
+    },
+    {
+      x: 198,
+      y: 148,
+      width: 799,
+      height: 521,
+    },
+    {
+      x: 0,
+      y: 0,
+      width: 1062,
+      height: 857,
+    },
+  ];
+
   constructor(appDom: HTMLDivElement, imgDom: HTMLImageElement) {
     this.imgDom = imgDom;
     this.canvasContainer.classList.add("canvas-container");
@@ -77,6 +101,8 @@ export class DrawScreen {
     this.drawBase();
     this.drawMask();
     this.initListener();
+
+    this.sizeDisplay = new SizeDisplay(appDom);
   }
 
   private initData = () => {
@@ -178,6 +204,22 @@ export class DrawScreen {
     }
 
     if (!this.isSelecting) {
+      const window = matchWindow({
+        x: e.clientX,
+        y: e.clientY,
+        windows: this.windows,
+      });
+      if (!window) {
+        return;
+      }
+
+      this.selectX = window.x;
+      this.selectY = window.y;
+      this.selectWidth = window.width;
+      this.selectHeight = window.height;
+
+      this.drawMask();
+
       return;
     }
     const { top, left, width, height } = calcStartAndMove({
@@ -203,6 +245,7 @@ export class DrawScreen {
     }
     this.isSelecting = false;
     this.mode = "waitEdit";
+    this.selectRectDom.classList.add("select-rect-wait-edit");
   };
 
   private resizeStart = (e: MouseEvent) => {
@@ -302,7 +345,10 @@ export class DrawScreen {
   };
 
   private onMouseDown = (e: MouseEvent) => {
-    calcEditToolTop(false, {
+    const isSelectRect =
+      e.target === this.selectRectDom ||
+      this.selectRectDom.contains(e.target as HTMLElement);
+    calcEditToolTop(!isSelectRect, {
       x: this.selectX,
       y: this.selectY,
       width: this.selectWidth,
@@ -318,8 +364,20 @@ export class DrawScreen {
   private onMouseMove = (e: MouseEvent) => {
     if (this.mode === "select") {
       this.selectMove(e);
+      this.sizeDisplay.render(true, {
+        x: this.selectX,
+        y: this.selectY,
+        width: this.selectWidth,
+        height: this.selectHeight,
+      });
     } else {
       this.resizeMove(e);
+      this.sizeDisplay.render(true, {
+        x: this.selectX,
+        y: this.selectY,
+        width: this.selectWidth,
+        height: this.selectHeight,
+      });
     }
   };
 
