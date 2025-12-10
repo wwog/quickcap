@@ -213,7 +213,7 @@ export const calcEditToolTop = (
     editTool.style.visibility = "visible";
     editTool.style.left = `${x + width - editTool.clientWidth}px`;
     const maxY = window.innerHeight;
-    const maxX = window.innerWidth;
+    // const maxX = window.innerWidth;
 
     // under the selection area
     if (y + height + editToolHeight + editToolGap <= maxY) {

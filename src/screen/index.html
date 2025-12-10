@@ -2,13 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>screen</title>
   </head>
   <body>
     <div id="app"></div>
-    <div class="edit-tool" style="visibility: hidden;">
+   <!--  <div class="edit-tool" style="visibility: hidden;">
       <div class="edit-tool-item"></div>
       <div class="edit-tool-item cancel">
         <svg
@@ -43,7 +43,10 @@
           />
         </svg>
       </div>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
+    </div> -->
+    <script type="module" src="./src/main.ts"></script>
+    <script>
+      alert("Is development:" + import.meta.env.DEV);
+    </script>
   </body>
 </html>

@@ -16,3 +16,4 @@ export const editToolGap = 8;
 export const sizeDisplayHeight = 20;
 
 export const sizeDisplayGap = 8;
+

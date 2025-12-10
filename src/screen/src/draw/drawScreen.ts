@@ -1,17 +1,20 @@
 import { resizeHandles } from "../const";
 import {
   bindDoubleClick,
-  calcEditToolTop,
+  // calcEditToolTop,
   calcFixedPoint,
   calcReactForResizing,
   calcStartAndMove,
   matchWindow,
 } from "../utils";
+import { EditTools } from "./editTools";
 import { SizeDisplay } from "./sizeDisplay";
 
 export class DrawScreen {
   sizeDisplay: SizeDisplay;
-  imgDom: HTMLImageElement;
+  editTools: EditTools;
+
+  imgDom: HTMLImageElement | null;
   canvasContainer = document.createElement("div");
   baseCanvas = document.createElement("canvas");
   baseCtx: CanvasRenderingContext2D;
@@ -74,8 +77,9 @@ export class DrawScreen {
     },
   ];
 
-  constructor(appDom: HTMLDivElement, imgDom: HTMLImageElement) {
-    this.imgDom = imgDom;
+  constructor(appDom: HTMLDivElement) {
+    // this.imgDom = imgDom;
+    this.imgDom = null;
     this.canvasContainer.classList.add("canvas-container");
     this.baseCanvas.classList.add("base-canvas");
     this.maskCanvas.classList.add("mask-canvas");
@@ -98,16 +102,32 @@ export class DrawScreen {
     });
 
     this.initData();
-    this.drawBase();
+
     this.drawMask();
     this.initListener();
 
     this.sizeDisplay = new SizeDisplay(appDom);
+    this.editTools = new EditTools();
   }
 
-  private initData = () => {
+  setImgDom = (imgDom: HTMLImageElement) => {
+    this.imgDom = imgDom;
     this.imgNaturalWidth = this.imgDom.naturalWidth;
     this.imgNaturalHeight = this.imgDom.naturalHeight;
+    const rateX = this.imgNaturalWidth / this.boxWidth;
+    const rateY = this.imgNaturalHeight / this.boxHeight;
+
+    const rate = Math.max(rateX, rateY);
+    this.imgDrawWidth = this.imgNaturalWidth / rate;
+    this.imgDrawHeight = this.imgNaturalHeight / rate;
+
+    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
+    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
+
+    this.drawBase();
+  };
+
+  private initData = () => {
     this.boxWidth = this.canvasContainer.clientWidth;
     this.boxHeight = this.canvasContainer.clientHeight;
 
@@ -140,19 +160,13 @@ export class DrawScreen {
     this.baseCtx.imageSmoothingQuality = "high";
     this.maskCtx.imageSmoothingEnabled = true;
     this.maskCtx.imageSmoothingQuality = "high";
-
-    const rateX = this.imgNaturalWidth / this.boxWidth;
-    const rateY = this.imgNaturalHeight / this.boxHeight;
-
-    const rate = Math.max(rateX, rateY);
-    this.imgDrawWidth = this.imgNaturalWidth / rate;
-    this.imgDrawHeight = this.imgNaturalHeight / rate;
-
-    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
-    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
   };
 
   private drawBase = () => {
+    if (!this.imgDom) {
+      console.error("Image dom is not set");
+      return;
+    }
     // Draw image
     this.baseCtx.drawImage(
       this.imgDom,
@@ -348,7 +362,7 @@ export class DrawScreen {
     const isSelectRect =
       e.target === this.selectRectDom ||
       this.selectRectDom.contains(e.target as HTMLElement);
-    calcEditToolTop(!isSelectRect, {
+    this.editTools.render(!isSelectRect, {
       x: this.selectX,
       y: this.selectY,
       width: this.selectWidth,
@@ -387,7 +401,7 @@ export class DrawScreen {
         e.stopPropagation();
         e.preventDefault();
         this.selectEnd();
-        calcEditToolTop(true, {
+        this.editTools.render(true, {
           x: this.selectX,
           y: this.selectY,
           width: this.selectWidth,
@@ -399,7 +413,7 @@ export class DrawScreen {
         e.stopPropagation();
         e.preventDefault();
         this.resizeEnd();
-        calcEditToolTop(true, {
+        this.editTools.render(true, {
           x: this.selectX,
           y: this.selectY,
           width: this.selectWidth,
