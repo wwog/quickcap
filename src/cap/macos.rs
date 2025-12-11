@@ -1,3 +1,6 @@
+use std::fmt::Error;
+use std::fs::File;
+use std::io::Read;
 use std::{
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -11,6 +14,26 @@ use screencapturekit::{
 };
 
 use super::{error::CaptureError, result::CaptureResult};
+
+fn get_system_version() -> Result<f32, Error> {
+    let path = "/System/Library/CoreServices/SystemVersion.plist";
+    let mut file = File::open(path).unwrap();
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+    println!("contents: {}", contents);
+    // 找ProductVersion，使用文本搜索不用正则
+    let search_text = "ProductVersion</key>\n";
+    let mut index = contents.find(search_text).unwrap();
+    index += search_text.len();
+    let version = contents[index..].split("\n").next().unwrap().to_string();
+    // 找到起始标签的结束位置
+    let start = version.find('>').unwrap() + 1;
+    // 找到结束标签的开始位置
+    let end = version.rfind('<').unwrap();
+
+    let v_str = version[start..end].to_string();
+    Ok(v_str.parse::<f32>().unwrap())
+}
 
 /// 获取显示器的原始物理分辨率
 ///
@@ -228,6 +251,12 @@ mod tests {
     }
 
     #[test]
+    fn test_get_system_version() {
+        let system_version = get_system_version();
+        println!("system_version: {:?}", system_version);
+    }
+
+    #[test]
     fn test_capture_and_save() {
         env_logger::builder()
             .filter_level(log::LevelFilter::Info)
@@ -236,7 +265,8 @@ mod tests {
         //获取所有显示器
         use core_graphics::display::CGDisplay;
         let displays = CGDisplay::active_displays()
-            .map_err(|e| CaptureError::ContentNotAvailable(e.to_string())).unwrap();
+            .map_err(|e| CaptureError::ContentNotAvailable(e.to_string()))
+            .unwrap();
         for display in displays {
             match capture_screen(display, true) {
                 Ok(capture) => {
