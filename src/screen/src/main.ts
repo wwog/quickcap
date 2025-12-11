@@ -1,6 +1,7 @@
 import { DrawScreen } from "./draw";
 import "./style.css";
 import testImg from "./test.png";
+import { exitApp } from "./utils";
 
 const appDom = document.querySelector("#app") as HTMLDivElement;
 // const maskDom = document.querySelector(".mask") as HTMLDivElement;
@@ -27,11 +28,20 @@ function init() {
     imgDom.setAttribute("src", testImg);
   }
 
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      (window as any).ipc.postMessage('escape_pressed');
+  window.addEventListener("keydown", (e) => {
+    console.log("🚀 ~ init ~ e:", e.key, e.keyCode);
+    if (e.key === "Escape") {
+      alert("Escape pressed");
+      exitApp();
     }
-  })
+  });
+  appDom.addEventListener("keydown", (e) => {
+    console.log("🚀 ~ appDom init ~ e:", e.key);
+    if (e.key === "Escape") {
+      alert("Escape pressed");
+      exitApp();
+    }
+  });
 }
 
 init();

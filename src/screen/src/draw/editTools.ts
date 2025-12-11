@@ -8,6 +8,7 @@ export const items = [
 <rect opacity="0" width="48" height="48" fill="#D8D8D8"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M24.0416 2C21.8325 2 20.0416 3.79086 20.0416 6V31.8258L12.7749 24.217C11.2251 22.5943 8.71225 22.5943 7.16239 24.217C5.61254 25.8396 5.61254 28.4704 7.16239 30.093L20.897 44.4724C21.2958 44.979 21.8145 45.3869 22.4103 45.6533C22.9221 45.8873 23.4715 46.0029 24.0205 45.9999C24.0275 46 24.0346 46 24.0416 46C25.4652 46 26.7151 45.2564 27.424 44.1363L40.8376 30.093C42.3875 28.4704 42.3875 25.8396 40.8376 24.217C39.2877 22.5943 36.7749 22.5943 35.2251 24.217L28.0416 31.7367V6C28.0416 3.79086 26.2508 2 24.0416 2Z" fill="#A2A8C3"/>
 </svg>`,
+    role: "download",
   },
   {
     id: "cancel",
@@ -26,6 +27,7 @@ export const items = [
             fill="red"
           />
         </svg>`,
+    role: "cancel",
   },
   {
     id: "finish",
@@ -45,11 +47,16 @@ export const items = [
             stroke-linejoin="round"
           />
         </svg>`,
+    role: "finish",
   },
-];
+] as const;
+
+// 从 items 数组中提取所有可能的 role 值
+type ItemRole = (typeof items)[number]["role"];
 
 export class EditTools {
   dom: HTMLDivElement;
+  itemListeners: Map<string, () => void> = new Map();
   constructor(parent?: HTMLElement) {
     this.dom = document.createElement("div");
     this.dom.classList.add("edit-tool");
@@ -60,6 +67,7 @@ export class EditTools {
     }
 
     this.initItems();
+    this.initListeners();
   }
 
   private initItems = () => {
@@ -67,7 +75,25 @@ export class EditTools {
       const itemDom = document.createElement("div");
       itemDom.classList.add("edit-tool-item", item.className);
       itemDom.innerHTML = item.content || "";
+      itemDom.dataset.role = item.role || "";
       this.dom.appendChild(itemDom);
+    });
+  };
+
+  private initListeners = () => {
+    this.dom.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      const role = target.dataset.role || "";
+      const listener = this.itemListeners.get(role);
+      if (listener) {
+        listener();
+      }
+    });
+  };
+
+  addListener = (items: { role: ItemRole; listener: () => void }[]) => {
+    items.forEach((item) => {
+      this.itemListeners.set(item.role, item.listener);
     });
   };
 

@@ -8,55 +8,60 @@ import {
   matchWindow,
 } from "../utils";
 import { EditTools } from "./editTools";
+import { onClickFinish } from "./func";
 import { SizeDisplay } from "./sizeDisplay";
 
+/**
+ * Manages interface drawing and interaction, including selection, editing, moving, etc.
+ * Do not put exported methods here, put them in func.ts.
+ */
 export class DrawScreen {
-  sizeDisplay: SizeDisplay;
-  editTools: EditTools;
+  private sizeDisplay: SizeDisplay;
+  private editTools: EditTools;
 
-  imgDom: HTMLImageElement | null;
-  canvasContainer = document.createElement("div");
-  baseCanvas = document.createElement("canvas");
-  baseCtx: CanvasRenderingContext2D;
-  maskCanvas = document.createElement("canvas");
-  maskCtx: CanvasRenderingContext2D;
-  editCanvas = document.createElement("canvas");
-  editCtx: CanvasRenderingContext2D;
+  private imgDom: HTMLImageElement | null;
+  private canvasContainer = document.createElement("div");
+  private baseCanvas = document.createElement("canvas");
+  private baseCtx: CanvasRenderingContext2D;
+  private maskCanvas = document.createElement("canvas");
+  private maskCtx: CanvasRenderingContext2D;
+  private editCanvas = document.createElement("canvas");
+  private editCtx: CanvasRenderingContext2D;
 
-  selectRectDom: HTMLDivElement;
+  private selectRectDom: HTMLDivElement;
 
-  isSelecting = false;
-  isResizing = false;
-  resizeHandle: string = "";
+  private isSelecting = false;
+  private isResizing = false;
+  private resizeHandle: string = "";
 
   // start point when mousedown
-  startX = 0;
-  startY = 0;
+  private startX = 0;
+  private startY = 0;
 
   // fixed point when resizing
-  fixedX = 0;
-  fixedY = 0;
-  fixedWidth = 0;
-  fixedHeight = 0;
+  private fixedX = 0;
+  private fixedY = 0;
+  private fixedWidth = 0;
+  private fixedHeight = 0;
 
   // Select area position and size
-  selectX = 0;
-  selectY = 0;
-  selectWidth = 0;
-  selectHeight = 0;
+  private selectX = 0;
+  private selectY = 0;
+  private selectWidth = 0;
+  private selectHeight = 0;
 
-  mode: "select" | "waitEdit" | "edit" | "move" = "select";
+  private mode: "select" | "waitEdit" | "edit" | "move" = "select";
 
-  imgNaturalWidth = 0;
-  imgNaturalHeight = 0;
-  imgDrawWidth = 0;
-  imgDrawHeight = 0;
-  boxWidth = 0;
-  boxHeight = 0;
-  imgOffsetX = 0;
-  imgOffsetY = 0;
+  private imgNaturalWidth = 0;
+  private imgNaturalHeight = 0;
+  private imgDrawWidth = 0;
+  private imgDrawHeight = 0;
+  private boxWidth = 0;
+  private boxHeight = 0;
+  private imgOffsetX = 0;
+  private imgOffsetY = 0;
 
-  windows = [
+  private windows = [
     {
       x: 20,
       y: 148,
@@ -68,12 +73,6 @@ export class DrawScreen {
       y: 148,
       width: 799,
       height: 521,
-    },
-    {
-      x: 0,
-      y: 0,
-      width: 1062,
-      height: 857,
     },
   ];
 
@@ -89,6 +88,7 @@ export class DrawScreen {
 
     this.selectRectDom = document.createElement("div");
     this.selectRectDom.classList.add("select-rect");
+    this.selectRectDom.appendChild(this.editCanvas);
     appDom.appendChild(this.canvasContainer);
     this.canvasContainer.appendChild(this.baseCanvas);
     this.canvasContainer.appendChild(this.maskCanvas);
@@ -106,8 +106,25 @@ export class DrawScreen {
     this.drawMask();
     this.initListener();
 
-    this.sizeDisplay = new SizeDisplay(appDom);
+    this.sizeDisplay = new SizeDisplay(this.canvasContainer);
     this.editTools = new EditTools();
+
+    this.editTools.addListener([
+      {
+        role: "finish",
+        listener: () => {
+          onClickFinish({
+            ctx: this.editCtx,
+            rect: {
+              x: this.selectX,
+              y: this.selectY,
+              width: this.selectWidth,
+              height: this.selectHeight,
+            },
+          });
+        },
+      },
+    ]);
   }
 
   setImgDom = (imgDom: HTMLImageElement) => {
@@ -362,7 +379,7 @@ export class DrawScreen {
     const isSelectRect =
       e.target === this.selectRectDom ||
       this.selectRectDom.contains(e.target as HTMLElement);
-    this.editTools.render(!isSelectRect, {
+    this.editTools.render(this.mode === "waitEdit" && !isSelectRect, {
       x: this.selectX,
       y: this.selectY,
       width: this.selectWidth,

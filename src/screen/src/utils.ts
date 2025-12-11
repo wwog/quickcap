@@ -1,5 +1,47 @@
 import { editToolGap, editToolHeight } from "./const";
 
+let promise: Promise<void> | null = null;
+
+export function exitApp() {
+  (window as any).ipc.postMessage("exit_app");
+}
+
+export async function getScreenImageData([x, y, width, height]: [
+  number,
+  number,
+  number,
+  number
+]) {
+  if (promise) return promise;
+  promise = new Promise((resolve, reject) => {
+    try {
+      (window as any).onRegionData = function (result: any) {
+        console.log("Region data received:", result);
+        if (result.error) {
+          console.error("Error:", result.error);
+          reject(result.error);
+        } else {
+          console.log(
+            "Region extracted:",
+            result.x,
+            result.y,
+            result.w,
+            result.h
+          );
+          console.log("Data length:", result.data.length);
+          // 这里可以处理返回的区域数据
+          // result.data 是 base64 编码的 RGBA 数据
+          resolve(result);
+        }
+      };
+      (window as any).ipc.postMessage(JSON.stringify([x, y, width, height]));
+    } catch (err) {
+      reject(err);
+    }
+  });
+  return promise;
+}
+
 // Calculate the position and size of the selection area based on the mouse movement
 export const calcStartAndMove = ({
   startX,

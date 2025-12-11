@@ -325,7 +325,9 @@ impl App {
             let ipc_handler = App::create_ipc_handler(proxy.clone(), window_id);
             
             let webview = WebViewBuilder::new()
-                .with_html(App::get_webview_html())
+                // .with_html(App::get_webview_html())
+                // .with_url("./src/screen/dist/index.html")
+                .with_url("http://localhost:5173/")
                 .with_transparent(true)
                 .with_ipc_handler(ipc_handler)
                 .build(&window_ref)
