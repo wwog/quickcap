@@ -362,9 +362,9 @@ dependencies = [
 
 [[package]]
 name = "capscreen_macos"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82b04e50861efc7b03f5d65f17a4ddc0ed88d7c19eb10bfdc610dd26184b4148"
+checksum = "035c8b67acbde9d874840604a59d29e4bd43898f44c5216c64251a33a7e76c3e"
 
 [[package]]
 name = "cc"
@@ -2751,6 +2751,7 @@ checksum = "a993555f31e5a609f617c12db6250dedcac1b0a85076912c436e6fc9b2c8e6a3"
 name = "quickcap"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "capscreen_macos",
  "chrono",
  "env_logger",
@@ -2760,6 +2761,7 @@ dependencies = [
  "objc2-app-kit",
  "objc2-foundation",
  "pollster",
+ "serde_json",
  "tao",
  "wgpu",
  "windows-capture",
@@ -3056,6 +3058,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
+name = "ryu"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3122,6 +3130,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.111",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.145"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "402a6f66d8c709116cf22f558eab210f5a50187f702eb4d7e5ef38d9a7f1c79c"
+dependencies = [
+ "itoa",
+ "memchr",
+ "ryu",
+ "serde",
+ "serde_core",
 ]
 
 [[package]]
