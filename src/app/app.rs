@@ -1,6 +1,7 @@
 use crate::app::macos::capscreen;
 use std::collections::HashMap;
 use base64::Engine;
+use tao::dpi::LogicalPosition;
 
 use super::window::AppWindow;
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
@@ -11,7 +12,7 @@ use tao::keyboard::Key;
 use tao::monitor::MonitorHandle;
 use tao::platform::macos::MonitorHandleExtMacOS;
 use tao::window::{WindowBuilder, WindowId};
-use wry::WebViewBuilder;
+use wry::{Rect, WebViewBuilder};
 
 /// 自定义应用事件
 #[derive(Debug)]
