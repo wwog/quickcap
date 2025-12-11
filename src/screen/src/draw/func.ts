@@ -11,5 +11,5 @@ export async function onClickFinish({ ctx, rect }: {
 }) {
   const { x, y, width, height } = rect;
   const screenImageData = await getScreenImageData([x, y, width, height]);
-  console.log("🚀 ~ onClickFinish ~ screenImageData:", screenImageData);
+  console.log("🚀 ~ onClickFinish ~ screenImageData:", screenImageData, ctx);
 }

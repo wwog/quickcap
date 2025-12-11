@@ -82,9 +82,16 @@ export class EditTools {
 
   private initListeners = () => {
     this.dom.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
+      let target = e.target as HTMLElement;
+      while (target && !target.classList.contains("edit-tool-item")) {
+        target = target.parentElement as HTMLElement;
+        if (target === this.dom) break;
+      }
+      if (!target) return;
       const role = target.dataset.role || "";
+      console.log("🚀 ~ EditTools ~ role:", role);
       const listener = this.itemListeners.get(role);
+      console.log("🚀 ~ EditTools ~ listener:", listener);
       if (listener) {
         listener();
       }

@@ -1,9 +1,9 @@
-import { editToolGap, editToolHeight } from "./const";
+import { editToolGap, editToolHeight } from "../const";
 
 let promise: Promise<void> | null = null;
 
 export function exitApp() {
-  (window as any).ipc.postMessage("exit_app");
+  (window as any).ipc.postMessage("escape_pressed");
 }
 
 export async function getScreenImageData([x, y, width, height]: [

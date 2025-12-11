@@ -58,6 +58,7 @@ body {
   overflow: hidden;
 }
 canvas {
+  user-select: none;
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
@@ -76,9 +77,6 @@ canvas {
   transform: translate3d(0, 0, 0);
   z-index: 300;
   border: 1px solid greenyellow;
-}
-.select-rect-wait-edit {
-  cursor: move;
 }
 .canvas-container.edit-mode .select-rect {
   display: none;

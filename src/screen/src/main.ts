@@ -1,6 +1,6 @@
 import { DrawScreen } from "./draw";
 import "./style.css";
-import testImg from "./test.png";
+// import testImg from "./test.png";
 import { exitApp } from "./utils";
 
 const appDom = document.querySelector("#app") as HTMLDivElement;
@@ -14,19 +14,20 @@ function init() {
   console.log("Is production:", import.meta.env.PROD);
 
   const drawScreen = new DrawScreen(appDom);
+  console.log("🚀 ~ init ~ drawScreen:", drawScreen);
 
-  if (import.meta.env.DEV) {
-    const imgDom = document.createElement("img");
-    imgDom.onload = () => {
-      (window as any).drawScreen = drawScreen;
-      drawScreen.setImgDom(imgDom);
-    };
-    imgDom.onerror = (e) => {
-      console.error("Image loading failed", e);
-    };
+  // if (import.meta.env.DEV) {
+  //   const imgDom = document.createElement("img");
+  //   imgDom.onload = () => {
+  //     (window as any).drawScreen = drawScreen;
+  //     drawScreen.setImgDom(imgDom);
+  //   };
+  //   imgDom.onerror = (e) => {
+  //     console.error("Image loading failed", e);
+  //   };
 
-    imgDom.setAttribute("src", testImg);
-  }
+  //   imgDom.setAttribute("src", testImg);
+  // }
 
   window.addEventListener("keydown", (e) => {
     console.log("🚀 ~ init ~ e:", e.key, e.keyCode);

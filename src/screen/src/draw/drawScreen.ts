@@ -5,11 +5,16 @@ import {
   calcFixedPoint,
   calcReactForResizing,
   calcStartAndMove,
+  exitApp,
   matchWindow,
 } from "../utils";
+import { initCanvasSetting } from "../utils/canvas";
+import { EditCanvas } from "./editCanvas";
 import { EditTools } from "./editTools";
 import { onClickFinish } from "./func";
 import { SizeDisplay } from "./sizeDisplay";
+
+type TMode = "select" | "waitEdit" | "resizing" | "edit" | "move";
 
 /**
  * Manages interface drawing and interaction, including selection, editing, moving, etc.
@@ -19,19 +24,16 @@ export class DrawScreen {
   private sizeDisplay: SizeDisplay;
   private editTools: EditTools;
 
+  private editCanvas: EditCanvas;
+
   private imgDom: HTMLImageElement | null;
   private canvasContainer = document.createElement("div");
-  private baseCanvas = document.createElement("canvas");
-  private baseCtx: CanvasRenderingContext2D;
   private maskCanvas = document.createElement("canvas");
   private maskCtx: CanvasRenderingContext2D;
-  private editCanvas = document.createElement("canvas");
-  private editCtx: CanvasRenderingContext2D;
 
   private selectRectDom: HTMLDivElement;
 
   private isSelecting = false;
-  private isResizing = false;
   private resizeHandle: string = "";
 
   // start point when mousedown
@@ -50,7 +52,40 @@ export class DrawScreen {
   private selectWidth = 0;
   private selectHeight = 0;
 
-  private mode: "select" | "waitEdit" | "edit" | "move" = "select";
+  private _mode: TMode = "select";
+
+  /**
+   * 获取当前模式
+   */
+  public get mode(): TMode {
+    return this._mode;
+  }
+
+  /**
+   * 设置模式
+   */
+  public set mode(value: TMode) {
+    const oldMode = this._mode;
+    if (oldMode !== value) {
+      this._mode = value;
+      switch (value) {
+        case "waitEdit": {
+          this.canvasContainer.style.cursor = "";
+          this.selectRectDom.style.cursor = "move";
+          break;
+        }
+        case "move": {
+          this.canvasContainer.style.cursor = "move";
+          break;
+        }
+        case "edit": {
+          this.canvasContainer.style.cursor = "";
+          this.selectRectDom.style.cursor = "crosshair";
+          break;
+        }
+      }
+    }
+  }
 
   private imgNaturalWidth = 0;
   private imgNaturalHeight = 0;
@@ -80,17 +115,14 @@ export class DrawScreen {
     // this.imgDom = imgDom;
     this.imgDom = null;
     this.canvasContainer.classList.add("canvas-container");
-    this.baseCanvas.classList.add("base-canvas");
     this.maskCanvas.classList.add("mask-canvas");
-    this.baseCtx = this.baseCanvas.getContext("2d") as CanvasRenderingContext2D;
     this.maskCtx = this.maskCanvas.getContext("2d") as CanvasRenderingContext2D;
-    this.editCtx = this.editCanvas.getContext("2d") as CanvasRenderingContext2D;
+    this.editCanvas = new EditCanvas();
 
     this.selectRectDom = document.createElement("div");
     this.selectRectDom.classList.add("select-rect");
-    this.selectRectDom.appendChild(this.editCanvas);
+    // this.selectRectDom.appendChild(this.editCanvas);
     appDom.appendChild(this.canvasContainer);
-    this.canvasContainer.appendChild(this.baseCanvas);
     this.canvasContainer.appendChild(this.maskCanvas);
 
     // Initialize resize handles
@@ -113,8 +145,11 @@ export class DrawScreen {
       {
         role: "finish",
         listener: () => {
+          this.mode = "edit";
+          this.editCanvas.initCanvasSetting(this.selectWidth, this.selectHeight);
+          this.editCanvas.setParentDom(this.selectRectDom);
           onClickFinish({
-            ctx: this.editCtx,
+            ctx: this.editCanvas.getCtx(),
             rect: {
               x: this.selectX,
               y: this.selectY,
@@ -124,78 +159,23 @@ export class DrawScreen {
           });
         },
       },
+      {
+        role: "cancel",
+        listener: () => {
+          exitApp();
+        },
+      },
     ]);
   }
-
-  setImgDom = (imgDom: HTMLImageElement) => {
-    this.imgDom = imgDom;
-    this.imgNaturalWidth = this.imgDom.naturalWidth;
-    this.imgNaturalHeight = this.imgDom.naturalHeight;
-    const rateX = this.imgNaturalWidth / this.boxWidth;
-    const rateY = this.imgNaturalHeight / this.boxHeight;
-
-    const rate = Math.max(rateX, rateY);
-    this.imgDrawWidth = this.imgNaturalWidth / rate;
-    this.imgDrawHeight = this.imgNaturalHeight / rate;
-
-    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
-    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
-
-    this.drawBase();
-  };
 
   private initData = () => {
     this.boxWidth = this.canvasContainer.clientWidth;
     this.boxHeight = this.canvasContainer.clientHeight;
 
-    // Consider device pixel ratio
-    const dpr = window.devicePixelRatio || 1;
-
-    // Set actual pixel size for canvas
-    this.baseCanvas.width = this.boxWidth * dpr;
-    this.baseCanvas.height = this.boxHeight * dpr;
-    this.maskCanvas.width = this.boxWidth * dpr;
-    this.maskCanvas.height = this.boxHeight * dpr;
-    this.editCanvas.width = this.boxWidth * dpr;
-    this.editCanvas.height = this.boxHeight * dpr;
-
-    // Set CSS size for canvas
-    this.baseCanvas.style.width = `${this.boxWidth}px`;
-    this.baseCanvas.style.height = `${this.boxHeight}px`;
-    this.maskCanvas.style.width = `${this.boxWidth}px`;
-    this.maskCanvas.style.height = `${this.boxHeight}px`;
-    this.editCanvas.style.width = `${this.boxWidth}px`;
-    this.editCanvas.style.height = `${this.boxHeight}px`;
-
-    // Scale drawing context to match device pixel ratio
-    this.baseCtx.scale(dpr, dpr);
-    this.maskCtx.scale(dpr, dpr);
-    this.editCtx.scale(dpr, dpr);
-
-    // Enable image smoothing for better quality
-    this.baseCtx.imageSmoothingEnabled = true;
-    this.baseCtx.imageSmoothingQuality = "high";
-    this.maskCtx.imageSmoothingEnabled = true;
-    this.maskCtx.imageSmoothingQuality = "high";
-  };
-
-  private drawBase = () => {
-    if (!this.imgDom) {
-      console.error("Image dom is not set");
-      return;
-    }
-    // Draw image
-    this.baseCtx.drawImage(
-      this.imgDom,
-      0,
-      0,
-      this.imgNaturalWidth,
-      this.imgNaturalHeight,
-      this.imgOffsetX,
-      this.imgOffsetY,
-      this.imgDrawWidth,
-      this.imgDrawHeight
-    );
+    initCanvasSetting(this.maskCanvas, {
+      width: this.boxWidth,
+      height: this.boxHeight,
+    });
   };
 
   private drawMask = () => {
@@ -276,7 +256,6 @@ export class DrawScreen {
     }
     this.isSelecting = false;
     this.mode = "waitEdit";
-    this.selectRectDom.classList.add("select-rect-wait-edit");
   };
 
   private resizeStart = (e: MouseEvent) => {
@@ -284,8 +263,11 @@ export class DrawScreen {
       return;
     }
     if ((e.target as HTMLDivElement)?.classList?.contains("resize-handle")) {
-      this.isResizing = true;
       this.resizeHandle = (e.target as HTMLDivElement).dataset.role || "";
+      this.mode = "resizing";
+      const cursor = getComputedStyle(e.target as HTMLDivElement).cursor || "";
+      this.canvasContainer.style.cursor = cursor;
+      this.selectRectDom.style.cursor = cursor;
       this.startX = e.clientX;
       this.startY = e.clientY;
       const { x, y } = calcFixedPoint({
@@ -299,8 +281,6 @@ export class DrawScreen {
       this.fixedY = y;
       this.fixedWidth = this.selectWidth;
       this.fixedHeight = this.selectHeight;
-      this.canvasContainer.style.cursor =
-        getComputedStyle(e.target as HTMLDivElement).cursor || "";
     } else if (
       (e.target as HTMLDivElement)?.classList?.contains("select-rect")
     ) {
@@ -311,7 +291,6 @@ export class DrawScreen {
       this.fixedY = this.selectY;
       this.fixedWidth = this.selectWidth;
       this.fixedHeight = this.selectHeight;
-      this.canvasContainer.style.cursor = "move";
     }
   };
   private resizeMove = (e: MouseEvent) => {
@@ -319,7 +298,7 @@ export class DrawScreen {
       return;
     }
 
-    if (this.mode === "waitEdit" && this.resizeHandle) {
+    if (this.mode === "resizing" && this.resizeHandle) {
       const { top, left, width, height } = calcReactForResizing({
         resizeHandle: this.resizeHandle,
         fixedX: this.fixedX,
@@ -371,11 +350,11 @@ export class DrawScreen {
       return;
     }
     this.mode = "waitEdit";
-    this.canvasContainer.style.cursor = "";
     this.resizeHandle = "";
   };
 
   private onMouseDown = (e: MouseEvent) => {
+    if (this.mode === "edit") return;
     const isSelectRect =
       e.target === this.selectRectDom ||
       this.selectRectDom.contains(e.target as HTMLElement);
@@ -413,6 +392,7 @@ export class DrawScreen {
   };
 
   private onMouseUp = (e: MouseEvent) => {
+    console.log("🚀 ~ DrawScreen ~ e:", e, this.mode);
     switch (this.mode) {
       case "select":
         e.stopPropagation();
@@ -427,6 +407,7 @@ export class DrawScreen {
         break;
       case "waitEdit":
       case "move":
+      case "resizing":
         e.stopPropagation();
         e.preventDefault();
         this.resizeEnd();
