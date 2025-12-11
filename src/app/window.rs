@@ -50,12 +50,6 @@ impl AppWindow {
             .render(frame_data, frame_width, frame_height, bytes_per_row)
             .unwrap();
     }
-
-    pub fn render_blank(&self) {
-        // 1x1 透明像素的占位帧，便于后续替换为真实截图
-        const EMPTY_PIXEL: [u8; 4] = [0, 0, 0, 0];
-        self.render(&EMPTY_PIXEL, 1, 1, 4);
-    }
 }
 
 impl rwh_06::HasWindowHandle for AppWindow {
