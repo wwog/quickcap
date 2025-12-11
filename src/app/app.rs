@@ -1,9 +1,9 @@
+use crate::app::macos::capscreen;
 use std::collections::HashMap;
-use std::sync::Arc;
-use std::thread;
+use base64::Engine;
+use tao::dpi::LogicalPosition;
 
 use super::window::AppWindow;
-use crate::cap::{capture_screen, result::CaptureResult};
 use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
 use tao::event_loop::{
     ControlFlow, DeviceEventFilter, EventLoop, EventLoopBuilder, EventLoopProxy,
@@ -12,16 +12,20 @@ use tao::keyboard::Key;
 use tao::monitor::MonitorHandle;
 use tao::platform::macos::MonitorHandleExtMacOS;
 use tao::window::{WindowBuilder, WindowId};
+use wry::{Rect, WebViewBuilder};
 
 /// 自定义应用事件
 #[derive(Debug)]
 pub enum AppEvent {
     /// 请求退出应用
     Exit,
-    /// 截屏完成事件
-    ScreenCaptured {
-        display_native_id: u32,
-        capture: Arc<CaptureResult>,
+    /// 区域数据提取请求
+    ExtractRegion {
+        window_id: WindowId,
+        x: u32,
+        y: u32,
+        w: u32,
+        h: u32,
     },
 }
 
@@ -77,43 +81,59 @@ impl App {
                             *control_flow = ControlFlow::Exit;
                         }
                     }
-                    AppEvent::ScreenCaptured {
-                        display_native_id,
-                        capture,
+                    AppEvent::ExtractRegion {
+                        window_id,
+                        x,
+                        y,
+                        w,
+                        h,
                     } => {
-                        // 查找对应 display_id 的窗口
-                        if let Some(window) = self
-                            .windows
-                            .values()
-                            .find(|w| w.display_native_id == display_native_id)
-                        {
-                            // 锁定像素数据并渲染
-                            match capture.lock_for_read() {
-                                Ok(guard) => {
-                                    let data = guard.as_slice();
-                                    let width = capture.width as u32;
-                                    let height = capture.height as u32;
-                                    let bytes_per_row = capture.bytes_per_row() as u32;
-
-                                    window.render(data, width, height, bytes_per_row);
-                                    log::info!(
-                                        "Rendered screenshot for display {} ({}x{})",
-                                        display_native_id,
-                                        width,
-                                        height
+                        if let Some(app_window) = self.windows.get(&window_id) {
+                            if let Some(region_data) = app_window.extract_region(x, y, w, h) {
+                                // 将数据编码为 base64
+                                let base64_data = base64::engine::general_purpose::STANDARD
+                                    .encode(&region_data);
+                                
+                                // 通过 webview 的 evaluate_script 返回数据
+                                if let Some(webview) = app_window.get_webview() {
+                                    let script = format!(
+                                        r#"
+                                        if (window.onRegionData) {{
+                                            window.onRegionData({{
+                                                x: {},
+                                                y: {},
+                                                w: {},
+                                                h: {},
+                                                data: "{}"
+                                            }});
+                                        }}
+                                        "#,
+                                        x, y, w, h, base64_data
                                     );
+                                    
+                                    if let Err(e) = webview.evaluate_script(&script) {
+                                        log::error!("Failed to evaluate script: {:?}", e);
+                                    }
                                 }
-                                Err(e) => {
-                                    log::error!("Failed to lock capture data: {:?}", e);
+                            } else {
+                                log::warn!("Failed to extract region data");
+                                // 返回错误
+                                if let Some(webview) = app_window.get_webview() {
+                                    let script = r#"
+                                        if (window.onRegionData) {
+                                            window.onRegionData({
+                                                error: "Failed to extract region"
+                                            });
+                                        }
+                                    "#;
+                                    if let Err(e) = webview.evaluate_script(script) {
+                                        log::error!("Failed to evaluate script: {:?}", e);
+                                    }
                                 }
                             }
                         }
                     }
                 },
-                Event::RedrawRequested(window_id) => {
-                    log::info!("Event::RedrawRequested: {:?}", window_id);
-                    // 不再渲染占位帧，等待真实截屏数据
-                }
                 Event::WindowEvent {
                     window_id, event, ..
                 } => match event {
@@ -152,10 +172,45 @@ impl App {
     /// 创建 WebView IPC 处理器
     fn create_ipc_handler(
         proxy: EventLoopProxy<AppEvent>,
+        window_id: WindowId,
     ) -> impl Fn(wry::http::Request<String>) + 'static {
         move |request: wry::http::Request<String>| {
             let body = request.body();
             log::info!("Received IPC message: {}", body);
+
+            // 尝试解析 JSON 格式的区域请求
+            if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(body) {
+                // 检查是否是区域提取请求
+                if let Some(arr) = json_value.as_array() {
+                    if arr.len() == 4 {
+                        if let (Some(x), Some(y), Some(w), Some(h)) = (
+                            arr[0].as_u64(),
+                            arr[1].as_u64(),
+                            arr[2].as_u64(),
+                            arr[3].as_u64(),
+                        ) {
+                            let x = x as u32;
+                            let y = y as u32;
+                            let w = w as u32;
+                            let h = h as u32;
+                            
+                            log::info!("Extracting region: x={}, y={}, w={}, h={}", x, y, w, h);
+                            
+                            // 通过 EventLoopProxy 发送区域提取请求到主事件循环
+                            if let Err(e) = proxy.send_event(AppEvent::ExtractRegion {
+                                window_id,
+                                x,
+                                y,
+                                w,
+                                h,
+                            }) {
+                                log::error!("Failed to send extract region event: {:?}", e);
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
 
             // 处理来自 WebView 的消息
             match body.as_str() {
@@ -192,6 +247,7 @@ impl App {
         </head>
         <body>
             <h1>Hello, World!</h1>
+            <button id="capture-button">Capture</button>
             <script>
                 // 监听键盘事件
                 document.addEventListener('keydown', function(e) {
@@ -200,6 +256,24 @@ impl App {
                         window.ipc.postMessage('escape_pressed');
                     }
                 });
+
+                // 区域数据回调函数
+                window.onRegionData = function(result) {
+                    console.log('Region data received:', result);
+                    if (result.error) {
+                        console.error('Error:', result.error);
+                    } else {
+                        console.log('Region extracted:', result.x, result.y, result.w, result.h);
+                        console.log('Data length:', result.data.length);
+                        // 这里可以处理返回的区域数据
+                        // result.data 是 base64 编码的 RGBA 数据
+                    }
+                };
+
+                document.getElementById('capture-button').addEventListener('click', function() {
+                    window.ipc.postMessage(JSON.stringify([100, 100, 200, 200]));
+                });
+
             </script>
         </body>
         </html>
@@ -218,38 +292,6 @@ impl App {
             let position = monitor.position();
             let size = monitor.size();
 
-            let proxy_for_capture = proxy.clone();
-            thread::Builder::new()
-                .name(format!("capture-screen-{}", index))
-                .spawn(move || match capture_screen(native_id, false) {
-                    Ok(capture) => {
-                        log::info!(
-                            "Capture screen for display {} initialized successfully ({}x{})",
-                            native_id,
-                            capture.width,
-                            capture.height
-                        );
-                        // 将截屏数据发送到主事件循环
-                        if let Err(e) = proxy_for_capture.send_event(AppEvent::ScreenCaptured {
-                            display_native_id: native_id,
-                            capture: Arc::new(capture),
-                        }) {
-                            log::error!("Failed to send screen capture event: {:?}", e);
-                        }
-                    }
-                    Err(e) => {
-                        log::error!(
-                            "Capture screen for display {} initialized failed: {:?}",
-                            native_id,
-                            e
-                        );
-                    }
-                })
-                .unwrap_or_else(|e| {
-                    log::error!("Failed to spawn capture-screen thread: {}", e);
-                    panic!("Failed to spawn capture-screen thread");
-                });
-
             let window = WindowBuilder::new()
                 .with_title(title)
                 .with_position(position)
@@ -261,7 +303,35 @@ impl App {
                 .unwrap();
             let window_id = window.id();
 
-            let app_window = AppWindow::new(window, index, native_id);
+            let mut app_window = AppWindow::new(window, index, native_id);
+            let image = capscreen(native_id);
+            if let Ok(image) = image {
+                log::info!("Captured image: {:?}", image);
+                let image_data = image.rgba_data().unwrap();
+                let image_data = image_data.as_slice();
+                let image_width = image.width() as u32;
+                let image_height = image.height() as u32;
+                
+                // 保存截屏数据到 AppWindow
+                app_window.set_screenshot_data(image_data.to_vec(), image_width, image_height);
+                
+                app_window.render(image_data, image_width, image_height, image_width * 4);
+            }
+            
+            // 从 AppWindow 中获取 window 引用来创建 webview
+            let window_ref = app_window.get_window().clone();
+            
+            // 创建 IPC 处理器（传入 window_id）
+            let ipc_handler = App::create_ipc_handler(proxy.clone(), window_id);
+            
+            let webview = WebViewBuilder::new()
+                .with_html(App::get_webview_html())
+                .with_transparent(true)
+                .with_ipc_handler(ipc_handler)
+                .build(&window_ref)
+                .unwrap();
+            
+            app_window.set_webview(webview);
             self.windows.insert(window_id, app_window);
         }
     }
