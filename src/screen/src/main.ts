@@ -14,7 +14,6 @@ function init() {
 
   const drawScreen = new DrawScreen(appDom);
 
-  alert("Is development:" + import.meta.env.DEV);
   if (import.meta.env.DEV) {
     const imgDom = document.createElement("img");
     imgDom.onload = () => {
@@ -27,6 +26,12 @@ function init() {
 
     imgDom.setAttribute("src", testImg);
   }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      (window as any).ipc.postMessage('escape_pressed');
+    }
+  })
 }
 
 init();
