@@ -93,28 +93,27 @@ impl BgSurface {
             address_mode_w: wgpu::AddressMode::ClampToEdge,
             ..Default::default()
         });
-        let bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Frame Bind Group Layout"),
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        },
-                        count: None,
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Frame Bind Group Layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
                     },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                ],
-            });
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Fullscreen Pipeline Layout"),
             bind_group_layouts: &[&bind_group_layout],
@@ -171,23 +170,20 @@ impl BgSurface {
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let frame_texture =
-            self.device
-                .create_texture(&wgpu::TextureDescriptor {
-                    label: Some("Frame Texture"),
-                    size: wgpu::Extent3d {
-                        width: frame_width.max(1),
-                        height: frame_height.max(1),
-                        depth_or_array_layers: 1,
-                    },
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: wgpu::TextureDimension::D2,
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    usage: wgpu::TextureUsages::TEXTURE_BINDING
-                        | wgpu::TextureUsages::COPY_DST,
-                    view_formats: &[],
-                });
+        let frame_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Frame Texture"),
+            size: wgpu::Extent3d {
+                width: frame_width.max(1),
+                height: frame_height.max(1),
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
 
         self.queue.write_texture(
             wgpu::TexelCopyTextureInfo {
@@ -209,22 +205,20 @@ impl BgSurface {
             },
         );
         let frame_view = frame_texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let bind_group = self
-            .device
-            .create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("Frame Bind Group"),
-                layout: &self.bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&frame_view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&self.sampler),
-                    },
-                ],
-            });
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Frame Bind Group"),
+            layout: &self.bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&frame_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+            ],
+        });
         // 命令编码器（CommandEncoder）来记录实际的命令发送给 GPU。
         // 大多数现代图形框架希望命令在被发送到 GPU 之前存储在一个命令缓冲区中。
         // 命令编码器创建了一个命令缓冲区，然后我们可以将其发送给 GPU。
