@@ -257,8 +257,8 @@ export class DrawScreen {
         this.selectHeight
       );
       this.canvasContainer.appendChild(this.selectRectDom);
-      this.selectRectDom.style.left = `${this.selectX}px`;
-      this.selectRectDom.style.top = `${this.selectY}px`;
+      this.selectRectDom.style.left = `${this.selectX - 1}px`;
+      this.selectRectDom.style.top = `${this.selectY - 1}px`;
       this.selectRectDom.style.width = `${this.selectWidth}px`;
       this.selectRectDom.style.height = `${this.selectHeight}px`;
     }
