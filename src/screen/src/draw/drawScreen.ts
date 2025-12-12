@@ -1,4 +1,4 @@
-import { DPR, resizeHandles } from "../const";
+import { resizeHandles } from "../const";
 import {
   bindDoubleClick,
   // calcEditToolTop,
@@ -11,7 +11,7 @@ import {
 import { initCanvasSetting } from "../utils/canvas";
 import { EditCanvas } from "./editCanvas";
 import { EditTools } from "./editTools";
-import { onClickFinish } from "./func";
+// import { onClickFinish } from "./func";
 import { SizeDisplay } from "./sizeDisplay";
 
 type TMode = "select" | "waitEdit" | "resizing" | "edit" | "move";
@@ -149,38 +149,13 @@ export class DrawScreen {
       {
         role: "download",
         listener: () => {
-          this.editCanvas.initCanvasSetting(
-            this.selectWidth,
-            this.selectHeight
-          );
-          this.editCanvas.setParentDom(this.selectRectDom);
-          this.editCanvas.setImg({
-            img: this.baseCanvas,
-            x: this.selectX,
-            y: this.selectY,
-            width: this.selectWidth,
-            height: this.selectHeight,
-          });
+          this.setEditCanvasBg();
         },
       },
       {
         role: "finish",
         listener: () => {
-          this.mode = "edit";
-          this.editCanvas.initCanvasSetting(
-            this.selectWidth,
-            this.selectHeight
-          );
-          this.editCanvas.setParentDom(this.selectRectDom);
-          onClickFinish({
-            ctx: this.editCanvas.getCtx(),
-            rect: {
-              x: this.selectX,
-              y: this.selectY,
-              width: this.selectWidth,
-              height: this.selectHeight,
-            },
-          });
+          this.setEditCanvasBg();
         },
       },
       {
@@ -207,6 +182,19 @@ export class DrawScreen {
     this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
 
     this.drawBase();
+  };
+
+  private setEditCanvasBg = () => {
+    this.mode = "edit";
+    this.editCanvas.initCanvasSetting(this.selectWidth, this.selectHeight);
+    this.editCanvas.setParentDom(this.selectRectDom);
+    this.editCanvas.setImg({
+      img: this.baseCanvas,
+      x: this.selectX,
+      y: this.selectY,
+      width: this.selectWidth,
+      height: this.selectHeight,
+    });
   };
 
   private drawBase = () => {
@@ -528,6 +516,30 @@ export class DrawScreen {
     bindDoubleClick(this.selectRectDom, () => {
       alert("double click");
     });
+  };
+
+  putImageData = ({
+    imageData,
+    width,
+    height,
+  }: {
+    width: number;
+    height: number;
+    imageData: ImageData;
+  }) => {
+    this.imgNaturalWidth = width;
+    this.imgNaturalHeight = height;
+    const rateX = this.imgNaturalWidth / this.boxWidth;
+    const rateY = this.imgNaturalHeight / this.boxHeight;
+
+    const rate = Math.max(rateX, rateY);
+    this.imgDrawWidth = this.imgNaturalWidth / rate;
+    this.imgDrawHeight = this.imgNaturalHeight / rate;
+
+    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
+    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
+
+    this.baseCtx.putImageData(imageData, 0, 0);
   };
 
   // getSelectedImg = () => {

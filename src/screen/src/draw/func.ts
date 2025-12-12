@@ -1,4 +1,4 @@
-import { getScreenImageData } from "../utils";
+// import { getScreenImageData } from "../utils";
 
 export async function onClickFinish({ ctx, rect }: {
   ctx: CanvasRenderingContext2D;
@@ -9,7 +9,9 @@ export async function onClickFinish({ ctx, rect }: {
     height: number;
   }
 }) {
-  const { x, y, width, height } = rect;
-  const screenImageData = await getScreenImageData([x, y, width, height]);
-  console.log("🚀 ~ onClickFinish ~ screenImageData:", screenImageData, ctx);
+
+  console.log("🚀 ~ onClickFinish ~:", rect, ctx);
+  // const { x, y, width, height } = rect;
+  // const screenImageData = await getScreenImageData([x, y, width, height]);
+  // console.log("🚀 ~ onClickFinish ~ screenImageData:", screenImageData, ctx);
 }

@@ -1,7 +1,7 @@
 import { DrawScreen } from "./draw";
 import "./style.css";
 import testImg from "./test.png";
-import { exitApp } from "./utils";
+import { exitApp, getScreenImageData } from "./utils";
 
 const appDom = document.querySelector("#app") as HTMLDivElement;
 // const maskDom = document.querySelector(".mask") as HTMLDivElement;
@@ -41,6 +41,11 @@ function init() {
       imgDom.setAttribute("src", testImg);
   };
   (window as any).setImgDom = setImgDom;
+
+  getScreenImageData().then((imgData) => {
+    console.log("🚀 ~ init ~ imgData:", imgData);
+    drawScreen.putImageData(imgData);
+  }).catch(err => console.error(err));
 
   window.addEventListener("keydown", (e) => {
     console.log("🚀 ~ init ~ e:", e.key, e.keyCode);

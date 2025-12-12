@@ -1,19 +1,19 @@
 import { editToolGap, editToolHeight } from "../const";
 
-let promise: Promise<void> | null = null;
+let promise: Promise<{
+  imageData: ImageData;
+  height: number;
+  width: number;
+}> | null = null;
 
 export function exitApp() {
-  (window as any).ipc.postMessage("escape_pressed");
+  // (window as any).ipc.postMessage("escape_pressed");
+  (window as any).app.exit();
 }
 
-export async function getScreenImageData([x, y, width, height]: [
-  number,
-  number,
-  number,
-  number
-]) {
+export async function getScreenImageData() {
   if (promise) return promise;
-  promise = new Promise((resolve, reject) => {
+  /* promise = new Promise((resolve, reject) => {
     try {
       (window as any).onRegionData = function (result: any) {
         console.log("Region data received:", result);
@@ -38,6 +38,29 @@ export async function getScreenImageData([x, y, width, height]: [
     } catch (err) {
       reject(err);
     }
+  }); */
+  promise = new Promise<{
+    imageData: ImageData;
+    height: number;
+    width: number;
+  }>((resolve, reject) => {
+    (async () => {
+      try {
+        const imageData = await (window as any).app.getImage();
+        const { width, height, arrayBuffer } = imageData;
+        resolve({
+          imageData: new ImageData(
+            new Uint8ClampedArray(arrayBuffer),
+            width,
+            height
+          ),
+          height,
+          width,
+        });
+      } catch (err) {
+        reject(err);
+      }
+    })();
   });
   return promise;
 }

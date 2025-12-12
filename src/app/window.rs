@@ -39,7 +39,7 @@ impl AppWindow {
                 .unwrap(),
         );
 
-        configure_overlay_window(&window);
+        // configure_overlay_window(&window);
 
         let frame = capscreen(monitor_id).unwrap();
 
@@ -47,8 +47,13 @@ impl AppWindow {
         let frame_width = frame.width;
         let frame_height = frame.height;
 
+        if std::path::Path::new("../../screen/dist/index.html").exists() {
+            println!("index.html exists");
+        }
+
         let webview = WebViewBuilder::new()
-            .with_html(include_str!("demo.html"))
+            // .with_html(include_str!("demo.html"))
+            .with_url("http://localhost:5173/")
             .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
