@@ -38,8 +38,8 @@ impl AppWindow {
                 .build(event_loop)
                 .unwrap(),
         );
-
-        configure_overlay_window(&window);
+        
+        // configure_overlay_window(&window);
 
         let frame = capscreen(monitor_id).unwrap();
 
