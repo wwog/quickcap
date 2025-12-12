@@ -41,7 +41,6 @@ impl AppWindow {
 
         let frame = capscreen(monitor_id).unwrap();
 
-        // 只克隆 Arc，不克隆底层数据
         let data_arc = Arc::clone(&frame.data);
         let frame_width = frame.width;
         let frame_height = frame.height;
@@ -56,7 +55,6 @@ impl AppWindow {
                 let method = req.method();
                 log::info!("path: {:?}, method: {:?}", path, method);
                 
-                // 处理 OPTIONS 预检请求
                 if method.as_str() == "OPTIONS" {
                     return Response::builder()
                         .header("Access-Control-Allow-Origin", "*")
