@@ -1,3 +1,4 @@
+import { DPR } from "../const";
 import { initCanvasSetting } from "../utils/canvas";
 export type EditCanvasMode = "normal" | "edit" | "drag";
 export class EditCanvas {
@@ -25,6 +26,13 @@ export class EditCanvas {
     this.editCanvas = document.createElement("canvas");
     this.baseCtx = this.baseCanvas.getContext("2d") as CanvasRenderingContext2D;
     this.editCtx = this.editCanvas.getContext("2d") as CanvasRenderingContext2D;
+
+    this.baseCanvas.style.position = "absolute";
+    this.editCanvas.style.position = "absolute";
+    this.baseCanvas.style.top = "0px";
+    this.baseCanvas.style.left = "0px";
+    this.editCanvas.style.left = "0px";
+    this.editCanvas.style.left = "0px";
   }
 
   initCanvasSetting(width: number, height: number) {
@@ -51,17 +59,30 @@ export class EditCanvas {
     return this.editCtx;
   }
 
-  setImg(imgDom: HTMLImageElement) {
+  setImg({
+    img,
+    x = 0,
+    y = 0,
+    width,
+    height,
+  }: {
+    img: CanvasImageSource;
+    x?: number;
+    y?: number;
+    width: number;
+    height: number;
+  }) {
+
     this.baseCtx.drawImage(
-      imgDom,
+      img,
+      x * DPR,
+      y * DPR,
+      width * DPR,
+      height * DPR,
       0,
       0,
-      imgDom.naturalWidth,
-      imgDom.naturalHeight,
-      0,
-      0,
-      Number(this.baseCanvas.style.width ? this.baseCanvas.style.width.replace("px", "") : imgDom.naturalWidth),
-      Number(this.baseCanvas.style.height ? this.baseCanvas.style.height.replace("px", "") : imgDom.naturalHeight)
+      width,
+      height,
     );
   }
 }

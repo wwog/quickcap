@@ -1,4 +1,4 @@
-import { resizeHandles } from "../const";
+import { DPR, resizeHandles } from "../const";
 import {
   bindDoubleClick,
   // calcEditToolTop,
@@ -28,7 +28,9 @@ export class DrawScreen {
 
   private imgDom: HTMLImageElement | null;
   private canvasContainer = document.createElement("div");
+  private baseCanvas = document.createElement("canvas");
   private maskCanvas = document.createElement("canvas");
+  private baseCtx: CanvasRenderingContext2D;
   private maskCtx: CanvasRenderingContext2D;
 
   private selectRectDom: HTMLDivElement;
@@ -117,12 +119,14 @@ export class DrawScreen {
     this.canvasContainer.classList.add("canvas-container");
     this.maskCanvas.classList.add("mask-canvas");
     this.maskCtx = this.maskCanvas.getContext("2d") as CanvasRenderingContext2D;
+    this.baseCtx = this.baseCanvas.getContext("2d") as CanvasRenderingContext2D;
     this.editCanvas = new EditCanvas();
 
     this.selectRectDom = document.createElement("div");
     this.selectRectDom.classList.add("select-rect");
     // this.selectRectDom.appendChild(this.editCanvas);
     appDom.appendChild(this.canvasContainer);
+    this.canvasContainer.appendChild(this.baseCanvas);
     this.canvasContainer.appendChild(this.maskCanvas);
 
     // Initialize resize handles
@@ -143,10 +147,30 @@ export class DrawScreen {
 
     this.editTools.addListener([
       {
+        role: "download",
+        listener: () => {
+          this.editCanvas.initCanvasSetting(
+            this.selectWidth,
+            this.selectHeight
+          );
+          this.editCanvas.setParentDom(this.selectRectDom);
+          this.editCanvas.setImg({
+            img: this.baseCanvas,
+            x: this.selectX,
+            y: this.selectY,
+            width: this.selectWidth,
+            height: this.selectHeight,
+          });
+        },
+      },
+      {
         role: "finish",
         listener: () => {
           this.mode = "edit";
-          this.editCanvas.initCanvasSetting(this.selectWidth, this.selectHeight);
+          this.editCanvas.initCanvasSetting(
+            this.selectWidth,
+            this.selectHeight
+          );
           this.editCanvas.setParentDom(this.selectRectDom);
           onClickFinish({
             ctx: this.editCanvas.getCtx(),
@@ -168,11 +192,51 @@ export class DrawScreen {
     ]);
   }
 
+  setImgDom = (imgDom: HTMLImageElement) => {
+    this.imgDom = imgDom;
+    this.imgNaturalWidth = this.imgDom.naturalWidth;
+    this.imgNaturalHeight = this.imgDom.naturalHeight;
+    const rateX = this.imgNaturalWidth / this.boxWidth;
+    const rateY = this.imgNaturalHeight / this.boxHeight;
+
+    const rate = Math.max(rateX, rateY);
+    this.imgDrawWidth = this.imgNaturalWidth / rate;
+    this.imgDrawHeight = this.imgNaturalHeight / rate;
+
+    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
+    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
+
+    this.drawBase();
+  };
+
+  private drawBase = () => {
+    if (!this.imgDom) {
+      console.error("Image dom is not set");
+      return;
+    }
+    // Draw image
+    this.baseCtx.drawImage(
+      this.imgDom,
+      0,
+      0,
+      this.imgNaturalWidth,
+      this.imgNaturalHeight,
+      this.imgOffsetX,
+      this.imgOffsetY,
+      this.imgDrawWidth,
+      this.imgDrawHeight
+    );
+  };
+
   private initData = () => {
     this.boxWidth = this.canvasContainer.clientWidth;
     this.boxHeight = this.canvasContainer.clientHeight;
 
     initCanvasSetting(this.maskCanvas, {
+      width: this.boxWidth,
+      height: this.boxHeight,
+    });
+    initCanvasSetting(this.baseCanvas, {
       width: this.boxWidth,
       height: this.boxHeight,
     });
@@ -465,4 +529,8 @@ export class DrawScreen {
       alert("double click");
     });
   };
+
+  // getSelectedImg = () => {
+  //   this.baseCanvas
+  // };
 }

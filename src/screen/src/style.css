@@ -77,6 +77,7 @@ canvas {
   transform: translate3d(0, 0, 0);
   z-index: 300;
   border: 1px solid greenyellow;
+  box-sizing: content-box;
 }
 .canvas-container.edit-mode .select-rect {
   display: none;
