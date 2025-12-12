@@ -1,12 +1,13 @@
+use crate::app::capscreen::{error::CaptureError, frame::Frame};
+use objc2::rc::Retained;
+use objc2::runtime::AnyObject;
+use objc2_app_kit::{NSScreenSaverWindowLevel, NSWindow, NSWindowCollectionBehavior};
 use screencapturekit::{
     prelude::{CGDisplay, PixelFormat, SCContentFilter, SCShareableContent, SCStreamConfiguration},
     screenshot_manager::capture_image_with_stream,
 };
-
-use crate::app::{capscreen::{error::CaptureError, frame::Frame}};
-
-
-
+use tao::platform::macos::WindowExtMacOS;
+use tao::window::Window;
 
 pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
     let content = SCShareableContent::get().map_err(|_| {
@@ -49,4 +50,25 @@ pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
         width: width as u32,
         height: height as u32,
     })
+}
+
+pub fn configure_overlay_window(window: &Window) {
+    unsafe {
+        let ns_window_ptr = window.ns_window() as *mut AnyObject;
+        let ns_window: Retained<NSWindow> =
+            Retained::retain(ns_window_ptr as *mut NSWindow).unwrap();
+        //设置窗口级别为窗口保护程序
+        ns_window.setLevel(NSScreenSaverWindowLevel);
+
+        let behavior = NSWindowCollectionBehavior::CanJoinAllSpaces
+            | NSWindowCollectionBehavior::Stationary
+            | NSWindowCollectionBehavior::FullScreenAuxiliary
+            | NSWindowCollectionBehavior::IgnoresCycle;
+        ns_window.setCollectionBehavior(behavior);
+
+        ns_window.setHidesOnDeactivate(false);
+        ns_window.setIgnoresMouseEvents(false);
+
+        log::info!("Configured window as overlay with NSScreenSaverWindowLevel");
+    }
 }

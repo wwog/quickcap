@@ -1,4 +1,4 @@
-use crate::app::capscreen::{Frame, capscreen};
+use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use std::{sync::Arc, time::Instant};
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
@@ -33,11 +33,12 @@ impl AppWindow {
                 .with_inner_size(monitor.size())
                 .with_decorations(false)
                 .with_has_shadow(false)
-                // .with_transparent(true)
                 .with_resizable(false)
                 .build(event_loop)
                 .unwrap(),
         );
+
+        configure_overlay_window(&window);
 
         let frame = capscreen(monitor_id).unwrap();
 
@@ -54,7 +55,7 @@ impl AppWindow {
                 let path = req.uri().to_string();
                 let method = req.method();
                 log::info!("path: {:?}, method: {:?}", path, method);
-                
+
                 if method.as_str() == "OPTIONS" {
                     return Response::builder()
                         .header("Access-Control-Allow-Origin", "*")
@@ -65,7 +66,7 @@ impl AppWindow {
                         .unwrap()
                         .map(Into::into);
                 }
-                
+
                 match path.as_str() {
                     "quickcap://bg/" | "quickcap://bg" => {
                         let data = Arc::try_unwrap(Arc::clone(&data_arc))
@@ -75,7 +76,10 @@ impl AppWindow {
                             .header("Access-Control-Allow-Origin", "*")
                             .header("Access-Control-Allow-Methods", "GET, OPTIONS")
                             .header("Access-Control-Allow-Headers", "*")
-                            .header("Access-Control-Expose-Headers", "x-frame-width, x-frame-height")
+                            .header(
+                                "Access-Control-Expose-Headers",
+                                "x-frame-width, x-frame-height",
+                            )
                             .header("x-frame-width", frame_width.to_string())
                             .header("x-frame-height", frame_height.to_string())
                             .status(200)
