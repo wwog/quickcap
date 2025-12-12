@@ -51,23 +51,32 @@
             height: 100%;
             z-index: 1;
         }
+
+        #close {
+            position: absolute;
+            background: gray;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 22px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 
 <body>
     <canvas id="canvas"></canvas>
     <div class="container">
-        <button id="capture">Capture</button>
         <button id="close">Close</button>
     </div>
 
     <script>
         document.getElementById('close').addEventListener('click', () => {
             window.app.exit();
-        });
-
-        document.getElementById('capture').addEventListener('click', () => {
-            loadBackground();
         });
 
         async function loadBackground() {
@@ -82,6 +91,8 @@
                 console.error('Failed to load background:', error);
             }
         }
+        
+        loadBackground();
     </script>
 </body>
 

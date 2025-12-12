@@ -34,6 +34,7 @@ impl AppWindow {
                 .with_decorations(false)
                 .with_has_shadow(false)
                 .with_resizable(false)
+                .with_transparent(true)
                 .build(event_loop)
                 .unwrap(),
         );
