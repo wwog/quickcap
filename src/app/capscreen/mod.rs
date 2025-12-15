@@ -1,6 +1,6 @@
 mod error;
 mod frame;
-mod enumerate;
+pub mod enumerate;
 
 pub use error::CaptureError;
 pub use frame::Frame;
