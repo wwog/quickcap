@@ -1,4 +1,4 @@
-use crate::app::capscreen::{Frame, capscreen};
+use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use crate::app::capscreen::enumerate::enumerate_windows;
 use std::{sync::Arc, time::Instant};
 use tao::{
