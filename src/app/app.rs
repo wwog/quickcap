@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
 use tao::{
-    event::{Event, WindowEvent},
-    event_loop::{EventLoop, EventLoopBuilder},
-    window::WindowId,
+    event::{Event, WindowEvent}, event_loop::{EventLoop, EventLoopBuilder}, platform::windows::MonitorHandleExtWindows, window::WindowId
 };
 
 use crate::app::AppEvent;
@@ -24,7 +22,7 @@ impl App {
         let windows = monitors
             .into_iter()
             .map(|monitor| {
-                log::info!("Monitor: {:?}", monitor);
+                log::info!("Monitor: {:?}", monitor.hmonitor());
                 AppWindow::new(monitor, &event_loop)
             })
             .map(|window| (window.window.id(), window))

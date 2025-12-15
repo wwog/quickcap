@@ -5,19 +5,21 @@ mod frame;
 
 pub use error::CaptureError;
 pub use frame::Frame;
-use tao::window::Window;
+use tao::{monitor::MonitorHandle, window::Window};
 
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "windows")]
+mod windows;
 
-pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
+pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
     #[cfg(target_os = "macos")]
     {
-        return macos::capscreen(display_id);
+        return macos::capscreen(handle.native_id());
     }
     #[cfg(not(target_os = "macos"))]
     {
-        Err(error::CaptureError::UnsupportedPlatform)
+        return windows::capscreen_windows(handle);
     }
 }
 #[allow(dead_code)]

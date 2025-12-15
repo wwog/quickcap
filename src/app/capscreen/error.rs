@@ -7,4 +7,7 @@ pub enum CaptureError {
     FailedToGetDisplayMode,
     FailedToCaptureImage,
     FailedToGetRGBAData,
+    FailedToAcquireFrame,
+    FailedToGetBuffer,
+    FailedToInitDuplication,
 }
