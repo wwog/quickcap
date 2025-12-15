@@ -5,9 +5,7 @@ use objc2_core_graphics::{
     CGWindowListCopyWindowInfo, CGWindowListOption, kCGNullWindowID, kCGWindowBounds, kCGWindowName,
 };
 use screencapturekit::prelude::SCShareableContent;
-
 use crate::app::capscreen::enumerate::structs::Rect;
-
 use super::structs::WindowInfo;
 
 pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
@@ -21,6 +19,10 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
         .into_iter()
         .find(|display| display.display_id() == display_id)?;
     let frame = display_info.frame();
+    let display_left = frame.origin().x;
+    let display_right = frame.origin().x + frame.size().width;
+    let display_top = frame.origin().y;
+    let display_bottom = frame.origin().y + frame.size().height;
 
     let windows = content.windows();
     let mut window_infos = vec![];
@@ -32,6 +34,29 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
             continue;
         }
 
+        //因为窗口可能会溢出当前显示器，所以不能用桌面frame包含来判断是否在当前显示器上
+        //这里应该是只要有交集就认为在当前显示器上
+        let window_frame = window.frame();
+        let window_origin = window_frame.origin();
+        let window_size = window_frame.size();
+        let window_left = window_origin.x;
+        let window_right = window_origin.x + window_size.width;
+        let window_top = window_origin.y;
+        let window_bottom = window_origin.y + window_size.height;
+        
+        if window_right < display_left || window_left > display_right || window_bottom < display_top || window_top > display_bottom {
+            continue;
+        }
+
+        window_infos.push(WindowInfo {
+            name: window.title().unwrap_or_default(),
+            bounds: Rect {
+                x: window_left,
+                y: window_top,
+                width: window_size.width,
+                height: window_size.height,
+            },
+        });
     }
     Some(window_infos)
 }
