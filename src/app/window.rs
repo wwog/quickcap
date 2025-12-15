@@ -1,7 +1,6 @@
 use crate::app::capscreen::enumerate::enumerate_windows;
 use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use std::{sync::Arc, time::Instant};
-use tao::dpi::PhysicalPosition;
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
     monitor::MonitorHandle,
@@ -28,11 +27,15 @@ impl AppWindow {
         let start_time = Instant::now();
         let monitor_id = monitor.native_id();
         let proxy = event_loop.create_proxy();
+        let scale_factor = monitor.scale_factor();
+        let position = monitor.position().to_logical::<f64>(scale_factor);
+        let size = monitor.size().to_logical::<f64>(scale_factor);
+        log::info!("create attributes: position: {:?}, size: {:?}", position, size);
         let win_builder = WindowBuilder::new();
         let window = Arc::new(
             win_builder
-                .with_position(monitor.position())
-                .with_inner_size(monitor.size())
+                .with_position(position)
+                .with_inner_size(size)
                 .with_decorations(false)
                 .with_has_shadow(false)
                 .with_resizable(false)
