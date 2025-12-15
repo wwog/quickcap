@@ -1,5 +1,7 @@
-use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
+use crate::app::AppEvent;
 use crate::app::capscreen::enumerate::enumerate_windows;
+use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
+use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
 use std::{sync::Arc, time::Instant};
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
@@ -11,8 +13,6 @@ use wry::{
     WebView, WebViewBuilder,
     http::{Response, header},
 };
-
-use crate::app::AppEvent;
 
 #[allow(dead_code)]
 pub struct AppWindow {
@@ -39,22 +39,21 @@ impl AppWindow {
                 .build(event_loop)
                 .unwrap(),
         );
-        
+
         // configure_overlay_window(&window);
 
         let frame = capscreen(monitor_id).unwrap();
 
+        // 只克隆 Arc，不克隆底层数据
         let data_arc = Arc::clone(&frame.data);
         let frame_width = frame.width;
         let frame_height = frame.height;
 
-        if std::path::Path::new("../../screen/dist/index.html").exists() {
-            println!("index.html exists");
-        }
-
         let webview = WebViewBuilder::new()
             // .with_html(include_str!("demo.html"))
-            .with_url("http://localhost:5173/")
+            .with_html(include_str!("dist/index.html"))
+            // .with_url("quickcap://index.html/")
+            // .with_url("http://localhost:5173/")
             .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
@@ -63,6 +62,7 @@ impl AppWindow {
                 let method = req.method();
                 log::info!("path: {:?}, method: {:?}", path, method);
 
+                // 处理 OPTIONS 预检请求
                 if method.as_str() == "OPTIONS" {
                     return Response::builder()
                         .header("Access-Control-Allow-Origin", "*")
@@ -96,7 +96,8 @@ impl AppWindow {
                     }
                     "quickcap://windows/" | "quickcap://windows" => {
                         let windows = enumerate_windows(monitor_id);
-                        let json = serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
+                        let json =
+                            serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
                         Response::builder()
                             .header(header::CONTENT_TYPE, "application/json")
                             .header("Access-Control-Allow-Origin", "*")
@@ -144,7 +145,46 @@ impl AppWindow {
                         log::warn!("Unknown action: {}", action);
                     }
                 }
+            } else if body.starts_with("clipboard:") {
+                // 处理剪切板操作
+                let base64_data = if body.starts_with("clipboard:base64:") {
+                    // 新格式
+                    body.split("clipboard:base64:").nth(1).unwrap_or("")
+                } else {
+                    // 兼容旧格式（clipboard:base64）
+                    body.split(":").nth(1).unwrap_or("")
+                };
+
+                if !base64_data.is_empty() {
+                    match base64::decode(base64_data) {
+                        Ok(image_data) => {
+                            Self::copy_image_to_clipboard(image_data);
+                        }
+                        Err(e) => {
+                            log::error!("Failed to decode base64 image data: {}", e);
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    // 将图像复制到剪切板的辅助函数
+    fn copy_image_to_clipboard(image_data: Vec<u8>) {
+        match ClipboardContext::new() {
+            Ok(mut ctx) => {
+
+                let str = if cfg!(target_os = "macos") {
+                    "public.png"
+                } else {
+                    "image/png"
+                };
+                match ctx.set_buffer(&str, image_data) {
+                    Ok(_) => println!("图像已成功复制到剪贴板"),
+                    Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                }
+            }
+            Err(e) => eprintln!("创建剪贴板上下文失败: {}", e),
         }
     }
 }

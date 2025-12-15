@@ -150,12 +150,14 @@ export class DrawScreen {
         role: "download",
         listener: () => {
           this.setEditCanvasBg();
+          this.editCanvas.writeToClipboard();
         },
       },
       {
         role: "finish",
         listener: () => {
           this.setEditCanvasBg();
+          this.editCanvas.writeToClipboard();
         },
       },
       {

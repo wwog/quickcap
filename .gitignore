@@ -4,3 +4,4 @@ node_modules
 *.png
 .DS_Store
 .idea
+dist
