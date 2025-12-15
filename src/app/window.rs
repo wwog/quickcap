@@ -1,6 +1,7 @@
-use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use crate::app::capscreen::enumerate::enumerate_windows;
+use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use std::{sync::Arc, time::Instant};
+use tao::dpi::PhysicalPosition;
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
     monitor::MonitorHandle,
@@ -39,7 +40,7 @@ impl AppWindow {
                 .build(event_loop)
                 .unwrap(),
         );
-        
+
         // configure_overlay_window(&window);
 
         let frame = capscreen(monitor_id).unwrap();
@@ -91,7 +92,8 @@ impl AppWindow {
                     }
                     "quickcap://windows/" | "quickcap://windows" => {
                         let windows = enumerate_windows(monitor_id);
-                        let json = serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
+                        let json =
+                            serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
                         Response::builder()
                             .header(header::CONTENT_TYPE, "application/json")
                             .header("Access-Control-Allow-Origin", "*")
