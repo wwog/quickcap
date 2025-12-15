@@ -1,9 +1,11 @@
 mod error;
 mod frame;
+mod enumerate;
 
 pub use error::CaptureError;
 pub use frame::Frame;
 use tao::window::Window;
+
 
 #[cfg(target_os = "macos")]
 mod macos;
