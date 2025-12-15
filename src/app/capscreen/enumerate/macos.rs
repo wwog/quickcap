@@ -4,41 +4,40 @@ use objc2_core_foundation::{
 use objc2_core_graphics::{
     CGWindowListCopyWindowInfo, CGWindowListOption, kCGNullWindowID, kCGWindowBounds, kCGWindowName,
 };
+use screencapturekit::prelude::SCShareableContent;
 
 use crate::app::capscreen::enumerate::structs::Rect;
 
 use super::structs::WindowInfo;
 
-unsafe fn get_number(dict: &CFDictionary<CFString, CFType>, key: &'static str) -> Option<f64> {
-    let key = CFString::from_static_str(key);
+pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
+    let content = SCShareableContent::with_options()
+        .on_screen_windows_only(true)
+        .get()
+        .ok()?;
 
-    let value = dict.get(&key)?;
-    let number = value.downcast_ref::<CFNumber>()?;
-    number.as_f64()
-}
+    let display_info = content
+        .displays()
+        .into_iter()
+        .find(|display| display.display_id() == display_id)?;
+    let frame = display_info.frame();
 
-unsafe fn extract_bounds(window: &CFDictionary<CFString, CFType>) -> Option<Rect> {
-    unsafe {
-        let bounds_value = window.get(&kCGWindowBounds)?;
-        let raw_dict = bounds_value.downcast_ref::<CFDictionary>()?;
+    let windows = content.windows();
+    let mut window_infos = vec![];
+    for window in windows {
+        if window.window_layer() != 0 {
+            continue;
+        }
+        if window.frame().is_empty() || window.frame().is_null() {
+            continue;
+        }
 
-        let bounds_dict: &CFDictionary<CFString, CFType> = raw_dict.cast_unchecked();
-
-        let x = get_number(bounds_dict, "X")?;
-        let y = get_number(bounds_dict, "Y")?;
-        let width = get_number(bounds_dict, "Width")?;
-        let height = get_number(bounds_dict, "Height")?;
-
-        Some(Rect {
-            x,
-            y,
-            width,
-            height,
-        })
     }
+    Some(window_infos)
 }
 
-pub fn enumerate_windows(display_id: u32) -> Vec<WindowInfo> {
+/// 如果后续兼容12.3以上，可以考虑使用这个函数，暂时不考虑使用
+pub fn enumerate_windows_cg(display_id: u32) -> Vec<WindowInfo> {
     let mut window_infos: Vec<WindowInfo> = vec![];
     unsafe {
         let options =
@@ -73,11 +72,38 @@ pub fn enumerate_windows(display_id: u32) -> Vec<WindowInfo> {
                 continue;
             }
         }
-
         window_infos
     }
 }
 
+unsafe fn get_number(dict: &CFDictionary<CFString, CFType>, key: &'static str) -> Option<f64> {
+    let key = CFString::from_static_str(key);
+
+    let value = dict.get(&key)?;
+    let number = value.downcast_ref::<CFNumber>()?;
+    number.as_f64()
+}
+
+unsafe fn extract_bounds(window: &CFDictionary<CFString, CFType>) -> Option<Rect> {
+    unsafe {
+        let bounds_value = window.get(&kCGWindowBounds)?;
+        let raw_dict = bounds_value.downcast_ref::<CFDictionary>()?;
+
+        let bounds_dict: &CFDictionary<CFString, CFType> = raw_dict.cast_unchecked();
+
+        let x = get_number(bounds_dict, "X")?;
+        let y = get_number(bounds_dict, "Y")?;
+        let width = get_number(bounds_dict, "Width")?;
+        let height = get_number(bounds_dict, "Height")?;
+
+        Some(Rect {
+            x,
+            y,
+            width,
+            height,
+        })
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -87,4 +113,10 @@ mod tests {
         let window_infos = enumerate_windows(1);
         println!("window_infos: {:#?}", window_infos);
     }
+
+    // #[test]
+    // fn test_enumerate_windows_cg() {
+    //     let window_infos = enumerate_windows_cg(1);
+    //     // println!("window_infos: {:#?}", window_infos);
+    // }
 }
