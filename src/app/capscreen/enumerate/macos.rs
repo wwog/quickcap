@@ -62,6 +62,7 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
 }
 
 /// 如果后续兼容12.3以上，可以考虑使用这个函数，暂时不考虑使用
+#[allow(dead_code)]
 pub fn enumerate_windows_cg(display_id: u32) -> Vec<WindowInfo> {
     let mut window_infos: Vec<WindowInfo> = vec![];
     unsafe {
