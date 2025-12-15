@@ -1,3 +1,5 @@
+pub mod enumerate;
+
 mod error;
 mod frame;
 
@@ -18,8 +20,7 @@ pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
         Err(error::CaptureError::UnsupportedPlatform)
     }
 }
-
-
+#[allow(dead_code)]
 pub fn configure_overlay_window(window: &Window) {
     #[cfg(target_os = "macos")]
     {

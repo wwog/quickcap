@@ -14,7 +14,6 @@ pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
         log::error!("Failed to get shareable content");
         CaptureError::FailedToGetShareableContent
     })?;
-
     let displays = content.displays();
     let Some(sc_display) = displays
         .into_iter()

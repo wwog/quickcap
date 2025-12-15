@@ -13,5 +13,10 @@ window.app = {
             height,
             arrayBuffer
         }
+    },
+    getWindows: async () => {
+        const response = await fetch('quickcap://windows');
+        const windows = await response.json();
+        return windows;
     }
 }

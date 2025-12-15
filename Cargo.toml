@@ -11,6 +11,7 @@ env_logger = "0.11"
 chrono = "0.4"
 wgpu = "27.0.1"
 pollster = "0.4.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 base64 = "0.22"
 
@@ -23,7 +24,8 @@ windows-capture = "2.0.0-alpha.7"
 capscreen_macos = { version = "0.1.1", features = ["macos_26_0"] }
 objc2 = "0.6.3"
 objc2-app-kit = "0.3.2"
-objc2-foundation = "0.3.2"
+objc2-core-foundation = "0.3.2"
+objc2-core-graphics = "0.3.2"
 
 [dev-dependencies]
 image = "0.25"
