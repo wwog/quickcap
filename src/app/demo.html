@@ -40,6 +40,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 10px;
             z-index: 10;
         }
 
@@ -52,8 +53,7 @@
             z-index: 1;
         }
 
-        #close {
-            position: absolute;
+        button {
             background: gray;
             color: white;
             border: none;
@@ -71,14 +71,19 @@
 <body>
     <canvas id="canvas"></canvas>
     <div class="container">
+        <button id="windows">Windows</button>
         <button id="close">Close</button>
     </div>
-
     <script>
+        document.getElementById('windows').addEventListener('click', () => {
+            window.app.getWindows().then(windows => {
+                console.log(windows);
+            });
+        });
+
         document.getElementById('close').addEventListener('click', () => {
             window.app.exit();
         });
-
         async function loadBackground() {
             try {
                 const { width, height, arrayBuffer } = await window.app.getImage();

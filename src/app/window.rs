@@ -1,4 +1,5 @@
 use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
+use crate::app::capscreen::enumerate::enumerate_windows;
 use std::{sync::Arc, time::Instant};
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
@@ -38,7 +39,7 @@ impl AppWindow {
                 .build(event_loop)
                 .unwrap(),
         );
-
+        
         // configure_overlay_window(&window);
 
         let frame = capscreen(monitor_id).unwrap();
@@ -90,6 +91,19 @@ impl AppWindow {
                             .header("x-frame-height", frame_height.to_string())
                             .status(200)
                             .body(data)
+                            .unwrap()
+                            .map(Into::into)
+                    }
+                    "quickcap://windows/" | "quickcap://windows" => {
+                        let windows = enumerate_windows(monitor_id);
+                        let json = serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
+                        Response::builder()
+                            .header(header::CONTENT_TYPE, "application/json")
+                            .header("Access-Control-Allow-Origin", "*")
+                            .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+                            .header("Access-Control-Allow-Headers", "*")
+                            .status(200)
+                            .body(json.into_bytes())
                             .unwrap()
                             .map(Into::into)
                     }
