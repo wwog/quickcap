@@ -61,7 +61,10 @@ export class EditCanvas {
 
   writeToClipboard = async () => {
     console.log('writeToClipboard');
-    await this.baseCanvas.toBlob(async (blob) => {
+    const dataURL = this.baseCanvas.toDataURL("image/png");
+    console.log("🚀 ~ EditCanvas ~ dataURL:", dataURL);
+    (window as any).app.copyToClipboard(dataURL);
+   /*  await this.baseCanvas.toBlob(async (blob) => {
       console.log("🚀 ~ EditCanvas ~ blob:", blob);
       if (blob) {
         try {
@@ -73,6 +76,7 @@ export class EditCanvas {
           if ((window as any).app && (window as any).app.copyToClipboard) {
             await (window as any).app.copyToClipboard(uint8Array);
             console.log("图片已通过IPC复制到剪贴板");
+            (window as any).app.exit();
           } else {
             // 降级方案：在新窗口中打开图片，用户可以手动保存
             const url = URL.createObjectURL(blob);
@@ -103,7 +107,7 @@ export class EditCanvas {
           alert("复制到剪贴板失败，图片已开始下载。");
         }
       }
-    });
+    }, "image/png"); */
   };
 
   setImg({

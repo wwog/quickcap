@@ -173,7 +173,6 @@ impl AppWindow {
     fn copy_image_to_clipboard(image_data: Vec<u8>) {
         match ClipboardContext::new() {
             Ok(mut ctx) => {
-
                 let str = if cfg!(target_os = "macos") {
                     "public.png"
                 } else {
