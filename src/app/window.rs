@@ -63,23 +63,23 @@ impl AppWindow {
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
         // Windows需要softbuffer来绘制透明背景
-        // #[cfg(target_os = "windows")]
-        // {
-        //     let context = softbuffer::Context::new(window.clone()).unwrap();
-        //     let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
-        //     let (width,height) = {
-        //         let size = window.inner_size();
-        //         (size.width,size.height)
-        //     };
-        //     surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
-        //         .map_err(|e| {
-        //             log::error!("Failed to resize surface: {:?}", e);
-        //         })
-        //         .unwrap();
-        //     let mut buffer = surface.buffer_mut().unwrap();
-        //     buffer.fill(0);
-        //     buffer.present().unwrap();
-        // };
+        #[cfg(target_os = "windows")]
+        {
+            let context = softbuffer::Context::new(window.clone()).unwrap();
+            let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
+            let (width,height) = {
+                let size = window.inner_size();
+                (size.width,size.height)
+            };
+            surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
+                .map_err(|e| {
+                    log::error!("Failed to resize surface: {:?}", e);
+                })
+                .unwrap();
+            let mut buffer = surface.buffer_mut().unwrap();
+            buffer.fill(0);
+            buffer.present().unwrap();
+        };
         let start_capscreen_time = Instant::now();
         let frame = capscreen(&monitor).unwrap();
         log::info!("capscreen time: {:?}", start_capscreen_time.elapsed());
