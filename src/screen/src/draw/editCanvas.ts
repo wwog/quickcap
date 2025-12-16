@@ -2,6 +2,12 @@ import { DPR } from "../const";
 import { initCanvasSetting } from "../utils/canvas";
 export type EditCanvasMode = "normal" | "edit" | "drag";
 export class EditCanvas {
+  private lastImg: null | {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } = null;
   private baseCanvas: HTMLCanvasElement;
   private editCanvas: HTMLCanvasElement;
 
@@ -64,11 +70,11 @@ export class EditCanvas {
   }
 
   writeToClipboard = async () => {
-    console.log('writeToClipboard');
+    console.log("writeToClipboard");
     const dataURL = this.getImageDataUrl();
     console.log("🚀 ~ EditCanvas ~ dataURL:", dataURL);
     (window as any).app.copyToClipboard(dataURL);
-   /*  await this.baseCanvas.toBlob(async (blob) => {
+    /*  await this.baseCanvas.toBlob(async (blob) => {
       console.log("🚀 ~ EditCanvas ~ blob:", blob);
       if (blob) {
         try {
@@ -115,11 +121,11 @@ export class EditCanvas {
   };
 
   saveImageToFolder = async () => {
-    console.log('saveImageToFolder');
+    console.log("saveImageToFolder");
     const dataURL = this.getImageDataUrl();
     console.log("🚀 ~ EditCanvas ~ dataURL:", dataURL);
     (window as any).app.saveImageToFolder(dataURL);
-  }
+  };
 
   setImg({
     img,
@@ -134,7 +140,15 @@ export class EditCanvas {
     width: number;
     height: number;
   }) {
-
+    if (
+      this.lastImg &&
+      this.lastImg.x === x &&
+      this.lastImg.y === y &&
+      this.lastImg.width === width &&
+      this.lastImg.height === height
+    ) {
+      return;
+    }
     this.baseCtx.drawImage(
       img,
       x * DPR,
@@ -144,7 +158,13 @@ export class EditCanvas {
       0,
       0,
       width,
-      height,
+      height
     );
+    this.lastImg = {
+      x,
+      y,
+      width,
+      height,
+    };
   }
 }

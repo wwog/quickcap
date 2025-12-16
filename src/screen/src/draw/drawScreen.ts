@@ -226,6 +226,9 @@ export class DrawScreen {
   };
 
   private setEditCanvasBg = () => {
+    if (this.mode === "edit") {
+      return;
+    }
     this.mode = "edit";
     this.editCanvas.initCanvasSetting(this.selectWidth, this.selectHeight);
     this.editCanvas.setParentDom(this.selectRectDom);
@@ -555,7 +558,8 @@ export class DrawScreen {
     this.canvasContainer.addEventListener("mouseleave", this.onMouseLeave);
 
     bindDoubleClick(this.selectRectDom, () => {
-      alert("double click");
+      this.setEditCanvasBg();
+      this.editCanvas.writeToClipboard();
     });
   };
 
