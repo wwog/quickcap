@@ -98,8 +98,13 @@ export class DrawScreen {
   private imgOffsetX = 0;
   private imgOffsetY = 0;
 
-  private windows = [
-    {
+  private windows: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[] = [
+    /* {
       x: 20,
       y: 148,
       width: 799,
@@ -110,7 +115,7 @@ export class DrawScreen {
       y: 148,
       width: 799,
       height: 521,
-    },
+    }, */
   ];
 
   constructor(appDom: HTMLDivElement) {
@@ -167,6 +172,28 @@ export class DrawScreen {
         },
       },
     ]);
+
+    (window as any).app.getWindows().then((windows: {name:string; bounds: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }}[]) => {
+      console.log("🚀 ~ DrawScreen ~ constructor ~ windows:", windows);
+      const arr: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      }[] = [];
+      windows.forEach(win => {
+        if (win.name !== 'tao window') {
+          arr.push(win.bounds);
+        }
+      });
+      this.windows = arr;
+      
+    });
   }
 
   setImgDom = (imgDom: HTMLImageElement) => {
