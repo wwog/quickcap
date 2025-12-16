@@ -59,9 +59,13 @@ export class EditCanvas {
     return this.editCtx;
   }
 
+  private getImageDataUrl() {
+    return this.baseCanvas.toDataURL("image/png");
+  }
+
   writeToClipboard = async () => {
     console.log('writeToClipboard');
-    const dataURL = this.baseCanvas.toDataURL("image/png");
+    const dataURL = this.getImageDataUrl();
     console.log("🚀 ~ EditCanvas ~ dataURL:", dataURL);
     (window as any).app.copyToClipboard(dataURL);
    /*  await this.baseCanvas.toBlob(async (blob) => {
@@ -109,6 +113,13 @@ export class EditCanvas {
       }
     }, "image/png"); */
   };
+
+  saveImageToFolder = async () => {
+    console.log('saveImageToFolder');
+    const dataURL = this.getImageDataUrl();
+    console.log("🚀 ~ EditCanvas ~ dataURL:", dataURL);
+    (window as any).app.saveImageToFolder(dataURL);
+  }
 
   setImg({
     img,

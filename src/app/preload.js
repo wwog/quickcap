@@ -21,6 +21,9 @@ window.app = {
         const base64 = btoa(String.fromCharCode(...uint8Array)); */
         window.ipc.postMessage('clipboard:base64:' + imageData.replace('data:image/png;base64,', ''));
     },
+    saveImageToFolder: async (imageData) => {
+        window.ipc.postMessage('save:' + imageData.replace('data:image/png;base64,', ''));
+    },
     getWindows: async () => {
         const response = await fetch('quickcap://windows');
         const windows = await response.json();

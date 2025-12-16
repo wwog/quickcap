@@ -1,7 +1,8 @@
 use crate::app::AppEvent;
 use crate::app::capscreen::enumerate::enumerate_windows;
+use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
-use crate::app::capscreen::{Frame, capscreen};
+use wgpu::rwh::HasWindowHandle;
 use std::{sync::Arc, time::Instant};
 #[cfg(target_os = "macos")]
 use tao::platform::macos::WindowBuilderExtMacOS;
@@ -18,6 +19,10 @@ use wry::{
     WebView, WebViewBuilder,
     http::{Response, header},
 };
+
+use dirs;
+use rfd::{FileDialog};
+use std::path::PathBuf;
 
 #[allow(dead_code)]
 pub struct AppWindow {
@@ -79,7 +84,7 @@ impl AppWindow {
             .with_custom_protocol("quickcap".into(), move |_name, req| {
                 let path = req.uri().to_string();
                 let method = req.method();
-                log::info!("path: {:?}, method: {:?}", path, method);
+                // log::info!("path: {:?}, method: {:?}", path, method);
 
                 // 处理 OPTIONS 预检请求
                 if method.as_str() == "OPTIONS" {
@@ -185,6 +190,19 @@ impl AppWindow {
                         }
                     }
                 }
+                proxy.send_event(AppEvent::Exit);
+            } else if body.starts_with("save:") {
+                let base64_data = body.split("save:").nth(1).unwrap_or("");
+                if !base64_data.is_empty() {
+                    match base64::decode(base64_data) {
+                        Ok(image_data) => {
+                            Self::save_image_to_folder(image_data, proxy.clone());
+                        }
+                        Err(e) => {
+                            log::error!("Failed to decode base64 image data: {}", e);
+                        }
+                    }
+                }
             }
         }
     }
@@ -204,6 +222,49 @@ impl AppWindow {
                 }
             }
             Err(e) => eprintln!("创建剪贴板上下文失败: {}", e),
+        }
+    }
+
+    fn save_image_to_folder(image_data: Vec<u8>, proxy: EventLoopProxy<AppEvent>) {
+        // 设置默认目录为下载目录，如果不存在则使用根目录
+        let download_dir = dirs::download_dir().unwrap_or_else(|| PathBuf::from("/"));
+
+        // 生成默认文件名（使用友好格式）
+        let now = chrono::Local::now();
+        let date_str = now.format("%Y%m%d");
+        let time_str = now.format("%H%M%S");
+        let default_name = format!("screenshot{}{}.png", date_str, time_str);
+
+        /* let file_path = DialogBuilder::file()
+            .set_filename(&default_name)
+            .set_owner(&window.window_handle().unwrap())
+            .set_location(&download_dir)
+            .add_filter("PNG 图像", &["png"])
+            .save_single_file()
+            .show()
+            .unwrap(); */
+
+        // 使用文件保存对话框，用户可以查看和修改文件名
+        let file_path = FileDialog::new()
+        .add_filter("PNG", &["png"])
+        .set_directory(&download_dir)
+        .set_can_create_directories(true)
+        .set_file_name(&default_name)
+        .save_file();
+
+        if let Some(file_path) = file_path {
+            println!("用户选择的文件路径: {}", file_path.display());
+            Self::copy_image_to_clipboard(image_data.clone());
+
+            // 将图像数据保存到用户指定的路径
+            if let Err(e) = std::fs::write(&file_path, image_data) {
+                eprintln!("保存图像失败: {}", e);
+            } else {
+                println!("图像已成功保存到: {}", file_path.display());
+            }
+            proxy.send_event(AppEvent::Exit);
+        } else {
+            println!("用户取消了文件保存");
         }
     }
 }

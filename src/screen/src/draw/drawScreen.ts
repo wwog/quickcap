@@ -156,7 +156,7 @@ export class DrawScreen {
         role: "download",
         listener: () => {
           this.setEditCanvasBg();
-          this.editCanvas.writeToClipboard();
+          this.editCanvas.saveImageToFolder();
         },
       },
       {
