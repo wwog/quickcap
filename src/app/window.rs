@@ -32,7 +32,6 @@ pub struct AppWindow {
 
 impl AppWindow {
     pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<AppEvent>) -> Self {
-        let start_time = Instant::now();
         let proxy = event_loop.create_proxy();
         let scale_factor = monitor.scale_factor();
         let position = monitor.position().to_logical::<f64>(scale_factor);
@@ -56,31 +55,34 @@ impl AppWindow {
         }
         #[cfg(target_os = "windows")]
         {
-
+            // 在 Windows 上使用最大化来确保窗口完全撑满屏幕
+            win_builder = win_builder
+                .with_maximized(true);
         }
 
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
         // Windows需要softbuffer来绘制透明背景
-        #[cfg(target_os = "windows")]
-        {
-            let context = softbuffer::Context::new(window.clone()).unwrap();
-            let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
-            let (width,height) = {
-                let size = window.inner_size();
-                (size.width,size.height)
-            };
-            surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
-                .map_err(|e| {
-                    log::error!("Failed to resize surface: {:?}", e);
-                })
-                .unwrap();
-            let mut buffer = surface.buffer_mut().unwrap();
-            buffer.fill(0);
-            buffer.present().unwrap();
-        };
-
+        // #[cfg(target_os = "windows")]
+        // {
+        //     let context = softbuffer::Context::new(window.clone()).unwrap();
+        //     let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
+        //     let (width,height) = {
+        //         let size = window.inner_size();
+        //         (size.width,size.height)
+        //     };
+        //     surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
+        //         .map_err(|e| {
+        //             log::error!("Failed to resize surface: {:?}", e);
+        //         })
+        //         .unwrap();
+        //     let mut buffer = surface.buffer_mut().unwrap();
+        //     buffer.fill(0);
+        //     buffer.present().unwrap();
+        // };
+        let start_capscreen_time = Instant::now();
         let frame = capscreen(&monitor).unwrap();
+        log::info!("capscreen time: {:?}", start_capscreen_time.elapsed());
 
         let data_arc = Arc::clone(&frame.data);
         let frame_width = frame.width;
@@ -153,7 +155,6 @@ impl AppWindow {
             .build(&window)
             .unwrap();
 
-        log::info!("frame time: {:?}", start_time.elapsed());
 
         Self {
             window,
