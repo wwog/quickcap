@@ -6,20 +6,19 @@ use tao::{
     window::WindowId,
 };
 
-use crate::app::AppEvent;
 use crate::app::window::AppWindow;
 use std::time::Instant;
 
 pub struct App {
     windows: HashMap<WindowId, AppWindow>,
-    event_loop: EventLoop<AppEvent>,
+    event_loop: EventLoop<()>,
 }
 
 impl App {
     pub fn new() -> Self {
         log::info!("App::new");
         let start_time = Instant::now();
-        let event_loop = EventLoopBuilder::<AppEvent>::with_user_event().build();
+        let event_loop = EventLoopBuilder::new().build();
         let monitors = event_loop.available_monitors().collect::<Vec<_>>();
         let windows = monitors
             .into_iter()
@@ -48,18 +47,11 @@ impl App {
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
                     ..
-                }
-                | Event::UserEvent(AppEvent::Exit) => {
+                } => {
                     if !self.windows.is_empty() {
                         log::info!("WindowEvent::CloseRequested");
                         self.windows.clear();
                         *control_flow = tao::event_loop::ControlFlow::Exit;
-                    }
-                }
-                #[cfg(target_os = "windows")]
-                Event::RedrawRequested(window_id) => {
-                    if let Some(window) = self.windows.get_mut(&window_id) {
-                        window.redraw();
                     }
                 }
                 _ => {}

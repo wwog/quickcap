@@ -1,7 +1,7 @@
 use log::error;
+use std::{os::raw::c_void, sync::Arc};
 use tao::{monitor::MonitorHandle, platform::windows::MonitorHandleExtWindows};
 use windows_capture::{dxgi_duplication_api::DxgiDuplicationApi, monitor::Monitor};
-use std::{os::raw::c_void, sync::Arc};
 
 use crate::app::capscreen::{CaptureError, Frame};
 
@@ -30,4 +30,3 @@ pub fn capscreen_windows(handle: &MonitorHandle) -> Result<Frame, CaptureError> 
     };
     Ok(frame)
 }
-

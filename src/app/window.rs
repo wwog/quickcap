@@ -1,8 +1,7 @@
 use crate::app::capscreen::enumerate::enumerate_windows;
 use crate::app::capscreen::{Frame, capscreen};
 use std::{sync::Arc, time::Instant};
-#[cfg(target_os = "macos")]
-use tao::platform::macos::WindowBuilderExtMacOS;
+
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
     monitor::MonitorHandle,
@@ -12,15 +11,12 @@ use tao::{
 #[allow(unused_imports)]
 #[cfg(target_os = "windows")]
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
-#[cfg(target_os = "windows")]
-use std::num::NonZeroU32;
 
 use wry::{
     WebView, WebViewBuilder,
     http::{Response, header},
 };
 
-use crate::app::AppEvent;
 
 #[allow(dead_code)]
 pub struct AppWindow {
@@ -31,8 +27,7 @@ pub struct AppWindow {
 }
 
 impl AppWindow {
-    pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<AppEvent>) -> Self {
-        let proxy = event_loop.create_proxy();
+    pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<()>) -> Self {
         let scale_factor = monitor.scale_factor();
         let position = monitor.position().to_logical::<f64>(scale_factor);
         let size = monitor.size().to_logical::<f64>(scale_factor);
@@ -50,36 +45,17 @@ impl AppWindow {
 
         #[cfg(target_os = "macos")]
         {
-            win_builder = win_builder
-                .with_has_shadow(false)
+            use tao::platform::macos::WindowBuilderExtMacOS;
+            win_builder = win_builder.with_has_shadow(false)
         }
         #[cfg(target_os = "windows")]
         {
-            // 在 Windows 上使用最大化来确保窗口完全撑满屏幕
-            win_builder = win_builder
-                .with_maximized(true);
+            use tao::platform::windows::WindowBuilderExtWindows;
+            // 关键：关闭无边框窗口的阴影，否则会出现看起来像“有缝”的偏移
+            win_builder = win_builder.with_undecorated_shadow(false);
         }
-
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        // Windows需要softbuffer来绘制透明背景
-        #[cfg(target_os = "windows")]
-        {
-            let context = softbuffer::Context::new(window.clone()).unwrap();
-            let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
-            let (width,height) = {
-                let size = window.inner_size();
-                (size.width,size.height)
-            };
-            surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
-                .map_err(|e| {
-                    log::error!("Failed to resize surface: {:?}", e);
-                })
-                .unwrap();
-            let mut buffer = surface.buffer_mut().unwrap();
-            buffer.fill(0);
-            buffer.present().unwrap();
-        };
         let start_capscreen_time = Instant::now();
         let frame = capscreen(&monitor).unwrap();
         log::info!("capscreen time: {:?}", start_capscreen_time.elapsed());
@@ -90,14 +66,12 @@ impl AppWindow {
         let monitor_for_enum = monitor.clone();
 
         let webview = WebViewBuilder::new()
-            .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
             .with_custom_protocol("quickcap".into(), move |_name, req| {
                 let path = req.uri().to_string();
                 let method = req.method();
                 log::info!("path: {:?}, method: {:?}", path, method);
-
                 if method.as_str() == "OPTIONS" {
                     return Response::builder()
                         .header("Access-Control-Allow-Origin", "*")
@@ -108,7 +82,6 @@ impl AppWindow {
                         .unwrap()
                         .map(Into::into);
                 }
-
                 match path.as_str() {
                     "quickcap://bg/" | "quickcap://bg" => {
                         let data = Arc::try_unwrap(Arc::clone(&data_arc))
@@ -150,11 +123,10 @@ impl AppWindow {
                         .map(Into::into),
                 }
             })
-            .with_ipc_handler(Self::ipc_handler(proxy))
+            .with_transparent(true)
             .with_html(include_str!("demo.html"))
             .build(&window)
             .unwrap();
-
 
         Self {
             window,
@@ -162,49 +134,5 @@ impl AppWindow {
             monitor,
             frame,
         }
-    }
-
-    fn ipc_handler(
-        proxy: EventLoopProxy<AppEvent>,
-    ) -> impl Fn(wry::http::Request<String>) + 'static {
-        move |req| {
-            log::info!("IPC: {:?}", req);
-            let body = req.body();
-            if body.starts_with("str:") {
-                let action = body.split(":").nth(1).unwrap();
-                match action {
-                    "exit" => {
-                        _ = proxy.send_event(AppEvent::Exit);
-                    }
-                    _ => {
-                        log::warn!("Unknown action: {}", action);
-                    }
-                }
-            }
-        }
-    }
-}
-
-impl AppWindow {
-    #[cfg(target_os = "windows")]
-    pub fn redraw(&mut self) {
-        log::info!("redraw");
-        // let (width,height) = {
-        //     let size = self.window.inner_size();
-        //     (size.width,size.height)
-        // };
-        // self.surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
-        //     .map_err(|e| {
-        //         log::error!("Failed to resize surface: {:?}", e);
-        //     })
-        //     .unwrap();
-        // let mut buffer = self.surface.buffer_mut().unwrap();
-        // buffer.fill(0);
-        // buffer.present().unwrap();
-    }
-    
-    #[cfg(not(target_os = "windows"))]
-    pub fn redraw(&self) {
-        // macOS不需要手动绘制透明背景
     }
 }
