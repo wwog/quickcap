@@ -6,6 +6,7 @@ import {
   calcReactForResizing,
   calcStartAndMove,
   exitApp,
+  getRectForWindow,
   matchWindow,
 } from "../utils";
 import { initCanvasSetting } from "../utils/canvas";
@@ -180,6 +181,8 @@ export class DrawScreen {
       height: number;
     }}[]) => {
       console.log("🚀 ~ DrawScreen ~ constructor ~ windows:", windows);
+      const maxX = window.innerWidth;
+      const maxY = window.innerHeight;
       const arr: {
         x: number;
         y: number;
@@ -188,8 +191,17 @@ export class DrawScreen {
       }[] = [];
       windows.forEach(win => {
         if (win.name !== 'tao window') {
-          arr.push(win.bounds);
+          const {x, y, width, height} = win.bounds;
+
+          arr.push(getRectForWindow({x, y, width, height}));
         }
+      });
+      // Add the main window area
+      arr.push({
+        x: 0,
+        y: 0,
+        width: maxX,
+        height: maxY,
       });
       this.windows = arr;
       

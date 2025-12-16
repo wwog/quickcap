@@ -136,7 +136,6 @@ impl AppWindow {
                 }
             })
             .with_ipc_handler(Self::ipc_handler(proxy))
-            .with_html(include_str!("demo.html"))
             .build(&window)
             .unwrap();
 

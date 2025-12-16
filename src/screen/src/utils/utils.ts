@@ -319,3 +319,28 @@ export const matchWindow = ({
     );
   });
 };
+
+export const getRectForWindow = ({
+  x,
+  y,
+  width,
+  height,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}) => {
+  const maxX = window.innerWidth;
+  const maxY = window.innerHeight;
+  const endX = Math.min(x + width, maxX);
+  const endY = Math.min(y + height, maxY);
+  const startX = Math.max(x, 0);
+  const startY = Math.max(y, 0);
+  return {
+    x: startX,
+    y: startY,
+    width: endX - startX,
+    height: endY - startY,
+  };
+};
