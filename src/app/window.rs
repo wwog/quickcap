@@ -2,7 +2,7 @@ use crate::app::capscreen::enumerate::enumerate_windows;
 use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use std::{sync::Arc, time::Instant};
 #[cfg(target_os = "macos")]
-use tao::platform::macos::{MonitorHandleExtMacOS, WindowBuilderExtMacOS};
+use tao::platform::macos::WindowBuilderExtMacOS;
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
     monitor::MonitorHandle,
@@ -65,6 +65,7 @@ impl AppWindow {
         let data_arc = Arc::clone(&frame.data);
         let frame_width = frame.width;
         let frame_height = frame.height;
+        let monitor_for_enum = monitor.clone();
 
         let webview = WebViewBuilder::new()
             .with_devtools(true)
@@ -106,20 +107,20 @@ impl AppWindow {
                             .unwrap()
                             .map(Into::into)
                     }
-                    // "quickcap://windows/" | "quickcap://windows" => {
-                    //     let windows = enumerate_windows(&monitor);
-                    //     let json =
-                    //         serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
-                    //     Response::builder()
-                    //         .header(header::CONTENT_TYPE, "application/json")
-                    //         .header("Access-Control-Allow-Origin", "*")
-                    //         .header("Access-Control-Allow-Methods", "GET, OPTIONS")
-                    //         .header("Access-Control-Allow-Headers", "*")
-                    //         .status(200)
-                    //         .body(json.into_bytes())
-                    //         .unwrap()
-                    //         .map(Into::into)
-                    // }
+                    "quickcap://windows/" | "quickcap://windows" => {
+                        let windows = enumerate_windows(&monitor_for_enum);
+                        let json =
+                            serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
+                        Response::builder()
+                            .header(header::CONTENT_TYPE, "application/json")
+                            .header("Access-Control-Allow-Origin", "*")
+                            .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+                            .header("Access-Control-Allow-Headers", "*")
+                            .status(200)
+                            .body(json.into_bytes())
+                            .unwrap()
+                            .map(Into::into)
+                    }
                     _ => Response::builder()
                         .status(404)
                         .body(vec![])

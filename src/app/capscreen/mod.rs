@@ -15,6 +15,8 @@ mod windows;
 pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
     #[cfg(target_os = "macos")]
     {
+        use tao::platform::macos::MonitorHandleExtMacOS;
+
         return macos::capscreen(handle.native_id());
     }
     #[cfg(not(target_os = "macos"))]
