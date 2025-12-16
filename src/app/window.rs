@@ -111,7 +111,6 @@ impl AppWindow {
                         let windows = enumerate_windows(&monitor_for_enum);
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
-                        log::info!("quickcap://windows/ : {:#?}", json);
                         Response::builder()
                             .header(header::CONTENT_TYPE, "application/json")
                             .header("Access-Control-Allow-Origin", "*")

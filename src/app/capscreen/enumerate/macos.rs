@@ -8,6 +8,7 @@ use screencapturekit::prelude::SCShareableContent;
 use crate::app::capscreen::enumerate::structs::Rect;
 use super::structs::WindowInfo;
 
+/// 枚举当前显示器上的所有窗口,排除自身进程,另外api使用和fork screencapture-rs 相同的api,确保窗口合理
 pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
     let content = SCShareableContent::with_options()
         .on_screen_windows_only(true)
@@ -56,6 +57,7 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
         if window_right < display_left || window_left > display_right || window_bottom < display_top || window_top > display_bottom {
             continue;
         }
+        println!("window: {:?}", window);
         window_infos.push(WindowInfo {
             name: window.title().unwrap_or_default(),
             bounds: Rect {
@@ -69,7 +71,7 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
     Some(window_infos)
 }
 
-/// 如果后续兼容12.3以上，可以考虑使用这个函数，暂时不考虑使用
+/// 如果后续兼容12.3以下，可以考虑使用这个函数，暂时不考虑使用
 #[allow(dead_code)]
 pub fn enumerate_windows_cg(display_id: u32) -> Vec<WindowInfo> {
     let mut window_infos: Vec<WindowInfo> = vec![];
