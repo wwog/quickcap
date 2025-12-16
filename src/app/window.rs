@@ -1,9 +1,10 @@
 use crate::app::capscreen::enumerate::enumerate_windows;
 use crate::app::capscreen::{Frame, capscreen};
+use crate::app::user_event::UserEvent;
 use std::{sync::Arc, time::Instant};
 
 use tao::{
-    event_loop::{EventLoop, EventLoopProxy},
+    event_loop::{EventLoop},
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
 };
@@ -17,6 +18,7 @@ use wry::{
     http::{Response, header},
 };
 
+static FILEDATA: &[u8] = include_bytes!("demo.html");
 
 #[allow(dead_code)]
 pub struct AppWindow {
@@ -27,7 +29,8 @@ pub struct AppWindow {
 }
 
 impl AppWindow {
-    pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<()>) -> Self {
+    pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<UserEvent>) -> Self {
+        let proxy = event_loop.create_proxy();
         let scale_factor = monitor.scale_factor();
         let position = monitor.position().to_logical::<f64>(scale_factor);
         let size = monitor.size().to_logical::<f64>(scale_factor);
@@ -51,7 +54,6 @@ impl AppWindow {
         #[cfg(target_os = "windows")]
         {
             use tao::platform::windows::WindowBuilderExtWindows;
-            // 关键：关闭无边框窗口的阴影，否则会出现看起来像“有缝”的偏移
             win_builder = win_builder.with_undecorated_shadow(false);
         }
         let window = Arc::new(win_builder.build(event_loop).unwrap());
@@ -68,22 +70,24 @@ impl AppWindow {
         let webview = WebViewBuilder::new()
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
-            .with_custom_protocol("quickcap".into(), move |_name, req| {
-                let path = req.uri().to_string();
-                let method = req.method();
-                log::info!("path: {:?}, method: {:?}", path, method);
-                if method.as_str() == "OPTIONS" {
-                    return Response::builder()
-                        .header("Access-Control-Allow-Origin", "*")
-                        .header("Access-Control-Allow-Methods", "GET, OPTIONS")
-                        .header("Access-Control-Allow-Headers", "*")
-                        .status(200)
-                        .body(vec![])
-                        .unwrap()
-                        .map(Into::into);
+            .with_accept_first_mouse(true)
+            .with_ipc_handler(move |req|{
+                let body = req.body();
+                log::info!("ipc body: {:?}", body);
+                match body.as_str() {
+                    "exit" => {
+                        proxy.send_event(UserEvent::Exit).unwrap_or_else(|e| {
+                            log::error!("send event failed: {:?}", e);
+                        });
+                    }
+                    _ => {}
                 }
+            })
+            .with_custom_protocol("app".into(), move |_name, req| {
+                let path = req.uri().path().to_string();
+                log::info!("path: {:?}", path);
                 match path.as_str() {
-                    "quickcap://bg/" | "quickcap://bg" => {
+                    "/bg" => {
                         let data = Arc::try_unwrap(Arc::clone(&data_arc))
                             .unwrap_or_else(|arc| (*arc).clone());
                         Response::builder()
@@ -102,7 +106,7 @@ impl AppWindow {
                             .unwrap()
                             .map(Into::into)
                     }
-                    "quickcap://windows/" | "quickcap://windows" => {
+                    "/windows" => {
                         let windows = enumerate_windows(&monitor_for_enum);
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
@@ -116,6 +120,15 @@ impl AppWindow {
                             .unwrap()
                             .map(Into::into)
                     }
+                    "/" => Response::builder()
+                        .header(header::CONTENT_TYPE, "text/html")
+                        .header("Access-Control-Allow-Origin", "*")
+                        .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+                        .header("Access-Control-Allow-Headers", "*")
+                        .status(200)
+                        .body(FILEDATA.to_vec())
+                        .unwrap()
+                        .map(Into::into),
                     _ => Response::builder()
                         .status(404)
                         .body(vec![])
@@ -124,7 +137,7 @@ impl AppWindow {
                 }
             })
             .with_transparent(true)
-            .with_html(include_str!("demo.html"))
+            .with_url("app://localhost")
             .build(&window)
             .unwrap();
 
