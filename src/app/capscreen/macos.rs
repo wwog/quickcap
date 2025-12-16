@@ -52,6 +52,7 @@ pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
 }
 
 pub fn configure_overlay_window(window: &Window) {
+    #[cfg(target_os = "macos")]
     unsafe {
         let ns_window_ptr = window.ns_window() as *mut AnyObject;
         let ns_window: Retained<NSWindow> =

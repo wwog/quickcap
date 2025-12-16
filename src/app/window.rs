@@ -1,14 +1,19 @@
 use crate::app::AppEvent;
 use crate::app::capscreen::enumerate::enumerate_windows;
-use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
 use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
+use crate::app::capscreen::{Frame, capscreen};
 use std::{sync::Arc, time::Instant};
+#[cfg(target_os = "macos")]
+use tao::platform::macos::WindowBuilderExtMacOS;
 use tao::{
     event_loop::{EventLoop, EventLoopProxy},
     monitor::MonitorHandle,
-    platform::macos::{MonitorHandleExtMacOS, WindowBuilderExtMacOS},
     window::{Window, WindowBuilder},
 };
+
+#[cfg(target_os = "windows")]
+use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
+
 use wry::{
     WebView, WebViewBuilder,
     http::{Response, header},
@@ -25,29 +30,43 @@ pub struct AppWindow {
 impl AppWindow {
     pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<AppEvent>) -> Self {
         let start_time = Instant::now();
-        let monitor_id = monitor.native_id();
         let proxy = event_loop.create_proxy();
-        let win_builder = WindowBuilder::new();
-        let window = Arc::new(
-            win_builder
-                .with_position(monitor.position())
-                .with_inner_size(monitor.size())
-                .with_decorations(false)
-                .with_has_shadow(false)
-                .with_resizable(false)
-                .with_transparent(true)
-                .build(event_loop)
-                .unwrap(),
+        let scale_factor = monitor.scale_factor();
+        let position = monitor.position().to_logical::<f64>(scale_factor);
+        let size = monitor.size().to_logical::<f64>(scale_factor);
+        log::info!(
+            "create attributes: position: {:?}, size: {:?}",
+            position,
+            size
         );
+        let mut win_builder = WindowBuilder::new()
+            .with_decorations(false)
+            .with_resizable(false)
+            .with_transparent(true);
+        #[cfg(target_os = "macos")]
+        {
+            win_builder = win_builder
+                .with_has_shadow(false)
+                .with_position(position)
+                .with_inner_size(size)
+        }
+        #[cfg(target_os = "windows")]
+        {
+            win_builder =
+                win_builder.with_fullscreen(Some(tao::window::Fullscreen::Borderless(None)));
+        }
+
+        let window = Arc::new(win_builder.build(event_loop).unwrap());
 
         // configure_overlay_window(&window);
 
-        let frame = capscreen(monitor_id).unwrap();
+        let frame = capscreen(&monitor).unwrap();
 
         // 只克隆 Arc，不克隆底层数据
         let data_arc = Arc::clone(&frame.data);
         let frame_width = frame.width;
         let frame_height = frame.height;
+        let monitor_for_enum = monitor.clone();
 
         let webview = WebViewBuilder::new()
             // .with_html(include_str!("demo.html"))
@@ -95,9 +114,10 @@ impl AppWindow {
                             .map(Into::into)
                     }
                     "quickcap://windows/" | "quickcap://windows" => {
-                        let windows = enumerate_windows(monitor_id);
+                        let windows = enumerate_windows(&monitor_for_enum);
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
+                        log::info!("quickcap://windows/ : {:#?}", json);
                         Response::builder()
                             .header(header::CONTENT_TYPE, "application/json")
                             .header("Access-Control-Allow-Origin", "*")
@@ -116,6 +136,7 @@ impl AppWindow {
                 }
             })
             .with_ipc_handler(Self::ipc_handler(proxy))
+            .with_html(include_str!("demo.html"))
             .build(&window)
             .unwrap();
 
