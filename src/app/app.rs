@@ -56,6 +56,12 @@ impl App {
                         *control_flow = tao::event_loop::ControlFlow::Exit;
                     }
                 }
+                #[cfg(target_os = "windows")]
+                Event::RedrawRequested(window_id) => {
+                    if let Some(window) = self.windows.get_mut(&window_id) {
+                        window.redraw();
+                    }
+                }
                 _ => {}
             }
         })

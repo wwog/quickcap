@@ -9,8 +9,11 @@ use tao::{
     window::{Window, WindowBuilder},
 };
 
+#[allow(unused_imports)]
 #[cfg(target_os = "windows")]
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
+#[cfg(target_os = "windows")]
+use std::num::NonZeroU32;
 
 use wry::{
     WebView, WebViewBuilder,
@@ -42,23 +45,40 @@ impl AppWindow {
         let mut win_builder = WindowBuilder::new()
             .with_decorations(false)
             .with_resizable(false)
-            .with_transparent(true);
+            .with_transparent(true)
+            .with_position(position)
+            .with_inner_size(size);
+
         #[cfg(target_os = "macos")]
         {
             win_builder = win_builder
                 .with_has_shadow(false)
-                .with_position(position)
-                .with_inner_size(size)
         }
         #[cfg(target_os = "windows")]
         {
-            win_builder =
-                win_builder.with_fullscreen(Some(tao::window::Fullscreen::Borderless(None)));
+
         }
 
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        // configure_overlay_window(&window);
+        // Windows需要softbuffer来绘制透明背景
+        #[cfg(target_os = "windows")]
+        {
+            let context = softbuffer::Context::new(window.clone()).unwrap();
+            let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
+            let (width,height) = {
+                let size = window.inner_size();
+                (size.width,size.height)
+            };
+            surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
+                .map_err(|e| {
+                    log::error!("Failed to resize surface: {:?}", e);
+                })
+                .unwrap();
+            let mut buffer = surface.buffer_mut().unwrap();
+            buffer.fill(0);
+            buffer.present().unwrap();
+        };
 
         let frame = capscreen(&monitor).unwrap();
 
@@ -161,5 +181,29 @@ impl AppWindow {
                 }
             }
         }
+    }
+}
+
+impl AppWindow {
+    #[cfg(target_os = "windows")]
+    pub fn redraw(&mut self) {
+        log::info!("redraw");
+        // let (width,height) = {
+        //     let size = self.window.inner_size();
+        //     (size.width,size.height)
+        // };
+        // self.surface.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
+        //     .map_err(|e| {
+        //         log::error!("Failed to resize surface: {:?}", e);
+        //     })
+        //     .unwrap();
+        // let mut buffer = self.surface.buffer_mut().unwrap();
+        // buffer.fill(0);
+        // buffer.present().unwrap();
+    }
+    
+    #[cfg(not(target_os = "windows"))]
+    pub fn redraw(&self) {
+        // macOS不需要手动绘制透明背景
     }
 }
