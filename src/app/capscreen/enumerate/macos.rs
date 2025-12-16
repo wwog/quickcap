@@ -24,6 +24,8 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
     let display_top = frame.origin().y;
     let display_bottom = frame.origin().y + frame.size().height;
 
+    let current_pid = std::process::id() as i32;
+
     let windows = content.windows();
     let mut window_infos = vec![];
     for window in windows {
@@ -32,6 +34,13 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
         }
         if window.frame().is_empty() || window.frame().is_null() {
             continue;
+        }
+
+        // 排除自身进程的窗口
+        if let Some(owner) = window.owning_application() {
+            if owner.process_id() == current_pid {
+                continue;
+            }
         }
 
         //因为窗口可能会溢出当前显示器，所以不能用桌面frame包含来判断是否在当前显示器上
@@ -47,7 +56,6 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
         if window_right < display_left || window_left > display_right || window_bottom < display_top || window_top > display_bottom {
             continue;
         }
-
         window_infos.push(WindowInfo {
             name: window.title().unwrap_or_default(),
             bounds: Rect {

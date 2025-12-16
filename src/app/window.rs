@@ -1,5 +1,5 @@
 use crate::app::capscreen::enumerate::enumerate_windows;
-use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
+use crate::app::capscreen::{Frame, capscreen};
 use std::{sync::Arc, time::Instant};
 #[cfg(target_os = "macos")]
 use tao::platform::macos::WindowBuilderExtMacOS;
@@ -111,6 +111,7 @@ impl AppWindow {
                         let windows = enumerate_windows(&monitor_for_enum);
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
+                        log::info!("quickcap://windows/ : {:#?}", json);
                         Response::builder()
                             .header(header::CONTENT_TYPE, "application/json")
                             .header("Access-Control-Allow-Origin", "*")
