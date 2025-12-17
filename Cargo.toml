@@ -14,8 +14,12 @@ base64 = "0.22"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 # Windows 捕获库，也支持DXGI复制
-windows-capture = "2.0.0-alpha.7"
-windows = { version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging","Win32_UI_HiDpi"] }
+# windows-capture = "2.0.0-alpha.7"
+windows = { version = "0.62.2", features = [
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_HiDpi",
+    "Win32_Graphics_Dwm",
+] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # macOS 捕获库

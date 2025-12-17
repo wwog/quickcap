@@ -19,18 +19,28 @@ impl App {
         log::info!("App::new");
         let start_time = Instant::now();
         let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
-        // let monitors = event_loop.available_monitors().collect::<Vec<_>>();
-        // let windows = monitors
-        //     .into_iter()
-        //     .map(|monitor| {
-        //         log::info!("Monitor: {:?}", monitor);
-        //         AppWindow::new(monitor, &event_loop)
-        //     })
-        //     .map(|window| (window.window.id(), window))
-        //     .collect();
-        let monitor = event_loop.primary_monitor().unwrap();
-        let window = AppWindow::new(monitor, &event_loop);
-        let windows = HashMap::from([(window.window.id(), window)]);
+        // Windows和Macos的逻辑并不一致，Windows是用虚拟桌面
+        #[cfg(target_os = "macos")]
+        let windows = {
+            let monitors = event_loop.available_monitors().collect::<Vec<_>>();
+            let windows = monitors
+                .into_iter()
+                .map(|monitor| {
+                    log::info!("Monitor: {:?}", monitor);
+                    AppWindow::new(monitor, &event_loop)
+                })
+                .map(|window| (window.window.id(), window))
+                .collect();
+            (monitors, windows)
+        };
+        #[cfg(target_os = "windows")]
+        let windows = {
+            let monitor = event_loop.primary_monitor().unwrap();
+            // 保留一个窗口，在windows中monitor并不是必要参数，但macos先开发，所以保留一个传参
+            // 后续优化点: 添加AppWindowBuilder，根据不同的操作系统创建不同的AppWindow
+            let window = AppWindow::new(monitor, &event_loop);
+            HashMap::from([(window.window.id(), window)])
+        };
         log::info!("windows time: {:?}", start_time.elapsed());
 
         Self {
@@ -46,8 +56,7 @@ impl App {
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = tao::event_loop::ControlFlow::Wait;
             match event {
-                Event::NewEvents(tao::event::StartCause::Init) => {
-                }
+                Event::NewEvents(tao::event::StartCause::Init) => {}
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
                     ..
