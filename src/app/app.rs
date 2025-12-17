@@ -19,15 +19,18 @@ impl App {
         log::info!("App::new");
         let start_time = Instant::now();
         let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
-        let monitors = event_loop.available_monitors().collect::<Vec<_>>();
-        let windows = monitors
-            .into_iter()
-            .map(|monitor| {
-                log::info!("Monitor: {:?}", monitor);
-                AppWindow::new(monitor, &event_loop)
-            })
-            .map(|window| (window.window.id(), window))
-            .collect();
+        // let monitors = event_loop.available_monitors().collect::<Vec<_>>();
+        // let windows = monitors
+        //     .into_iter()
+        //     .map(|monitor| {
+        //         log::info!("Monitor: {:?}", monitor);
+        //         AppWindow::new(monitor, &event_loop)
+        //     })
+        //     .map(|window| (window.window.id(), window))
+        //     .collect();
+        let monitor = event_loop.primary_monitor().unwrap();
+        let window = AppWindow::new(monitor, &event_loop);
+        let windows = HashMap::from([(window.window.id(), window)]);
         log::info!("windows time: {:?}", start_time.elapsed());
 
         Self {
@@ -43,7 +46,8 @@ impl App {
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = tao::event_loop::ControlFlow::Wait;
             match event {
-                Event::NewEvents(tao::event::StartCause::Init) => {}
+                Event::NewEvents(tao::event::StartCause::Init) => {
+                }
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
                     ..

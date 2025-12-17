@@ -7,9 +7,7 @@ use std::{
 };
 
 use tao::{
-    event_loop::EventLoop,
-    monitor::MonitorHandle,
-    window::{Window, WindowBuilder},
+    dpi::{LogicalPosition, LogicalSize}, event_loop::EventLoop, monitor::MonitorHandle, window::{Window, WindowBuilder}
 };
 
 #[allow(unused_imports)]
@@ -38,6 +36,7 @@ struct CaptureState {
 
 impl AppWindow {
     pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<UserEvent>) -> Self {
+
         let proxy = event_loop.create_proxy();
         let scale_factor = monitor.scale_factor();
         let position = monitor.position().to_logical::<f64>(scale_factor);
@@ -47,6 +46,29 @@ impl AppWindow {
             position,
             size
         );
+        #[cfg(target_os = "windows")]
+        let (position,size) =  unsafe {
+            use windows::Win32::UI::WindowsAndMessaging::{
+                GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
+                SM_YVIRTUALSCREEN,
+            };
+
+            let cx_virtual_screen = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+            let cy_virtual_screen = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+            let x_virtual_screen = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            let y_virtual_screen = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            log::info!(
+                "virtual screen: x={:?}, y={:?}, w={:?}, h={:?}",
+                x_virtual_screen,
+                y_virtual_screen,
+                cx_virtual_screen,
+                cy_virtual_screen
+            );
+            // 使用虚拟桌面原点和整体尺寸，保证跨屏时位置正确
+            let position = LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
+            let size  = LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
+            (position,size)
+        };
         let mut win_builder = WindowBuilder::new()
             .with_decorations(false)
             .with_resizable(false)
@@ -65,6 +87,7 @@ impl AppWindow {
             win_builder = win_builder.with_undecorated_shadow(false);
         }
         let window = Arc::new(win_builder.build(event_loop).unwrap());
+
 
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
             Mutex::new(CaptureState {
