@@ -13,6 +13,9 @@ use windows::Win32::{
 
 use crate::app::capscreen::{CaptureError, Frame};
 
+//todo:如何隐藏窗口 SetWindowDisplayAffinity ??
+//todo:如何快速转换bgra的数据为rgba的数据
+
 pub fn capscreen() -> Result<Frame, CaptureError> {
     unsafe {
         let x = GetSystemMetrics(SM_XVIRTUALSCREEN);
