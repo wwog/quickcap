@@ -80,6 +80,7 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
         if let Some(window_infos) = window_infos.as_mut() {
             window_infos.push(WindowInfo {
                 name: window_text,
+                //todo:转换逻辑分辨率
                 bounds: Rect {
                     x: visual_rect.left as f64,
                     y: visual_rect.top as f64,
