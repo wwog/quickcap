@@ -1,10 +1,13 @@
+use crate::app::capscreen::capscreen;
 use crate::app::capscreen::enumerate::enumerate_windows;
-use crate::app::capscreen::{Frame, capscreen};
 use crate::app::user_event::UserEvent;
-use std::{sync::Arc, time::Instant};
+use std::{
+    sync::{Arc, Condvar, Mutex},
+    time::Instant,
+};
 
 use tao::{
-    event_loop::{EventLoop},
+    event_loop::EventLoop,
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
 };
@@ -25,7 +28,12 @@ pub struct AppWindow {
     pub window: Arc<Window>,
     pub webview: WebView,
     pub monitor: MonitorHandle,
-    pub frame: Frame,
+}
+
+struct CaptureState {
+    frame: Option<crate::app::capscreen::Frame>,
+    error: Option<String>,
+    done: bool,
 }
 
 impl AppWindow {
@@ -58,20 +66,46 @@ impl AppWindow {
         }
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        let start_capscreen_time = Instant::now();
-        let frame = capscreen(&monitor).unwrap();
-        log::info!("capscreen time: {:?}", start_capscreen_time.elapsed());
+        let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
+            Mutex::new(CaptureState {
+                frame: None,
+                error: None,
+                done: false,
+            }),
+            Condvar::new(),
+        ));
 
-        let data_arc = Arc::clone(&frame.data);
-        let frame_width = frame.width;
-        let frame_height = frame.height;
+        // 启动后台截图线程
+        let capture_state_for_thread = Arc::clone(&capture_state);
+        let monitor_for_capture = monitor.clone();
+        std::thread::spawn(move || {
+            let start_capscreen_time = Instant::now();
+            let result = capscreen(&monitor_for_capture);
+            log::info!("capscreen time: {:?}", start_capscreen_time.elapsed());
+
+            let (lock, cvar) = &*capture_state_for_thread;
+            let mut state = lock.lock().unwrap();
+            match result {
+                Ok(frame) => {
+                    state.frame = Some(frame);
+                }
+                Err(e) => {
+                    log::error!("capscreen failed: {:?}", e);
+                    state.error = Some(format!("capscreen failed: {:?}", e));
+                }
+            }
+            state.done = true;
+            cvar.notify_all();
+        });
+
+        let capture_state_for_bg = Arc::clone(&capture_state);
         let monitor_for_enum = monitor.clone();
 
         let webview = WebViewBuilder::new()
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
             .with_accept_first_mouse(true)
-            .with_ipc_handler(move |req|{
+            .with_ipc_handler(move |req| {
                 let body = req.body();
                 log::info!("ipc body: {:?}", body);
                 match body.as_str() {
@@ -88,23 +122,54 @@ impl AppWindow {
                 log::info!("path: {:?}", path);
                 match path.as_str() {
                     "/bg" => {
-                        let data = Arc::try_unwrap(Arc::clone(&data_arc))
-                            .unwrap_or_else(|arc| (*arc).clone());
-                        Response::builder()
-                            .header(header::CONTENT_TYPE, "application/octet-stream")
-                            .header("Access-Control-Allow-Origin", "*")
-                            .header("Access-Control-Allow-Methods", "GET, OPTIONS")
-                            .header("Access-Control-Allow-Headers", "*")
-                            .header(
-                                "Access-Control-Expose-Headers",
-                                "x-frame-width, x-frame-height",
-                            )
-                            .header("x-frame-width", frame_width.to_string())
-                            .header("x-frame-height", frame_height.to_string())
-                            .status(200)
-                            .body(data)
-                            .unwrap()
-                            .map(Into::into)
+                        let (lock, cvar) = &*capture_state_for_bg;
+                        let mut state = lock.lock().unwrap();
+
+                        // 如果截图尚未完成，则等待
+                        while !state.done {
+                            state = cvar.wait(state).unwrap();
+                        }
+
+                        // 检查是否有错误
+                        if let Some(error) = &state.error {
+                            log::error!("Capture error: {}", error);
+                            return Response::builder()
+                                .status(500)
+                                .header(header::CONTENT_TYPE, "text/plain")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .body(error.clone().into_bytes())
+                                .unwrap()
+                                .map(Into::into);
+                        }
+
+                        // 获取截图数据
+                        if let Some(frame) = &state.frame {
+                            let data = Arc::try_unwrap(Arc::clone(&frame.data))
+                                .unwrap_or_else(|arc| (*arc).clone());
+                            Response::builder()
+                                .header(header::CONTENT_TYPE, "application/octet-stream")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+                                .header("Access-Control-Allow-Headers", "*")
+                                .header(
+                                    "Access-Control-Expose-Headers",
+                                    "x-frame-width, x-frame-height",
+                                )
+                                .header("x-frame-width", frame.width.to_string())
+                                .header("x-frame-height", frame.height.to_string())
+                                .status(200)
+                                .body(data)
+                                .unwrap()
+                                .map(Into::into)
+                        } else {
+                            Response::builder()
+                                .status(500)
+                                .header(header::CONTENT_TYPE, "text/plain")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .body(b"No frame data available".to_vec())
+                                .unwrap()
+                                .map(Into::into)
+                        }
                     }
                     "/windows" => {
                         let windows = enumerate_windows(&monitor_for_enum);
@@ -145,7 +210,6 @@ impl AppWindow {
             window,
             webview,
             monitor,
-            frame,
         }
     }
 }
