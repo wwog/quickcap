@@ -2,6 +2,8 @@ mod structs;
 
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "windows")]
+mod windows;
 
 pub use structs::WindowInfo;
 use tao::monitor::MonitorHandle;
@@ -15,6 +17,6 @@ pub fn enumerate_windows(handle: &MonitorHandle) -> Vec<WindowInfo> {
     }
     #[cfg(not(target_os = "macos"))]
     {
-        vec![]
+        windows::enumerate_windows(handle).unwrap_or_default()
     }
 }
