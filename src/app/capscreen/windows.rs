@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use windows::Win32::{
     Foundation::HWND,
     Graphics::Gdi::{
@@ -73,7 +74,11 @@ pub fn capscreen() -> Result<Frame, CaptureError> {
             DIB_RGB_COLORS,
         );
 
-        // 4. 清理 GDI 资源（防止句柄泄漏，这非常重要！）
+        data.par_chunks_exact_mut(4).for_each(|pixel| {
+            pixel.swap(0, 2);
+            pixel[3] = 255;
+        });
+
         SelectObject(h_memory_dc, old_obj);
         _ = DeleteObject(HGDIOBJ(h_bitmap.0));
         _ = DeleteDC(h_memory_dc);

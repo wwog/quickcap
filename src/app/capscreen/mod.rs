@@ -8,9 +8,9 @@ pub use frame::Frame;
 use tao::{monitor::MonitorHandle, window::Window};
 
 #[cfg(target_os = "macos")]
-mod macos;
+pub mod macos;
 #[cfg(target_os = "windows")]
-mod windows;
+pub mod windows;
 
 pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
     #[cfg(target_os = "macos")]
