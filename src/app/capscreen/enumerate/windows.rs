@@ -11,7 +11,7 @@ use windows::{
     core::BOOL,
 };
 
-/// todo 这里还不清楚windows的monitor的规则，所以先不处理
+//todo:如果存在多显示器，需要将显示器位于虚拟桌面的bounds添加进window_info的bounds中
 pub fn enumerate_windows(monitor: &MonitorHandle) -> Option<Vec<WindowInfo>> {
     let mut window_infos = vec![];
     // 修正 EnumWindows 的 LPARAM 构造方式，确保传递的是 isize
@@ -22,7 +22,6 @@ pub fn enumerate_windows(monitor: &MonitorHandle) -> Option<Vec<WindowInfo>> {
 
     Some(window_infos)
 }
-
 extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     unsafe {
         let is_visible: bool = WindowsAndMessaging::IsWindowVisible(hwnd).into();
