@@ -1,6 +1,18 @@
 import { DPR } from "../const";
-import { initCanvasSetting } from "../utils/canvas";
-export type EditCanvasMode = "normal" | "edit" | "drag";
+import { generateUID } from "../utils";
+import {
+  calculateEllipseFromRect,
+  calculateRectFromPoints,
+  // drawArrow,
+  // drawCircle,
+  // drawPath,
+  // drawRect,
+  drawShape,
+  initCanvasSetting,
+} from "../utils/canvas";
+import type { EditCanvasMode, TShape } from "./editType";
+import { ResizeAssist } from "./resizeAssist";
+
 export class EditCanvas {
   private lastImg: null | {
     x: number;
@@ -15,6 +27,23 @@ export class EditCanvas {
   private editCtx: CanvasRenderingContext2D;
 
   private _mode: EditCanvasMode = "normal";
+
+  private resizeAssist: ResizeAssist;
+
+  private drawState: null | TShape = null;
+
+  private shapeArr: TShape[] = [];
+
+  private currentDrawPos = {
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 0,
+  };
+
+  private drawing = false;
+
+  // private dragging = false;
 
   get mode() {
     return this._mode;
@@ -39,7 +68,115 @@ export class EditCanvas {
     this.baseCanvas.style.left = "0px";
     this.editCanvas.style.left = "0px";
     this.editCanvas.style.left = "0px";
+
+    this.resizeAssist = new ResizeAssist();
+
+    console.log("editCanvas created", this.resizeAssist);
+
+    (window as any).editCanvas = this;
   }
+
+  private getCanvasPos = (clientX: number, clientY: number) => {
+    if (!this.lastImg) {
+      return {
+        x: 0,
+        y: 0,
+      };
+    }
+    return {
+      x: Math.min(
+        Math.max(clientX - this.lastImg.x, 0),
+        this.lastImg.x + this.lastImg.width
+      ),
+      y: Math.min(
+        Math.max(clientY - this.lastImg.y, 0),
+        this.lastImg.y + this.lastImg.height
+      ),
+    };
+  };
+
+  private initListener = () => {
+    this.editCanvas.addEventListener("mousedown", (e) => {
+      if (this.mode === "normal") {
+        return;
+      }
+
+      const { x, y } = this.getCanvasPos(e.clientX, e.clientY);
+      this.currentDrawPos = {
+        x1: x,
+        y1: y,
+        x2: x,
+        y2: y,
+      };
+      this.drawing = true;
+    });
+    document.body.addEventListener("mousemove", (e) => {
+      if (this.mode === "normal") {
+        return;
+      }
+
+      if (this.drawing) {
+        const { x, y } = this.getCanvasPos(e.clientX, e.clientY);
+        this.currentDrawPos.x2 = x;
+        this.currentDrawPos.y2 = y;
+
+        switch (this.drawState?.shape) {
+          case "rect":
+            const rect = calculateRectFromPoints(this.currentDrawPos, {
+              maxX: this.lastImg!.width,
+              maxY: this.lastImg!.height,
+            });
+            this.drawState.attr = rect;
+            break;
+          case "circle":
+            const ellipse = calculateEllipseFromRect(this.currentDrawPos, {
+              maxX: this.lastImg!.width,
+              maxY: this.lastImg!.height,
+            });
+            this.drawState.attr = ellipse;
+            break;
+          case "path":
+            if (!this.drawState.attr.path.length) {
+              this.drawState.attr.path.push({
+                x: this.currentDrawPos.x1,
+                y: this.currentDrawPos.y1,
+              });
+            }
+            this.drawState.attr.path.push({ x: x, y: y });
+            break;
+          case "arrow":
+            this.drawState.attr = {
+              fromX: this.currentDrawPos.x1,
+              fromY: this.currentDrawPos.y1,
+              toX: this.currentDrawPos.x2,
+              toY: this.currentDrawPos.y2,
+            };
+            break;
+          default:
+            break;
+        }
+        this.renderAll();
+      }
+    });
+    document.body.addEventListener("mouseup", (e) => {
+      console.log("🚀 ~ EditCanvas ~ e:", e);
+      if (this.mode === "normal") {
+        return;
+      }
+      if (this.drawing && this.drawState) {
+        this.drawing = false;
+        if (
+          this.currentDrawPos.x1 !== this.currentDrawPos.x2 ||
+          this.currentDrawPos.y1 !== this.currentDrawPos.y2
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.shapeArr.push(this.drawState);
+          this.setShape(this.drawState.shape);
+        }
+      }
+    });
+  };
 
   initCanvasSetting(width: number, height: number) {
     initCanvasSetting(this.baseCanvas, {
@@ -66,16 +203,25 @@ export class EditCanvas {
   }
 
   private getImageDataUrl() {
+    this.baseCtx.drawImage(
+      this.editCanvas,
+      0,
+      0,
+      this.editCanvas.width,
+      this.editCanvas.height,
+      0,
+      0,
+      this.lastImg!.width,
+      this.lastImg!.height
+    );
     return this.baseCanvas.toDataURL("image/png");
   }
 
   writeToClipboard = async () => {
     console.log("writeToClipboard");
     const dataURL = this.getImageDataUrl();
-    console.log("🚀 ~ EditCanvas ~ dataURL:", dataURL);
     (window as any).app.copyToClipboard(dataURL);
     /*  await this.baseCanvas.toBlob(async (blob) => {
-      console.log("🚀 ~ EditCanvas ~ blob:", blob);
       if (blob) {
         try {
           // 将blob转换为ArrayBuffer，然后通过IPC发送
@@ -123,7 +269,6 @@ export class EditCanvas {
   saveImageToFolder = async () => {
     console.log("saveImageToFolder");
     const dataURL = this.getImageDataUrl();
-    console.log("🚀 ~ EditCanvas ~ dataURL:", dataURL);
     (window as any).app.saveImageToFolder(dataURL);
   };
 
@@ -166,5 +311,101 @@ export class EditCanvas {
       width,
       height,
     };
+
+    this.initListener();
   }
+
+  setShape(shape = "rect") {
+    switch (shape) {
+      case "rect":
+        this.drawState = {
+          id: generateUID(),
+          shape: "rect",
+          attr: {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+          },
+          pen: {
+            color: "#ff0000",
+            lineWidth: 2,
+          },
+        };
+        break;
+      case "circle":
+        this.drawState = {
+          id: generateUID(),
+          shape: "circle",
+          attr: {
+            centerX: 0,
+            centerY: 0,
+            radiusX: 0,
+            radiusY: 0,
+            isCircle: false,
+            left: 0,
+            top: 0,
+            width: 0,
+            height: 0,
+          },
+          pen: {
+            color: "#ff0000",
+            lineWidth: 2,
+          },
+        };
+        break;
+      case "path":
+        this.drawState = {
+          id: generateUID(),
+          shape: "path",
+          attr: {
+            path: [],
+          },
+          pen: {
+            color: "#ff0000",
+            lineWidth: 2,
+          },
+        };
+        break;
+      case "arrow":
+        this.drawState = {
+          id: generateUID(),
+          shape: "arrow",
+          attr: {
+            fromX: 0,
+            fromY: 0,
+            toX: 0,
+            toY: 0,
+          },
+          pen: {
+            color: "#ff0000",
+            lineWidth: 2,
+          },
+        };
+        break;
+      default:
+        this.drawState = null;
+        break;
+    }
+  }
+
+  private renderAll = () => {
+    this.editCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+    this.shapeArr.forEach((shape) => {
+      drawShape(this.editCtx, shape);
+    });
+    this.renderPreview();
+  };
+  private renderPreview = () => {
+    if (
+      this.currentDrawPos.x1 === this.currentDrawPos.x2 &&
+      this.currentDrawPos.y1 === this.currentDrawPos.y2
+    ) {
+      return;
+    }
+    if (!this.drawState) {
+      return;
+    }
+    drawShape(this.editCtx, this.drawState);
+  };
 }

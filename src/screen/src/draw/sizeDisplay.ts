@@ -1,4 +1,4 @@
-import { sizeDisplayGap, sizeDisplayHeight } from "../const";
+import { DPR, sizeDisplayGap, sizeDisplayHeight } from "../const";
 
 export class SizeDisplay {
   private dom: HTMLDivElement;
@@ -34,6 +34,6 @@ export class SizeDisplay {
     } else {
       this.dom.style.top = `${y - sizeDisplayHeight - sizeDisplayGap}px`;
     }
-    this.dom.innerText = `${width} x ${height}`;
+    this.dom.innerText = `${width * DPR} x ${height * DPR}`;
   };
 }

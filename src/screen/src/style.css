@@ -9,6 +9,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --resize-handle-size: 5px;
 }
 * {
   margin: 0;
@@ -80,61 +82,88 @@ canvas {
   border: 1px solid greenyellow;
   box-sizing: content-box;
 }
-.canvas-container.edit-mode .select-rect {
-  display: none;
-}
 
 /* resize-handle */
 .resize-handle {
   position: absolute;
-  width: 5px;
-  height: 5px;
+  width: var(--resize-handle-size);
+  height: var(--resize-handle-size);
   background-color: greenyellow;
   user-select: none;
 }
-.top-left {
-  top: -2.5px;
-  left: -2.5px;
+.resize-top-left {
+  /* top: -2.5px;
+  left: -2.5px; */
+  top: calc(var(--resize-handle-size) / -2);
+  left: calc(var(--resize-handle-size) / -2);
   cursor: nwse-resize;
 }
-.top {
-  top: -2.5px;
+.resize-top {
+  /* top: -2.5px; */
+  top: calc(var(--resize-handle-size) / -2);
   left: 50%;
   transform: translateX(-50%);
   cursor: ns-resize;
 }
-.top-right {
-  top: -2.5px;
-  right: -2.5px;
+.resize-top-right {
+  /* top: -2.5px;
+  right: -2.5px; */
+  top: calc(var(--resize-handle-size) / -2);
+  right: calc(var(--resize-handle-size) / -2);
   cursor: nesw-resize;
 }
-.right {
-  right: -2.5px;
+.resize-right {
+  /* right: -2.5px; */
+  right: calc(var(--resize-handle-size) / -2);
   top: 50%;
   transform: translate(0, -50%);
   cursor: ew-resize;
 }
-.bottom-right {
-  right: -2.5px;
-  bottom: -2.5px;
+.resize-bottom-right {
+  /* right: -2.5px;
+  bottom: -2.5px; */
+  right: calc(var(--resize-handle-size) / -2);
+  bottom: calc(var(--resize-handle-size) / -2);
   cursor: nwse-resize;
 }
-.bottom {
-  bottom: -2.5px;
+.resize-bottom {
+  /* bottom: -2.5px; */
+  bottom: calc(var(--resize-handle-size) / -2);
   left: 50%;
   transform: translateX(-50%);
   cursor: ns-resize;
 }
-.bottom-left {
-  bottom: -2.5px;
-  left: -2.5px;
+.resize-bottom-left {
+  /* bottom: -2.5px;
+  left: -2.5px; */
+  bottom: calc(var(--resize-handle-size) / -2);
+  left: calc(var(--resize-handle-size) / -2);
   cursor: nesw-resize;
 }
-.left {
+.resize-left {
   top: 50%;
-  left: -2.5px;
+  /* left: -2.5px; */
+  left: calc(var(--resize-handle-size) / -2);
   transform: translate(0, -50%);
   cursor: ew-resize;
+}
+
+.edit-mode .resize-handle {
+  cursor: default;
+}
+
+/* resize-assist */
+.resize-assist {
+  position: absolute;
+  z-index: 400;
+  border: 1px dashed rgba(0, 0, 0, 0.5);
+}
+.resize-assist-handle {
+  position: absolute;
+  width: var(--resize-handle-size);
+  height: var(--resize-handle-size);
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
 }
 
 /* edit-tool */

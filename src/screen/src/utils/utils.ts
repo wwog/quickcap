@@ -127,26 +127,26 @@ export const calcFixedPoint = ({
   height: number;
 }) => {
   switch (resizeHandle) {
-    case "top-left":
+    case "resize-top-left":
       return {
         x: x + width,
         y: y + height,
       };
-    case "top":
-    case "top-right":
+    case "resize-top":
+    case "resize-top-right":
       return {
         x,
         y: y + height,
       };
-    case "right":
-    case "bottom-right":
-    case "bottom":
+    case "resize-right":
+    case "resize-bottom-right":
+    case "resize-bottom":
       return {
         x,
         y,
       };
-    case "bottom-left":
-    case "left":
+    case "resize-bottom-left":
+    case "resize-left":
       return {
         x: x + width,
         y,
@@ -183,35 +183,35 @@ export const calcReactForResizing = ({
   let actualMoveX = moveX;
   let actualMoveY = moveY;
   switch (resizeHandle) {
-    case "top-left":
+    case "resize-top-left":
       actualMoveX = moveX - originWidth;
       actualMoveY = moveY - originHeight;
       break;
-    case "top":
+    case "resize-top":
       actualMoveX = originWidth;
       actualMoveY = moveY - originHeight;
       break;
-    case "top-right":
+    case "resize-top-right":
       actualMoveX = moveX + originWidth;
       actualMoveY = moveY - originHeight;
       break;
-    case "right":
+    case "resize-right":
       actualMoveX = moveX + originWidth;
       actualMoveY = originHeight;
       break;
-    case "bottom-right":
+    case "resize-bottom-right":
       actualMoveX = moveX + originWidth;
       actualMoveY = moveY + originHeight;
       break;
-    case "bottom":
+    case "resize-bottom":
       actualMoveX = originWidth;
       actualMoveY = moveY + originHeight;
       break;
-    case "bottom-left":
+    case "resize-bottom-left":
       actualMoveX = moveX - originWidth;
       actualMoveY = moveY + originHeight;
       break;
-    case "left":
+    case "resize-left":
       actualMoveX = moveX - originWidth;
       actualMoveY = originHeight;
       break;
@@ -227,29 +227,6 @@ export const calcReactForResizing = ({
     maxX,
     maxY,
   });
-};
-
-export const bindDoubleClick = (
-  target: HTMLDivElement,
-  cb: (e: MouseEvent) => void
-) => {
-  let clickCount = 0;
-  const doubleClickInterval = 300; // 300ms 内双击被认为是双击事件
-  const onClick = (e: MouseEvent) => {
-    clickCount++;
-    if (clickCount === 2) {
-      cb(e);
-      clickCount = 0;
-    } else {
-      setTimeout(() => {
-        clickCount = 0;
-      }, doubleClickInterval);
-    }
-  };
-  target.addEventListener("click", onClick);
-  return () => {
-    target.removeEventListener("click", onClick);
-  };
 };
 
 export const calcEditToolTop = (
@@ -344,3 +321,9 @@ export const getRectForWindow = ({
     height: endY - startY,
   };
 };
+
+export function generateUID() {
+  return `${Math.random().toString(36).substring(2, 10)}-${Math.random()
+    .toString(36)
+    .substring(2, 10)}-${Math.random().toString(36).substring(2, 10)}`;
+}

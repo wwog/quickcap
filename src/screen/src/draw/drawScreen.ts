@@ -84,6 +84,7 @@ export class DrawScreen {
         case "edit": {
           this.canvasContainer.style.cursor = "";
           this.selectRectDom.style.cursor = "crosshair";
+          this.canvasContainer.classList.add("edit-mode");
           break;
         }
       }
@@ -152,6 +153,17 @@ export class DrawScreen {
     this.editTools = new EditTools();
 
     this.editTools.addListener([
+      {
+        role: "edit",
+        listener: (shape?: string) => {
+          console.log("🚀 ~ DrawScreen ~ constructor ~ shape:", shape);
+          this.setEditCanvasBg();
+          this.editCanvas.setMode("edit");
+          if (shape) {
+            this.editCanvas.setShape(shape);
+          }
+        },
+      },
       {
         role: "download",
         listener: () => {
@@ -468,6 +480,7 @@ export class DrawScreen {
   };
 
   private onMouseMove = (e: MouseEvent) => {
+    if (this.mode === "edit") return;
     if (this.mode === "select") {
       this.selectMove(e);
       this.sizeDisplay.render(true, {
@@ -488,7 +501,7 @@ export class DrawScreen {
   };
 
   private onMouseUp = (e: MouseEvent) => {
-    console.log("🚀 ~ DrawScreen ~ e:", e, this.mode);
+    if (this.mode === "edit") return;
     switch (this.mode) {
       case "select":
         e.stopPropagation();
@@ -520,11 +533,11 @@ export class DrawScreen {
   };
 
   private onMouseLeave = (e: MouseEvent) => {
-    console.log(
+    /* console.log(
       `%c🎄 mouseout`,
       "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
       e
-    );
+    ); */
     if (this.mode === "move") {
       const x = e.clientX;
       const y = e.clientY;
@@ -558,6 +571,7 @@ export class DrawScreen {
     this.canvasContainer.addEventListener("mouseleave", this.onMouseLeave);
 
     bindDoubleClick(this.selectRectDom, () => {
+      console.log("================double click================");
       this.setEditCanvasBg();
       this.editCanvas.writeToClipboard();
     });

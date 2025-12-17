@@ -1,12 +1,12 @@
 export const resizeHandles = [
-  "top-left",
-  "top",
-  "top-right",
-  "right",
-  "bottom-right",
-  "bottom",
-  "bottom-left",
-  "left",
+  "resize-top-left",
+  "resize-top",
+  "resize-top-right",
+  "resize-right",
+  "resize-bottom-right",
+  "resize-bottom",
+  "resize-bottom-left",
+  "resize-left",
 ];
 
 export const DPR = window.devicePixelRatio;

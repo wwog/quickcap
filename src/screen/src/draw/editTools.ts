@@ -2,6 +2,42 @@ import { editToolGap, editToolHeight } from "../const";
 
 export const items = [
   {
+    id: "rect",
+    className: "box-select rect",
+    content: `<div style="width: 70%; height: 70%; border-radius: 4px; border: 2px solid #D8D8D8;"></div>`,
+    role: "edit",
+    shape: "rect",
+  },
+  {
+    id: "circle",
+    className: "box-select circle",
+    content: `<div style="width: 70%; height: 70%; border-radius: 50%; border: 2px solid #D8D8D8;"></div>`,
+    role: "edit",
+    shape: "circle",
+  },
+  {
+    id: "arrow",
+    className: "box-select arrow",
+    content: `<div style="width: 70%; height: 70%; position: relative;">
+      <div style="width:100%; height: 2px; background-color: #D8D8D8; position: absolute; top: 50%; left: 0; transform: translateY(-50%) rotate(-215deg);">
+        <div style="width: 10px; height: 2px; background-color: #D8D8D8; position: absolute; right: 0; top: 0; transform: rotate(45deg); transform-origin: right center;"></div>
+        <div style="width: 10px; height: 2px; background-color: #D8D8D8; position: absolute; right: 0; top: 0; transform: rotate(-45deg); transform-origin: right center;"></div>
+      </div>
+    </div>`,
+    role: "edit",
+    shape: "arrow",
+  },
+  {
+    id: "path",
+    className: "box-select path",
+    content: `<div style="width: 70%; height: 70%; position: relative;">
+      <div style="width:100%; height: 2px; background-color: #D8D8D8; position: absolute; top: 50%; left: 0; transform: translateY(-50%) rotate(-215deg);">
+      </div>
+    </div>`,
+    role: "edit",
+    shape: "path",
+  },
+  {
     id: "download",
     className: "download",
     content: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -56,7 +92,7 @@ type ItemRole = (typeof items)[number]["role"];
 
 export class EditTools {
   dom: HTMLDivElement;
-  itemListeners: Map<string, () => void> = new Map();
+  itemListeners: Map<string, (str?: string) => void> = new Map();
   constructor(parent?: HTMLElement) {
     this.dom = document.createElement("div");
     this.dom.classList.add("edit-tool");
@@ -73,9 +109,10 @@ export class EditTools {
   private initItems = () => {
     items.forEach((item) => {
       const itemDom = document.createElement("div");
-      itemDom.classList.add("edit-tool-item", item.className);
+      itemDom.classList.add("edit-tool-item", ...item.className.split(" "));
       itemDom.innerHTML = item.content || "";
       itemDom.dataset.role = item.role || "";
+      itemDom.dataset.shape = (item as any).shape || "";
       this.dom.appendChild(itemDom);
     });
   };
@@ -89,16 +126,17 @@ export class EditTools {
       }
       if (!target) return;
       const role = target.dataset.role || "";
-      console.log("🚀 ~ EditTools ~ role:", role);
+      const shape = target.dataset.shape || undefined;
       const listener = this.itemListeners.get(role);
-      console.log("🚀 ~ EditTools ~ listener:", listener);
       if (listener) {
-        listener();
+        listener(shape);
       }
     });
   };
 
-  addListener = (items: { role: ItemRole; listener: () => void }[]) => {
+  addListener = (
+    items: { role: ItemRole; listener: (shape?: string) => void }[]
+  ) => {
     items.forEach((item) => {
       this.itemListeners.set(item.role, item.listener);
     });
