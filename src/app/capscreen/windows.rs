@@ -22,6 +22,7 @@ pub fn capscreen_windows(handle: &MonitorHandle) -> Result<Frame, CaptureError> 
         error!("get frame buffer failed: {:?}", e);
         CaptureError::FailedToGetBuffer
     })?;
+    log::info!("buffer format: {:?}", buffer.format());
     let data = buffer.as_raw_buffer().to_vec();
     let frame = Frame {
         data: Arc::new(data),
