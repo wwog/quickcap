@@ -45,7 +45,7 @@ pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
         CaptureError::FailedToGetRGBAData
     })?;
     Ok(Frame {
-        data: std::sync::Arc::new(data),
+        data: data,
         width: width as u32,
         height: height as u32,
     })

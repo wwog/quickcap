@@ -144,8 +144,7 @@ impl AppWindow {
 
                         // 获取截图数据
                         if let Some(frame) = &state.frame {
-                            let data = Arc::try_unwrap(Arc::clone(&frame.data))
-                                .unwrap_or_else(|arc| (*arc).clone());
+                            let data = frame.data.clone();
                             Response::builder()
                                 .header(header::CONTENT_TYPE, "application/octet-stream")
                                 .header("Access-Control-Allow-Origin", "*")
