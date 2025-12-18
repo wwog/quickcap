@@ -31,7 +31,7 @@ impl App {
                 })
                 .map(|window| (window.window.id(), window))
                 .collect();
-            (monitors, windows)
+            windows
         };
         #[cfg(target_os = "windows")]
         let windows = {

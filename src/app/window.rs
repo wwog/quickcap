@@ -7,7 +7,6 @@ use std::{
 };
 
 use tao::{
-    dpi::{LogicalPosition, LogicalSize},
     event_loop::EventLoop,
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
