@@ -63,8 +63,8 @@ impl AppWindow {
             let x_virtual_screen = GetSystemMetrics(SM_XVIRTUALSCREEN);
             let y_virtual_screen = GetSystemMetrics(SM_YVIRTUALSCREEN);
             // 使用虚拟桌面原点和整体尺寸，保证跨屏时位置正确
-            let position = LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
-            let size = LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
+            let position =  tao::dpi::LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
+            let size =  tao::dpi::LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
             log::info!(
                 "create attributes: position={:?}, size={:?}",
                 position,

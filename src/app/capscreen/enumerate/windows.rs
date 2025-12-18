@@ -1,25 +1,34 @@
 use crate::app::capscreen::enumerate::{WindowInfo, structs::Rect};
-use tao::monitor::MonitorHandle;
 use windows::{
     Win32::{
         Foundation::{HWND, LPARAM, RECT},
         Graphics::Dwm::{DWMWA_CLOAKED, DWMWA_EXTENDED_FRAME_BOUNDS, DwmGetWindowAttribute},
         UI::WindowsAndMessaging::{
-            self, GetWindowInfo, WINDOWINFO, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+            self, GetSystemMetrics, GetWindowInfo, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN, WINDOWINFO, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW
         },
     },
     core::BOOL,
 };
 
-//todo:如果存在多显示器，需要将显示器位于虚拟桌面的bounds添加进window_info的bounds中
-pub fn enumerate_windows(monitor: &MonitorHandle) -> Option<Vec<WindowInfo>> {
-    let mut window_infos = vec![];
+pub fn enumerate_windows() -> Option<Vec<WindowInfo>> {
+    let mut window_infos: Vec<WindowInfo> = vec![];
     // 修正 EnumWindows 的 LPARAM 构造方式，确保传递的是 isize
     let window_infos_ptr = &mut window_infos as *mut _ as isize;
     _ = unsafe {
         WindowsAndMessaging::EnumWindows(Some(enum_window_callback), LPARAM(window_infos_ptr))
     };
 
+    //截屏的全尺寸窗口画布是基于虚拟桌面原点,所以需要将实际坐标转换为基于虚拟桌面原点的坐标
+    let (v_x,v_y) = unsafe {
+        (GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN))
+    };
+
+    if v_x != 0 || v_y != 0 {
+        for window_info in window_infos.iter_mut() {
+            window_info.bounds.x -= v_x as f64;
+            window_info.bounds.y -= v_y as f64;
+        }
+    }
     Some(window_infos)
 }
 extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
@@ -94,16 +103,11 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
 
 #[cfg(test)]
 mod tests {
-    use tao::event_loop::EventLoopBuilder;
-    use tao::platform::windows::EventLoopBuilderExtWindows;
-
     use super::*;
 
     #[test]
     fn test_enumerate_windows() {
-        let event_loop = EventLoopBuilder::new().with_any_thread(true).build();
-        let monitor = event_loop.primary_monitor().unwrap();
-        let windows = enumerate_windows(&monitor);
+        let windows = enumerate_windows();
         println!("windows: {:#?}", windows);
     }
 }

@@ -17,6 +17,6 @@ pub fn enumerate_windows(handle: &MonitorHandle) -> Vec<WindowInfo> {
     }
     #[cfg(not(target_os = "macos"))]
     {
-        windows::enumerate_windows(handle).unwrap_or_default()
+        windows::enumerate_windows().unwrap_or_default()
     }
 }
