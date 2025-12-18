@@ -1,7 +1,7 @@
 window.app = {
-    exit: () => window.ipc.postMessage('str:exit'),
+    exit: () => window.ipc.postMessage('exit'),
     getImage: async () => {
-        const response = await fetch('quickcap://bg');
+        const response = await fetch('/bg');
         const width = parseInt(response.headers.get('x-frame-width') || '0');
         const height = parseInt(response.headers.get('x-frame-height') || '0');
         response.headers.forEach((value, key) => {
@@ -25,8 +25,15 @@ window.app = {
         window.ipc.postMessage('save:' + imageData.replace('data:image/png;base64,', ''));
     },
     getWindows: async () => {
-        const response = await fetch('quickcap://windows');
+        const response = await fetch('/windows');
         const windows = await response.json();
         return windows;
+    },
+    notify: (method, params = {}) => {
+        window.ipc.postMessage(JSON.stringify({
+            type: 'notify',
+            method,
+            params
+        }));
     }
 }

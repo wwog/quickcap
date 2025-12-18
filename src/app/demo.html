@@ -86,6 +86,7 @@
         <div id="buttons">
             <button id="windows">Windows</button>
             <button id="close">Close</button>
+            <button id="notify">Notify</button>
         </div>
     </div>
 
@@ -100,6 +101,11 @@
         document.getElementById('close').addEventListener('click', () => {
             window.app.exit();
         });
+
+        document.getElementById('notify').addEventListener('click', () => {
+            window.app.notify('test', { message: 'Hello, world!' });
+        });
+        
         async function loadBackground() {
             try {
                 const { width, height, arrayBuffer } = await window.app.getImage();

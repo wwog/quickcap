@@ -8,9 +8,9 @@ pub use frame::Frame;
 use tao::{monitor::MonitorHandle, window::Window};
 
 #[cfg(target_os = "macos")]
-mod macos;
+pub mod macos;
 #[cfg(target_os = "windows")]
-mod windows;
+pub mod windows;
 
 pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
     #[cfg(target_os = "macos")]
@@ -21,13 +21,18 @@ pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
     }
     #[cfg(not(target_os = "macos"))]
     {
-        return windows::capscreen_windows(handle);
+        return windows::capscreen();
     }
 }
+
 #[allow(dead_code)]
 pub fn configure_overlay_window(window: &Window) {
     #[cfg(target_os = "macos")]
     {
         macos::configure_overlay_window(window);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        // do nothing
     }
 }

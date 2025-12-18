@@ -1,4 +1,4 @@
-use crate::app::capscreen::{error::CaptureError, frame::Frame};
+use crate::capscreen::{error::CaptureError, frame::Frame};
 use objc2::rc::Retained;
 use objc2::runtime::AnyObject;
 use objc2_app_kit::{NSScreenSaverWindowLevel, NSWindow, NSWindowCollectionBehavior};
@@ -45,7 +45,7 @@ pub fn capscreen(display_id: u32) -> Result<Frame, CaptureError> {
         CaptureError::FailedToGetRGBAData
     })?;
     Ok(Frame {
-        data: std::sync::Arc::new(data),
+        data: data,
         width: width as u32,
         height: height as u32,
     })
@@ -69,6 +69,6 @@ pub fn configure_overlay_window(window: &Window) {
         ns_window.setHidesOnDeactivate(false);
         ns_window.setIgnoresMouseEvents(false);
 
-        log::info!("Configured window as overlay with NSScreenSaverWindowLevel");
+        log::error!("Configured window as overlay with NSScreenSaverWindowLevel");
     }
 }

@@ -1,17 +1,20 @@
-use crate::app::AppEvent;
-use crate::app::capscreen::enumerate::enumerate_windows;
-use crate::app::capscreen::{Frame, capscreen, configure_overlay_window};
+use crate::capscreen::capscreen;
+use crate::capscreen::enumerate::enumerate_windows;
+use crate::app::user_event::UserEvent;
 use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
-use std::{sync::Arc, time::Instant};
-#[cfg(target_os = "macos")]
-use tao::platform::macos::WindowBuilderExtMacOS;
+use std::{
+    sync::{Arc, Condvar, Mutex},
+    time::Instant,
+};
+
 use tao::{
-    event_loop::{EventLoop, EventLoopProxy},
+    event_loop::EventLoop,
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
 };
 use wgpu::rwh::HasWindowHandle;
 
+#[allow(unused_imports)]
 #[cfg(target_os = "windows")]
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
 
@@ -19,58 +22,115 @@ use wry::{
     WebView, WebViewBuilder,
     http::{Response, header},
 };
-
+use crate::app::AppEvent;
 use dirs;
 use rfd::FileDialog;
 use std::path::PathBuf;
+
+static FILEDATA: &[u8] = include_bytes!("demo.html");
 
 #[allow(dead_code)]
 pub struct AppWindow {
     pub window: Arc<Window>,
     pub webview: WebView,
     pub monitor: MonitorHandle,
-    pub frame: Frame,
+}
+
+struct CaptureState {
+    frame: Option<crate::capscreen::Frame>,
+    error: Option<String>,
+    done: bool,
 }
 
 impl AppWindow {
-    pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<AppEvent>) -> Self {
-        let start_time = Instant::now();
+    pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<UserEvent>) -> Self {
         let proxy = event_loop.create_proxy();
-        let scale_factor = monitor.scale_factor();
-        let position = monitor.position().to_logical::<f64>(scale_factor);
-        let size = monitor.size().to_logical::<f64>(scale_factor);
-        log::info!(
-            "create attributes: position: {:?}, size: {:?}",
-            position,
-            size
-        );
+        #[cfg(target_os = "macos")]
+        let (position, size) = {
+            let scale_factor = monitor.scale_factor();
+            let position = monitor.position().to_logical::<f64>(scale_factor);
+            let size = monitor.size().to_logical::<f64>(scale_factor);
+            log::error!(
+                "create attributes: position: {:?}, size: {:?}",
+                position,
+                size
+            );
+            (position, size)
+        };
+        #[cfg(target_os = "windows")]
+        let (position, size) = unsafe {
+            use windows::Win32::UI::WindowsAndMessaging::{
+                GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
+                SM_YVIRTUALSCREEN,
+            };
+
+            let cx_virtual_screen = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+            let cy_virtual_screen = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+            let x_virtual_screen = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            let y_virtual_screen = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            // 使用虚拟桌面原点和整体尺寸，保证跨屏时位置正确
+            let position =  tao::dpi::LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
+            let size =  tao::dpi::LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
+            log::error!(
+                "create attributes: position={:?}, size={:?}",
+                position,
+                size
+            );
+            (position, size)
+        };
         let mut win_builder = WindowBuilder::new()
             .with_decorations(false)
             .with_resizable(false)
-            .with_transparent(true);
+            .with_transparent(true)
+            .with_position(position)
+            .with_inner_size(size);
+
         #[cfg(target_os = "macos")]
         {
-            win_builder = win_builder
-                .with_has_shadow(false)
-                .with_position(position)
-                .with_inner_size(size)
+            use tao::platform::macos::WindowBuilderExtMacOS;
+            win_builder = win_builder.with_has_shadow(false)
         }
         #[cfg(target_os = "windows")]
         {
-            win_builder =
-                win_builder.with_fullscreen(Some(tao::window::Fullscreen::Borderless(None)));
+            use tao::platform::windows::WindowBuilderExtWindows;
+            win_builder = win_builder.with_undecorated_shadow(false);
         }
-
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        // configure_overlay_window(&window);
+        let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
+            Mutex::new(CaptureState {
+                frame: None,
+                error: None,
+                done: false,
+            }),
+            Condvar::new(),
+        ));
 
-        let frame = capscreen(&monitor).unwrap();
+        // 启动后台截图线程
+        let capture_state_for_thread = Arc::clone(&capture_state);
+        let monitor_for_capture = monitor.clone();
+        std::thread::spawn(move || {
+            let start_capscreen_time = Instant::now();
+            let result = capscreen(&monitor_for_capture);
+            log::error!("capscreen time: {:?}", start_capscreen_time.elapsed());
 
-        // 只克隆 Arc，不克隆底层数据
-        let data_arc = Arc::clone(&frame.data);
-        let frame_width = frame.width;
-        let frame_height = frame.height;
+            // 只克隆 Arc，不克隆底层数据
+        let (lock, cvar) = &*capture_state_for_thread;
+            let mut state = lock.lock().unwrap();
+            match result {
+                Ok(frame) => {
+                    state.frame = Some(frame);
+                }
+                Err(e) => {
+                    log::error!("capscreen failed: {:?}", e);
+                    state.error = Some(format!("capscreen failed: {:?}", e));
+                }
+            }
+            state.done = true;
+            cvar.notify_all();
+        });
+
+        let capture_state_for_bg = Arc::clone(&capture_state);
         let monitor_for_enum = monitor.clone();
 
         let webview = WebViewBuilder::new()
@@ -81,11 +141,91 @@ impl AppWindow {
             .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
-            .with_custom_protocol("quickcap".into(), move |_name, req| {
-                let path = req.uri().to_string();
-                let method = req.method();
-                // log::info!("path: {:?}, method: {:?}", path, method);
+            .with_accept_first_mouse(true)
+            .with_ipc_handler(move |req| {
+                let body = req.body();
+                log::error!("ipc body: {:?}", body);
+                match body.as_str() {
+                    "exit" => {
+                        proxy.send_event(UserEvent::Exit).unwrap_or_else(|e| {
+                            log::error!("send event failed: {:?}", e);
+                        });
+                    }
+                    body.starts_with("clipboard:") => {
+                        // 处理剪切板操作
+                                        let base64_data = if body.starts_with("clipboard:base64:") {
+                                            // 新格式
+                                            body.split("clipboard:base64:").nth(1).unwrap_or("")
+                                        } else {
+                                            // 兼容旧格式（clipboard:base64）
+                                            body.split(":").nth(1).unwrap_or("")
+                                        };
 
+                                        if !base64_data.is_empty() {
+                                            match base64::decode(base64_data) {
+                                                Ok(image_data) => {
+                                                    Self::copy_image_to_clipboard(image_data);
+                                                }
+                                                Err(e) => {
+                                                    log::error!("Failed to decode base64 image data: {}", e);
+                                                }
+                                            }
+                                        }
+                                        proxy.send_event(AppEvent::Exit);Ï
+                        }
+                    body.starts_with("save:") => {
+                                    let base64_data = body.split("save:").nth(1).unwrap_or("");
+                                    if !base64_data.is_empty() {
+                                        match base64::decode(base64_data) {
+                                            Ok(image_data) => {
+                                                Self::save_image_to_folder(image_data, proxy.clone());
+                                            }
+                                            Err(e) => {
+                                                log::error!("Failed to decode base64 image data: {}", e);
+                                            }
+                                        }
+                                    }
+                                }
+                    _ => {
+                        // 尝试解析 JSON 消息
+                        if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
+                            if msg.get("type").and_then(|t| t.as_str()) == Some("notify") {
+                                if let (Some(method), Some(params)) = (
+                                    msg.get("method").and_then(|m| m.as_str()),
+                                    msg.get("params"),
+                                ) {
+                                    crate::StdRpcClient::global()
+                                        .send_notification(method, Some(params.clone()));
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .with_custom_protocol("app".into(), move |_name, req| {
+                let path = req.uri().path().to_string();
+                // log::error!("path: {:?}", path);
+                match path.as_str() {
+                    "/bg" => {
+                        let (lock, cvar) = &*capture_state_for_bg;
+                        let mut state = lock.lock().unwrap();
+
+                        // 如果截图尚未完成，则等待
+                        while !state.done {
+                            state = cvar.wait(state).unwrap();
+                        }
+
+                        // 检查是否有错误
+                        if let Some(error) = &state.error {
+                            log::error!("Capture error: {}", error);
+                            return Response::builder()
+                                .status(500)
+                                .header(header::CONTENT_TYPE, "text/plain")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .body(error.clone().into_bytes())
+                                .unwrap()
+                                .map(Into::into);
+                        }
                 // 处理 OPTIONS 预检请求
                 if method.as_str() == "OPTIONS" {
                     return Response::builder()
@@ -98,31 +238,38 @@ impl AppWindow {
                         .map(Into::into);
                 }
 
-                match path.as_str() {
-                    "quickcap://bg/" | "quickcap://bg" => {
-                        let data = Arc::try_unwrap(Arc::clone(&data_arc))
-                            .unwrap_or_else(|arc| (*arc).clone());
-                        Response::builder()
-                            .header(header::CONTENT_TYPE, "application/octet-stream")
-                            .header("Access-Control-Allow-Origin", "*")
-                            .header("Access-Control-Allow-Methods", "GET, OPTIONS")
-                            .header("Access-Control-Allow-Headers", "*")
-                            .header(
-                                "Access-Control-Expose-Headers",
-                                "x-frame-width, x-frame-height",
-                            )
-                            .header("x-frame-width", frame_width.to_string())
-                            .header("x-frame-height", frame_height.to_string())
-                            .status(200)
-                            .body(data)
-                            .unwrap()
-                            .map(Into::into)
+                        // 获取截图数据
+                        if let Some(frame) = &state.frame {
+                            let data = frame.data.clone();
+                            Response::builder()
+                                .header(header::CONTENT_TYPE, "application/octet-stream")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+                                .header("Access-Control-Allow-Headers", "*")
+                                .header(
+                                    "Access-Control-Expose-Headers",
+                                    "x-frame-width, x-frame-height",
+                                )
+                                .header("x-frame-width", frame.width.to_string())
+                                .header("x-frame-height", frame.height.to_string())
+                                .status(200)
+                                .body(data)
+                                .unwrap()
+                                .map(Into::into)
+                        } else {
+                            Response::builder()
+                                .status(500)
+                                .header(header::CONTENT_TYPE, "text/plain")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .body(b"No frame data available".to_vec())
+                                .unwrap()
+                                .map(Into::into)
+                        }
                     }
-                    "quickcap://windows/" | "quickcap://windows" => {
+                    "/windows" => {
                         let windows = enumerate_windows(&monitor_for_enum);
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
-                        log::info!("quickcap://windows/ : {:#?}", json);
                         Response::builder()
                             .header(header::CONTENT_TYPE, "application/json")
                             .header("Access-Control-Allow-Origin", "*")
@@ -133,6 +280,15 @@ impl AppWindow {
                             .unwrap()
                             .map(Into::into)
                     }
+                    "/" => Response::builder()
+                        .header(header::CONTENT_TYPE, "text/html")
+                        .header("Access-Control-Allow-Origin", "*")
+                        .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+                        .header("Access-Control-Allow-Headers", "*")
+                        .status(200)
+                        .body(FILEDATA.to_vec())
+                        .unwrap()
+                        .map(Into::into),
                     _ => Response::builder()
                         .status(404)
                         .body(vec![])
@@ -140,74 +296,19 @@ impl AppWindow {
                         .map(Into::into),
                 }
             })
-            .with_ipc_handler(Self::ipc_handler(proxy))
+            .with_transparent(true)
+            .with_url("app://localhost")
             .build(&window)
             .unwrap();
-
-        log::info!("frame time: {:?}", start_time.elapsed());
 
         Self {
             window,
             webview,
             monitor,
-            frame,
         }
     }
 
-    fn ipc_handler(
-        proxy: EventLoopProxy<AppEvent>,
-    ) -> impl Fn(wry::http::Request<String>) + 'static {
-        move |req| {
-            log::info!("IPC: {:?}", req);
-            let body = req.body();
-            if body.starts_with("str:") {
-                let action = body.split(":").nth(1).unwrap();
-                match action {
-                    "exit" => {
-                        _ = proxy.send_event(AppEvent::Exit);
-                    }
-                    _ => {
-                        log::warn!("Unknown action: {}", action);
-                    }
-                }
-            } else if body.starts_with("clipboard:") {
-                // 处理剪切板操作
-                let base64_data = if body.starts_with("clipboard:base64:") {
-                    // 新格式
-                    body.split("clipboard:base64:").nth(1).unwrap_or("")
-                } else {
-                    // 兼容旧格式（clipboard:base64）
-                    body.split(":").nth(1).unwrap_or("")
-                };
-
-                if !base64_data.is_empty() {
-                    match base64::decode(base64_data) {
-                        Ok(image_data) => {
-                            Self::copy_image_to_clipboard(image_data);
-                        }
-                        Err(e) => {
-                            log::error!("Failed to decode base64 image data: {}", e);
-                        }
-                    }
-                }
-                proxy.send_event(AppEvent::Exit);
-            } else if body.starts_with("save:") {
-                let base64_data = body.split("save:").nth(1).unwrap_or("");
-                if !base64_data.is_empty() {
-                    match base64::decode(base64_data) {
-                        Ok(image_data) => {
-                            Self::save_image_to_folder(image_data, proxy.clone());
-                        }
-                        Err(e) => {
-                            log::error!("Failed to decode base64 image data: {}", e);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // 将图像复制到剪切板的辅助函数
+// 将图像复制到剪切板的辅助函数
     fn copy_image_to_clipboard(image_data: Vec<u8>) {
         match ClipboardContext::new() {
             Ok(mut ctx) => {
