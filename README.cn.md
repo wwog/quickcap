@@ -39,3 +39,8 @@ Macos使用ScreenCaptureKit的最初实现完成，包括窗口枚举也是这�
 
 macos12.3以上 (内部使用screencapture截取单帧)
 windows大部分支持 (需要支持多显示器，所以使用了较为简单的GDI进行获取)
+
+
+## 通信
+
+unix/linux stdio. stderr is log, stdout is data.

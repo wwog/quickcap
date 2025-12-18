@@ -40,3 +40,7 @@ At the time of writing, cross-application communication hasn't been completed. I
 
 - macOS 12.3+ (internally uses ScreenCapture for single-frame capture)
 - Most Windows versions supported (uses GDI for multi-monitor support due to its simplicity)
+
+## Information exchange
+
+unix/linux stdio. stderr is log, stdout is data.

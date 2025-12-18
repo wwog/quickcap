@@ -16,8 +16,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let mut builder = env_logger::Builder::from_default_env();
-        builder.init();
+        env_logger::init();
         log::error!("App::new");
         let start_time = Instant::now();
         let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
