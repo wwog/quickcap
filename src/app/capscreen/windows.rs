@@ -14,8 +14,6 @@ use windows::Win32::{
 
 use crate::app::capscreen::{CaptureError, Frame};
 
-//todo:如何隐藏窗口 SetWindowDisplayAffinity ??
-
 pub fn capscreen() -> Result<Frame, CaptureError> {
     unsafe {
         let x = GetSystemMetrics(SM_XVIRTUALSCREEN);
