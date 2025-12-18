@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use env_logger::fmt::style::{AnsiColor, Color, Style};
+use std::io::Write;
 use tao::{
     event::{Event, WindowEvent},
     event_loop::{EventLoop, EventLoopBuilder},
@@ -11,7 +13,6 @@ use crate::{
     app::{user_event::UserEvent, window::AppWindow},
 };
 use std::time::Instant;
-
 pub struct App {
     windows: HashMap<WindowId, AppWindow>,
     event_loop: EventLoop<UserEvent>,
@@ -19,17 +20,57 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        env_logger::init();
+        let mut logger_builder = env_logger::builder();
+
+        logger_builder.format(|buf, record| {
+            let style_gray = Style::new().fg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
+            let style_cyan = Style::new()
+                .fg_color(Some(Color::Ansi(AnsiColor::Cyan)))
+                .bold();
+            let style_green = Style::new()
+                .fg_color(Some(Color::Ansi(AnsiColor::Green)))
+                .bold();
+            let style_white = Style::new().fg_color(Some(Color::Ansi(AnsiColor::White)));
+
+            writeln!(
+                buf,
+                "{}{}{} {}{}{} {}{}{} {}{}{}",
+                // 1. 时间戳 (灰色)
+                style_gray.render(),
+                buf.timestamp_millis(),
+                style_gray.render_reset(),
+                // 2. [INFO] 伪装标签 (绿色)
+                style_green.render(),
+                "[INFO]",
+                style_green.render_reset(), // <--- 之前这里用了 info_reset= 写法导致报错，现已修正
+                // 3. 模块路径 (青色)
+                style_cyan.render(),
+                record.target(),
+                style_cyan.render_reset(),
+                // 4. 日志内容 (白色)
+                style_white.render(),
+                record.args(),
+                style_white.render_reset(),
+            )
+        });
+        logger_builder.init();
         log::error!("App::new");
         let start_time = Instant::now();
         let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
         let proxy = event_loop.create_proxy();
 
-        StdRpcClient::init(move |req| {
-            if let Err(e) = proxy.send_event(UserEvent::RpcMessage(req)) {
-                log::error!("Failed to send event to GUI loop: {}", e);
-            }
-        });
+        StdRpcClient::init(
+            move |req| {
+                log::error!("RpcMessage: {:?}", req);
+                if let Err(e) = proxy.send_event(UserEvent::RpcMessage(req)) {
+                    log::error!("Failed to send event to GUI loop: {}", e);
+                }
+                Ok(serde_json::Value::Null)
+            },
+            move |notif| {
+                log::error!("RpcNotification: {:?}", notif);
+            },
+        );
 
         // Windows和Macos的逻辑并不一致，Windows是用虚拟桌面
         #[cfg(target_os = "macos")]
@@ -79,6 +120,9 @@ impl App {
                         self.windows.clear();
                         *control_flow = tao::event_loop::ControlFlow::Exit;
                     }
+                }
+                Event::UserEvent(UserEvent::RpcMessage(req)) => {
+                    log::error!("RpcMessage: {:?}", req);
                 }
                 _ => {}
             }

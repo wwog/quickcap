@@ -18,5 +18,12 @@ window.app = {
         const response = await fetch('/windows');
         const windows = await response.json();
         return windows;
+    },
+    notify: (method, params = {}) => {
+        window.ipc.postMessage(JSON.stringify({
+            type: 'notify',
+            method,
+            params
+        }));
     }
 }

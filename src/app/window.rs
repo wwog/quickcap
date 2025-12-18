@@ -139,7 +139,20 @@ impl AppWindow {
                             log::error!("send event failed: {:?}", e);
                         });
                     }
-                    _ => {}
+                    _ => {
+                        // 尝试解析 JSON 消息
+                        if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
+                            if msg.get("type").and_then(|t| t.as_str()) == Some("notify") {
+                                if let (Some(method), Some(params)) = (
+                                    msg.get("method").and_then(|m| m.as_str()),
+                                    msg.get("params"),
+                                ) {
+                                    crate::StdRpcClient::global()
+                                        .send_notification(method, Some(params.clone()));
+                                }
+                            }
+                        }
+                    }
                 }
             })
             .with_custom_protocol("app".into(), move |_name, req| {
