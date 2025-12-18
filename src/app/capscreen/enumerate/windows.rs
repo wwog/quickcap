@@ -2,9 +2,14 @@ use crate::app::capscreen::enumerate::{WindowInfo, structs::Rect};
 use windows::{
     Win32::{
         Foundation::{HWND, LPARAM, RECT},
-        Graphics::Dwm::{DWMWA_CLOAKED, DWMWA_EXTENDED_FRAME_BOUNDS, DwmGetWindowAttribute},
+        Graphics::{
+            self,
+            Dwm::{DWMWA_CLOAKED, DWMWA_EXTENDED_FRAME_BOUNDS, DwmGetWindowAttribute},
+            Gdi::{GetMonitorInfoW, HDC, HMONITOR, MONITORINFO},
+        },
         UI::WindowsAndMessaging::{
-            self, GetSystemMetrics, GetWindowInfo, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN, WINDOWINFO, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW
+            self, GetSystemMetrics, GetWindowInfo, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
+            WINDOWINFO, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
         },
     },
     core::BOOL,
@@ -15,12 +20,22 @@ pub fn enumerate_windows() -> Option<Vec<WindowInfo>> {
     // 修正 EnumWindows 的 LPARAM 构造方式，确保传递的是 isize
     let window_infos_ptr = &mut window_infos as *mut _ as isize;
     _ = unsafe {
-        WindowsAndMessaging::EnumWindows(Some(enum_window_callback), LPARAM(window_infos_ptr))
+        _ = WindowsAndMessaging::EnumWindows(Some(enum_window_callback), LPARAM(window_infos_ptr));
+        //将显示器作为窗口添加到window_infos中
+        _ = Graphics::Gdi::EnumDisplayMonitors(
+            None,
+            None,
+            Some(monitor_enum_proc),
+            LPARAM(window_infos_ptr),
+        );
     };
 
     //截屏的全尺寸窗口画布是基于虚拟桌面原点,所以需要将实际坐标转换为基于虚拟桌面原点的坐标
-    let (v_x,v_y) = unsafe {
-        (GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN))
+    let (v_x, v_y) = unsafe {
+        (
+            GetSystemMetrics(SM_XVIRTUALSCREEN),
+            GetSystemMetrics(SM_YVIRTUALSCREEN),
+        )
     };
 
     if v_x != 0 || v_y != 0 {
@@ -31,6 +46,48 @@ pub fn enumerate_windows() -> Option<Vec<WindowInfo>> {
     }
     Some(window_infos)
 }
+
+unsafe extern "system" fn monitor_enum_proc(
+    hmonitor: HMONITOR,
+    _: HDC,
+    _: *mut RECT,
+    lparam: LPARAM,
+) -> BOOL {
+    unsafe {
+        println!("monitor_enum_proc hmonitor: {hmonitor:?}");
+        let mut monitor_info = MONITORINFO {
+            cbSize: core::mem::size_of::<MONITORINFO>() as u32,
+            ..Default::default()
+        };
+        if GetMonitorInfoW(hmonitor, &mut monitor_info).as_bool() == false {
+            println!("GetMonitorInfoW failed,hmonitor: {hmonitor:?}");
+            return true.into();
+        }
+        let is_primary = (monitor_info.dwFlags & 1) != 0;
+        let Some(window_infos) = (lparam.0 as *mut Vec<WindowInfo>).as_mut() else {
+            return true.into();
+        };
+        let t = if is_primary {
+            "Primary".to_string()
+        } else {
+            format!(
+                "l{}t{}",
+                monitor_info.rcMonitor.left, monitor_info.rcMonitor.top
+            )
+        };
+        window_infos.push(WindowInfo {
+            name: format!("Monitor_{}", t),
+            bounds: Rect {
+                x: monitor_info.rcMonitor.left as f64,
+                y: monitor_info.rcMonitor.top as f64,
+                width: (monitor_info.rcMonitor.right - monitor_info.rcMonitor.left) as f64,
+                height: (monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top) as f64,
+            },
+        });
+    }
+    true.into()
+}
+
 extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     unsafe {
         let is_visible: bool = WindowsAndMessaging::IsWindowVisible(hwnd).into();
@@ -54,8 +111,13 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
         }
 
         let mut cloaked: u32 = 0;
-        if let Err(e) = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &mut cloaked as *mut _ as *mut _, 4) {
-            println!("DwmGetWindowAttribute failed,HWND is {hwnd:?} error: {:?}", e);
+        if let Err(e) =
+            DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &mut cloaked as *mut _ as *mut _, 4)
+        {
+            println!(
+                "DwmGetWindowAttribute failed,HWND is {hwnd:?} error: {:?}",
+                e
+            );
             return true.into();
         }
         if cloaked != 0 {
@@ -80,7 +142,10 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
             &mut visual_rect as *mut _ as *mut _,
             core::mem::size_of::<RECT>() as u32,
         ) {
-            println!("DwmGetWindowAttribute failed,HWND is {hwnd:?} error: {:?}", e);
+            println!(
+                "DwmGetWindowAttribute failed,HWND is {hwnd:?} error: {:?}",
+                e
+            );
             return true.into();
         }
 
@@ -88,7 +153,6 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
         if let Some(window_infos) = window_infos.as_mut() {
             window_infos.push(WindowInfo {
                 name: window_text,
-                //todo:转换逻辑分辨率
                 bounds: Rect {
                     x: visual_rect.left as f64,
                     y: visual_rect.top as f64,
