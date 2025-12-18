@@ -44,7 +44,7 @@ impl AppWindow {
             let scale_factor = monitor.scale_factor();
             let position = monitor.position().to_logical::<f64>(scale_factor);
             let size = monitor.size().to_logical::<f64>(scale_factor);
-            log::info!(
+            log::error!(
                 "create attributes: position: {:?}, size: {:?}",
                 position,
                 size
@@ -65,7 +65,7 @@ impl AppWindow {
             // 使用虚拟桌面原点和整体尺寸，保证跨屏时位置正确
             let position =  tao::dpi::LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
             let size =  tao::dpi::LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
-            log::info!(
+            log::error!(
                 "create attributes: position={:?}, size={:?}",
                 position,
                 size
@@ -106,7 +106,7 @@ impl AppWindow {
         std::thread::spawn(move || {
             let start_capscreen_time = Instant::now();
             let result = capscreen(&monitor_for_capture);
-            log::info!("capscreen time: {:?}", start_capscreen_time.elapsed());
+            log::error!("capscreen time: {:?}", start_capscreen_time.elapsed());
 
             let (lock, cvar) = &*capture_state_for_thread;
             let mut state = lock.lock().unwrap();
@@ -132,7 +132,7 @@ impl AppWindow {
             .with_accept_first_mouse(true)
             .with_ipc_handler(move |req| {
                 let body = req.body();
-                log::info!("ipc body: {:?}", body);
+                log::error!("ipc body: {:?}", body);
                 match body.as_str() {
                     "exit" => {
                         proxy.send_event(UserEvent::Exit).unwrap_or_else(|e| {
@@ -144,7 +144,7 @@ impl AppWindow {
             })
             .with_custom_protocol("app".into(), move |_name, req| {
                 let path = req.uri().path().to_string();
-                log::info!("path: {:?}", path);
+                log::error!("path: {:?}", path);
                 match path.as_str() {
                     "/bg" => {
                         let (lock, cvar) = &*capture_state_for_bg;

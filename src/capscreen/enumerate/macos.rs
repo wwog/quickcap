@@ -79,7 +79,7 @@ pub fn enumerate_windows_cg(display_id: u32) -> Vec<WindowInfo> {
         let options =
             CGWindowListOption::OptionOnScreenOnly | CGWindowListOption::ExcludeDesktopElements;
         let Some(raw_windows) = CGWindowListCopyWindowInfo(options, kCGNullWindowID) else {
-            log::warn!(
+            log::error!(
                 "CGWindowListCopyWindowInfo returned None for display {}",
                 display_id
             );
@@ -104,7 +104,7 @@ pub fn enumerate_windows_cg(display_id: u32) -> Vec<WindowInfo> {
                 window_infos.push(WindowInfo { name, bounds });
             } else {
                 CFShow(Some(&window));
-                log::warn!("Failed to extract bounds for window: {}", name);
+                log::error!("Failed to extract bounds for window: {}", name);
                 continue;
             }
         }

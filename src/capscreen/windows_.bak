@@ -41,7 +41,7 @@ impl GraphicsCaptureApiHandler for SharedFrameCapture {
             let width = frame_buffer.width();
             let height = frame_buffer.height();
             let color_format = frame_buffer.color_format();
-            log::info!(
+            log::error!(
                 "width: {}, height: {}, color_format: {:?}",
                 width,
                 height,
@@ -82,14 +82,14 @@ pub fn capscreen_windows(handle: &MonitorHandle) -> Result<Frame, CaptureError> 
     let draw_border_setting = match GraphicsCaptureApi::is_border_settings_supported() {
         Ok(true) => DrawBorderSettings::WithoutBorder,
         Ok(false) | Err(_) => {
-            log::info!("Unsupported border settings, using default settings (may have flickering)");
+            log::error!("Unsupported border settings, using default settings (may have flickering)");
             DrawBorderSettings::Default
         }
     };
     let cursor_capture_setting = match GraphicsCaptureApi::is_cursor_settings_supported() {
         Ok(true) => CursorCaptureSettings::WithoutCursor,
         Ok(false) | Err(_) => {
-            log::info!("Unsupported cursor settings, using default settings (may have cursor)");
+            log::error!("Unsupported cursor settings, using default settings (may have cursor)");
             CursorCaptureSettings::Default
         }
     };

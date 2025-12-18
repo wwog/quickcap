@@ -17,9 +17,8 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         let mut builder = env_logger::Builder::from_default_env();
-        builder.target(env_logger::Target::Stderr);
         builder.init();
-        log::info!("App::new");
+        log::error!("App::new");
         let start_time = Instant::now();
         let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
         // Windows和Macos的逻辑并不一致，Windows是用虚拟桌面
@@ -29,7 +28,7 @@ impl App {
             let windows = monitors
                 .into_iter()
                 .map(|monitor| {
-                    log::info!("Monitor: {:?}", monitor);
+                    log::error!("Monitor: {:?}", monitor);
                     AppWindow::new(monitor, &event_loop)
                 })
                 .map(|window| (window.window.id(), window))
@@ -44,7 +43,7 @@ impl App {
             let window = AppWindow::new(monitor, &event_loop);
             HashMap::from([(window.window.id(), window)])
         };
-        log::info!("windows time: {:?}", start_time.elapsed());
+        log::error!("windows time: {:?}", start_time.elapsed());
 
         Self {
             windows,
@@ -55,7 +54,7 @@ impl App {
     /// 运行应用，创建并运行事件循环
     /// 此方法永远不会返回，因为事件循环会一直阻塞运行
     pub fn run(mut self) -> ! {
-        log::info!("App::run");
+        log::error!("App::run");
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = tao::event_loop::ControlFlow::Wait;
             match event {
@@ -66,7 +65,7 @@ impl App {
                 }
                 | Event::UserEvent(UserEvent::Exit) => {
                     if !self.windows.is_empty() {
-                        log::info!("WindowEvent::CloseRequested");
+                        log::error!("WindowEvent::CloseRequested");
                         self.windows.clear();
                         *control_flow = tao::event_loop::ControlFlow::Exit;
                     }

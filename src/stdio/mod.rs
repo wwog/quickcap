@@ -1,2 +1,1 @@
-mod json_rpc;
-mod client;
+pub mod client;

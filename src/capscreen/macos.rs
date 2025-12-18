@@ -69,6 +69,6 @@ pub fn configure_overlay_window(window: &Window) {
         ns_window.setHidesOnDeactivate(false);
         ns_window.setIgnoresMouseEvents(false);
 
-        log::info!("Configured window as overlay with NSScreenSaverWindowLevel");
+        log::error!("Configured window as overlay with NSScreenSaverWindowLevel");
     }
 }
