@@ -8,8 +8,8 @@ use windows::{
             Gdi::{GetMonitorInfoW, HDC, HMONITOR, MONITORINFO},
         },
         UI::WindowsAndMessaging::{
-            self, GetSystemMetrics, GetWindowInfo, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
-            WINDOWINFO, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+            self, GetSystemMetrics, GetWindowInfo, GetWindowThreadProcessId, SM_XVIRTUALSCREEN,
+            SM_YVIRTUALSCREEN, WINDOWINFO, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
         },
     },
     core::BOOL,
@@ -54,7 +54,6 @@ unsafe extern "system" fn monitor_enum_proc(
     lparam: LPARAM,
 ) -> BOOL {
     unsafe {
-        println!("monitor_enum_proc hmonitor: {hmonitor:?}");
         let mut monitor_info = MONITORINFO {
             cbSize: core::mem::size_of::<MONITORINFO>() as u32,
             ..Default::default()
@@ -148,7 +147,11 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
             );
             return true.into();
         }
-
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        if pid == std::process::id() {
+            return true.into();
+        }
         let window_infos = lparam.0 as *mut Vec<WindowInfo>;
         if let Some(window_infos) = window_infos.as_mut() {
             window_infos.push(WindowInfo {
