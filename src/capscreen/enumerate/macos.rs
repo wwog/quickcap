@@ -5,7 +5,7 @@ use objc2_core_graphics::{
     CGWindowListCopyWindowInfo, CGWindowListOption, kCGNullWindowID, kCGWindowBounds, kCGWindowName,
 };
 use screencapturekit::prelude::SCShareableContent;
-use crate::app::capscreen::enumerate::structs::Rect;
+use crate::capscreen::enumerate::structs::Rect;
 use super::structs::WindowInfo;
 
 /// 枚举当前显示器上的所有窗口,排除自身进程,另外api使用和fork screencapture-rs 相同的api,确保窗口合理

@@ -1,5 +1,5 @@
-use crate::app::capscreen::capscreen;
-use crate::app::capscreen::enumerate::enumerate_windows;
+use crate::capscreen::capscreen;
+use crate::capscreen::enumerate::enumerate_windows;
 use crate::app::user_event::UserEvent;
 use std::{
     sync::{Arc, Condvar, Mutex},
@@ -31,7 +31,7 @@ pub struct AppWindow {
 }
 
 struct CaptureState {
-    frame: Option<crate::app::capscreen::Frame>,
+    frame: Option<crate::capscreen::Frame>,
     error: Option<String>,
     done: bool,
 }

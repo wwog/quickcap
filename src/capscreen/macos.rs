@@ -1,4 +1,4 @@
-use crate::app::capscreen::{error::CaptureError, frame::Frame};
+use crate::capscreen::{error::CaptureError, frame::Frame};
 use objc2::rc::Retained;
 use objc2::runtime::AnyObject;
 use objc2_app_kit::{NSScreenSaverWindowLevel, NSWindow, NSWindowCollectionBehavior};

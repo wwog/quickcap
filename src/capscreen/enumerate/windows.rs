@@ -1,4 +1,4 @@
-use crate::app::capscreen::enumerate::{WindowInfo, structs::Rect};
+use crate::capscreen::enumerate::{WindowInfo, structs::Rect};
 use windows::{
     Win32::{
         Foundation::{HWND, LPARAM, RECT},
