@@ -1,6 +1,6 @@
 import { DrawScreen } from "./draw";
 import "./style.css";
-// import testImg from "./test.png";
+import testImg from "./test.png";
 import { exitApp, getScreenImageData } from "./utils";
 
 const appDom = document.querySelector("#app") as HTMLDivElement;
@@ -29,23 +29,27 @@ function init() {
   //   imgDom.setAttribute("src", testImg);
   // }
 
-  // const setImgDom = () => {
-  //     const imgDom = document.createElement("img");
-  //     imgDom.onload = () => {
-  //       (window as any).drawScreen = drawScreen;
-  //       drawScreen.setImgDom(imgDom);
-  //     };
-  //     imgDom.onerror = (e) => {
-  //       console.error("Image loading failed", e);
-  //     };
-  //     imgDom.setAttribute("src", testImg);
-  // };
-  // (window as any).setImgDom = setImgDom;
+  const setImgDom = () => {
+    const imgDom = document.createElement("img");
+    imgDom.onload = () => {
+      (window as any).drawScreen = drawScreen;
+      drawScreen.setImgDom(imgDom);
+    };
+    imgDom.onerror = (e) => {
+      console.error("Image loading failed", e);
+    };
+    imgDom.setAttribute("src", testImg);
+  };
+  (window as any).setImgDom = setImgDom;
 
-  getScreenImageData().then((imgData) => {
-    console.log("🚀 ~ init ~ imgData:", imgData);
-    drawScreen.putImageData(imgData);
-  }).catch(err => console.error(err));
+  setImgDom();
+
+  getScreenImageData()
+    .then((imgData) => {
+      console.log("🚀 ~ init ~ imgData:", imgData);
+      drawScreen.putImageData(imgData);
+    })
+    .catch((err) => console.error(err));
 
   window.addEventListener("keydown", (e) => {
     console.log("🚀 ~ init ~ e:", e.key, e.keyCode);

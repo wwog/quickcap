@@ -47,6 +47,15 @@ export type TShapePath = {
   };
 }
 
+export type TShapeMosaic = {
+  id: string;
+  shape: "mosaic";
+  attr: {
+    path: Array<{ x: number; y: number }>;
+    radius: number;
+  }
+}
+
 export type TShapeArrow = {
   id: string;
   shape: "arrow";
@@ -63,4 +72,4 @@ export type TShapeArrow = {
 }
 
 
-export type TShape = TShapeRect | TShapeCircle | TShapePath | TShapeArrow;
+export type TShape = TShapeRect | TShapeCircle | TShapePath | TShapeArrow | TShapeMosaic;

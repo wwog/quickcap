@@ -327,3 +327,33 @@ export function generateUID() {
     .toString(36)
     .substring(2, 10)}-${Math.random().toString(36).substring(2, 10)}`;
 }
+
+/**
+ * 返回圆内、且落在 [0, maxX]×[0, maxY] 范围内的所有整数像素点
+ * @param {number} cx    圆心 x
+ * @param {number} cy    圆心 y
+ * @param {number} r     半径
+ * @param {number} maxX  画布右边界（含）
+ * @param {number} maxY  画布下边界（含）
+ */
+export function pointsInCircleClipped(cx: number, cy: number, r: number, maxX: number, maxY: number) {
+  const pts = [];
+  const r2 = r * r;
+
+  // 外接正方形边界（先按圆算，再和画布求交，减少无效循环）
+  const x0 = Math.max(0, Math.ceil(cx - r));
+  const x1 = Math.min(maxX, Math.floor(cx + r));
+  const y0 = Math.max(0, Math.ceil(cy - r));
+  const y1 = Math.min(maxY, Math.floor(cy + r));
+
+  for (let y = y0; y <= y1; y++) {
+    const dy = y - cy;
+    for (let x = x0; x <= x1; x++) {
+      const dx = x - cx;
+      if (dx * dx + dy * dy <= r2) {
+        pts.push({ x, y });
+      }
+    }
+  }
+  return pts;
+}

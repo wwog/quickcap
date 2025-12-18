@@ -38,6 +38,18 @@ export const items = [
     shape: "path",
   },
   {
+    id: "mosaic",
+    className: "box-select mosaic",
+    content: `<div style="width: 70%; height: 70%; position: relative; display: flex; flex-wrap: wrap;">
+      <div style="width: 50%; height: 50%; background-color: #D8D8D8; opacity: 0.5;"></div>
+      <div style="width: 50%; height: 50%; background-color: #D8D8D8; opacity: 1;"></div>
+      <div style="width: 50%; height: 50%; background-color: #D8D8D8; opacity: 1;"></div>
+      <div style="width: 50%; height: 50%; background-color: #D8D8D8; opacity:0.51;"></div>
+    </div>`,
+    role: "edit",
+    shape: "mosaic",
+  },
+  {
     id: "download",
     className: "download",
     content: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -93,6 +105,21 @@ type ItemRole = (typeof items)[number]["role"];
 export class EditTools {
   dom: HTMLDivElement;
   itemListeners: Map<string, (str?: string) => void> = new Map();
+
+  _active: string = "";
+
+  get active() {
+    return this._active;
+  }
+
+  set active(shape: string) {
+    this.dom.querySelector('.edit-tool-item.active')?.classList.remove('active');
+    if (shape) {
+      this.dom.querySelector(`.edit-tool-item[data-shape="${shape}"]`)?.classList.add('active');
+    }
+    this._active = shape;
+  }
+
   constructor(parent?: HTMLElement) {
     this.dom = document.createElement("div");
     this.dom.classList.add("edit-tool");

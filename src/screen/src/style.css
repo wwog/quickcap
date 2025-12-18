@@ -196,6 +196,9 @@ canvas {
   justify-content: center;
   align-items: center;
 }
+.edit-tool-item.active {
+  background-color: #f5f5f5;
+}
 .edit-tool-item svg {
   user-select: none;
 }

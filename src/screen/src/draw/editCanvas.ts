@@ -11,6 +11,7 @@ import {
   initCanvasSetting,
 } from "../utils/canvas";
 import type { EditCanvasMode, TShape } from "./editType";
+import { Mosaic } from "./mosaic";
 import { ResizeAssist } from "./resizeAssist";
 
 export class EditCanvas {
@@ -21,10 +22,14 @@ export class EditCanvas {
     height: number;
   } = null;
   private baseCanvas: HTMLCanvasElement;
+  private mosaicCanvas: HTMLCanvasElement;
   private editCanvas: HTMLCanvasElement;
 
   private baseCtx: CanvasRenderingContext2D;
+  private mosaicCtx: CanvasRenderingContext2D;
   private editCtx: CanvasRenderingContext2D;
+
+  private mosaic: Mosaic | null = null;
 
   private _mode: EditCanvasMode = "normal";
 
@@ -58,14 +63,21 @@ export class EditCanvas {
 
   constructor() {
     this.baseCanvas = document.createElement("canvas");
+    this.mosaicCanvas = document.createElement("canvas");
     this.editCanvas = document.createElement("canvas");
     this.baseCtx = this.baseCanvas.getContext("2d") as CanvasRenderingContext2D;
+    this.mosaicCtx = this.mosaicCanvas.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
     this.editCtx = this.editCanvas.getContext("2d") as CanvasRenderingContext2D;
 
     this.baseCanvas.style.position = "absolute";
+    this.mosaicCanvas.style.position = "absolute";
     this.editCanvas.style.position = "absolute";
     this.baseCanvas.style.top = "0px";
     this.baseCanvas.style.left = "0px";
+    this.mosaicCanvas.style.top = "0px";
+    this.mosaicCanvas.style.left = "0px";
     this.editCanvas.style.left = "0px";
     this.editCanvas.style.left = "0px";
 
@@ -127,6 +139,7 @@ export class EditCanvas {
               maxY: this.lastImg!.height,
             });
             this.drawState.attr = rect;
+            this.renderAll();
             break;
           case "circle":
             const ellipse = calculateEllipseFromRect(this.currentDrawPos, {
@@ -134,6 +147,7 @@ export class EditCanvas {
               maxY: this.lastImg!.height,
             });
             this.drawState.attr = ellipse;
+            this.renderAll();
             break;
           case "path":
             if (!this.drawState.attr.path.length) {
@@ -143,6 +157,35 @@ export class EditCanvas {
               });
             }
             this.drawState.attr.path.push({ x: x, y: y });
+            this.renderPreview();
+            break;
+          case "mosaic":
+            console.log(
+              `%c🎄 mosaic`,
+              "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+              x,
+              y,
+              this.mosaic
+            );
+            if (!this.drawState.attr.path.length) {
+              this.drawState.attr.path.push({
+                x: this.currentDrawPos.x1,
+                y: this.currentDrawPos.y1,
+              });
+              this.mosaic?.drawMosaicForCircle({
+                cx: this.currentDrawPos.x1,
+                cy: this.currentDrawPos.y1,
+                r: this.drawState.attr.radius,
+                fresh: true,
+              });
+            }
+            this.drawState.attr.path.push({ x: x, y: y });
+            this.mosaic?.drawMosaicForCircle({
+              cx: x,
+              cy: y,
+              r: this.drawState.attr.radius,
+              fresh: true,
+            });
             break;
           case "arrow":
             this.drawState.attr = {
@@ -151,11 +194,11 @@ export class EditCanvas {
               toX: this.currentDrawPos.x2,
               toY: this.currentDrawPos.y2,
             };
+            this.renderAll();
             break;
           default:
             break;
         }
-        this.renderAll();
       }
     });
     document.body.addEventListener("mouseup", (e) => {
@@ -183,6 +226,10 @@ export class EditCanvas {
       width,
       height,
     });
+    initCanvasSetting(this.mosaicCanvas, {
+      width,
+      height,
+    });
     initCanvasSetting(this.editCanvas, {
       width,
       height,
@@ -191,6 +238,7 @@ export class EditCanvas {
 
   setParentDom(parentDom: HTMLElement) {
     parentDom.appendChild(this.baseCanvas);
+    parentDom.appendChild(this.mosaicCanvas);
     parentDom.appendChild(this.editCanvas);
   }
 
@@ -203,6 +251,17 @@ export class EditCanvas {
   }
 
   private getImageDataUrl() {
+    this.baseCtx.drawImage(
+      this.mosaicCanvas,
+      0,
+      0,
+      this.mosaicCanvas.width,
+      this.mosaicCanvas.height,
+      0,
+      0,
+      this.lastImg!.width,
+      this.lastImg!.height
+    );
     this.baseCtx.drawImage(
       this.editCanvas,
       0,
@@ -294,7 +353,13 @@ export class EditCanvas {
     ) {
       return;
     }
-    this.baseCtx.drawImage(
+    const t0 = performance.now();
+    const imgData = (img as HTMLCanvasElement)
+      .getContext("2d")!
+      .getImageData(x * DPR, y * DPR, width * DPR, height * DPR);
+    this.baseCtx.putImageData(imgData, 0, 0);
+
+    /* this.baseCtx.drawImage(
       img,
       x * DPR,
       y * DPR,
@@ -304,7 +369,10 @@ export class EditCanvas {
       0,
       width,
       height
-    );
+    ); */
+
+    const t1 = performance.now();
+    console.log(`drawImage cost ${t1 - t0} ms`);
     this.lastImg = {
       x,
       y,
@@ -313,6 +381,11 @@ export class EditCanvas {
     };
 
     this.initListener();
+
+    this.mosaic = new Mosaic({
+      imgData,
+      canvas: this.mosaicCanvas,
+    });
   }
 
   setShape(shape = "rect") {
@@ -364,6 +437,16 @@ export class EditCanvas {
           pen: {
             color: "#ff0000",
             lineWidth: 2,
+          },
+        };
+        break;
+      case "mosaic":
+        this.drawState = {
+          id: generateUID(),
+          shape: "mosaic",
+          attr: {
+            path: [],
+            radius: 10,
           },
         };
         break;

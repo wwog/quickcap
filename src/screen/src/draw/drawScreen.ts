@@ -156,12 +156,11 @@ export class DrawScreen {
       {
         role: "edit",
         listener: (shape?: string) => {
-          console.log("🚀 ~ DrawScreen ~ constructor ~ shape:", shape);
           this.setEditCanvasBg();
           this.editCanvas.setMode("edit");
-          if (shape) {
-            this.editCanvas.setShape(shape);
-          }
+          const newShape = shape === this.editTools.active ? "" : shape || "";
+          this.editCanvas.setShape(newShape);
+          this.editTools.active = newShape;
         },
       },
       {
@@ -186,38 +185,46 @@ export class DrawScreen {
       },
     ]);
 
-    (window as any).app.getWindows().then((windows: {name:string; bounds: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    }}[]) => {
-      console.log("🚀 ~ DrawScreen ~ constructor ~ windows:", windows);
-      const maxX = window.innerWidth;
-      const maxY = window.innerHeight;
-      const arr: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-      }[] = [];
-      windows.forEach(win => {
-        if (win.name !== 'tao window') {
-          const {x, y, width, height} = win.bounds;
+    (window as any).app
+      ?.getWindows?.()
+      .then(
+        (
+          windows: {
+            name: string;
+            bounds: {
+              x: number;
+              y: number;
+              width: number;
+              height: number;
+            };
+          }[]
+        ) => {
+          const maxX = window.innerWidth;
+          const maxY = window.innerHeight;
+          const arr: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+          }[] = [];
+          windows.forEach((win) => {
+            if (win.name !== "tao window") {
+              const { x, y, width, height } = win.bounds;
 
-          arr.push(getRectForWindow({x, y, width, height}));
+              arr.push(getRectForWindow({ x, y, width, height }));
+            }
+          });
+          // Add the main window area
+          arr.push({
+            x: 0,
+            y: 0,
+            width: maxX,
+            height: maxY,
+          });
+          this.windows = arr;
         }
-      });
-      // Add the main window area
-      arr.push({
-        x: 0,
-        y: 0,
-        width: maxX,
-        height: maxY,
-      });
-      this.windows = arr;
-      
-    });
+      )
+      .catch((err: any) => console.error(err));
   }
 
   setImgDom = (imgDom: HTMLImageElement) => {

@@ -75,9 +75,9 @@ impl AppWindow {
 
         let webview = WebViewBuilder::new()
             // .with_html(include_str!("demo.html"))
-            .with_html(include_str!("dist/index.html"))
+            // .with_html(include_str!("dist/index.html"))
             // .with_url("quickcap://index.html/")
-            // .with_url("http://localhost:5173/")
+            .with_url("http://localhost:5173/")
             .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
