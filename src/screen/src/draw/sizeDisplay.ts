@@ -23,7 +23,7 @@ export class SizeDisplay {
       width: number;
     }
   ) => {
-    if (!show) {
+    if (!show || (!height && !width)) {
       this.dom.style.visibility = "hidden";
       return;
     }
