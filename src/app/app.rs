@@ -6,7 +6,10 @@ use tao::{
     window::WindowId,
 };
 
-use crate::app::{user_event::UserEvent, window::AppWindow};
+use crate::{
+    StdRpcClient,
+    app::{user_event::UserEvent, window::AppWindow},
+};
 use std::time::Instant;
 
 pub struct App {
@@ -20,6 +23,14 @@ impl App {
         log::error!("App::new");
         let start_time = Instant::now();
         let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
+        let proxy = event_loop.create_proxy();
+
+        StdRpcClient::init(move |req| {
+            if let Err(e) = proxy.send_event(UserEvent::RpcMessage(req)) {
+                log::error!("Failed to send event to GUI loop: {}", e);
+            }
+        });
+
         // Windows和Macos的逻辑并不一致，Windows是用虚拟桌面
         #[cfg(target_os = "macos")]
         let windows = {
