@@ -127,7 +127,6 @@ impl AppWindow {
         let monitor_for_enum = monitor.clone();
 
         let webview = WebViewBuilder::new()
-            .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
             .with_accept_first_mouse(true)
             .with_ipc_handler(move |req| {
