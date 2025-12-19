@@ -104,7 +104,7 @@ impl AppWindow {
         }
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        // configure_overlay_window(&window);
+        crate::capscreen::configure_overlay_window(&window);
 
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
             Mutex::new(CaptureState {
