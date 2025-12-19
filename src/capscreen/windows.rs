@@ -43,7 +43,7 @@ pub fn capscreen() -> Result<Frame, CaptureError> {
             _ = DeleteObject(HGDIOBJ(h_bitmap.0));
             _ = DeleteDC(h_memory_dc);
             ReleaseDC(None, h_screen_dc);
-            println!("BitBlt failed, error: {:?}", e);
+            log::error!("BitBlt failed, error: {:?}", e);
             return Err(CaptureError::FailedToCaptureImage);
         }
 
@@ -82,7 +82,7 @@ pub fn capscreen() -> Result<Frame, CaptureError> {
         ReleaseDC(None, h_screen_dc);
 
         if lines_copied == 0 {
-            println!("GetDIBits failed, lines_copied: {}", lines_copied);
+            log::error!("GetDIBits failed, lines_copied: {}", lines_copied);
             return Err(CaptureError::FailedToCaptureImage);
         }
         Ok(Frame {

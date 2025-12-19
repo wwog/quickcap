@@ -57,7 +57,7 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
         if window_right < display_left || window_left > display_right || window_bottom < display_top || window_top > display_bottom {
             continue;
         }
-        println!("window: {:?}", window);
+        log::error!("window: {:?}", window);
         window_infos.push(WindowInfo {
             name: window.title().unwrap_or_default(),
             bounds: Rect {

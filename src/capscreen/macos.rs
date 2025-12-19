@@ -65,7 +65,7 @@ pub fn configure_overlay_window(window: &Window) {
             | NSWindowCollectionBehavior::FullScreenAuxiliary
             | NSWindowCollectionBehavior::IgnoresCycle;
         ns_window.setCollectionBehavior(behavior);
-
+        ns_window.setMovable(false);
         ns_window.setHidesOnDeactivate(false);
         ns_window.setIgnoresMouseEvents(false);
 
