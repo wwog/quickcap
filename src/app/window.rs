@@ -1,16 +1,16 @@
-use crate::{app::user_event::UserEvent, capscreen::configure_overlay_window};
+use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
 use crate::capscreen::enumerate::enumerate_windows;
 use arboard::ImageData;
-use image::{ImageBuffer, ImageFormat, Rgba};
-use tao::platform::macos::WindowBuilderExtMacOS;
-use tao::rwh_06::HasWindowHandle;
+use png::{BitDepth, ColorType, Encoder, Filter};
 use std::{
     borrow::Cow,
-    path,
+    fs::File,
+    io::BufWriter,
     sync::{Arc, Condvar, Mutex},
     time::Instant,
 };
+use tao::platform::macos::WindowBuilderExtMacOS;
 
 use tao::{
     event_loop::EventLoop,
@@ -106,7 +106,6 @@ impl AppWindow {
         }
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-
         // configure_overlay_window(&window);
 
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
@@ -195,18 +194,15 @@ impl AppWindow {
                             .unwrap()
                             .parse::<u32>()
                             .unwrap();
+
                         let body = req.into_body();
-                        // save image to folder
-                        let start = Instant::now();
-                        let img_buf: ImageBuffer<Rgba<u8>, Vec<u8>> =
-                            ImageBuffer::from_vec(width, height, body).unwrap();
-                        log::error!("create image time: {:?}", start.elapsed());
+
                         let download_dir =
                             dirs::download_dir().unwrap_or_else(|| PathBuf::from("/"));
                         let now = Local::now();
                         let date_str = now.format("%Y%m%d");
                         let time_str = now.format("%H%M%S");
-                        let default_name = format!("screenshot{}{}.webp", date_str, time_str);
+                        let default_name = format!("screenshot{}{}.png", date_str, time_str);
                         let file_path = FileDialog::new()
                             .add_filter("PNG", &["png"])
                             .set_directory(&download_dir)
@@ -214,12 +210,20 @@ impl AppWindow {
                             .set_file_name(&default_name)
                             // .set_parent(&window.window_handle().unwrap())
                             .save_file();
-                        if let Some(path) = file_path {
-                            let start = Instant::now();
-                            
-                            img_buf.save_with_format(path, ImageFormat::WebP);
-                            log::error!("save image time: {:?}", start.elapsed());
-                        }
+
+                        let file = File::create(file_path.unwrap()).unwrap();
+                        let writer = BufWriter::new(file);
+
+                        let mut encoder = Encoder::new(writer, width, height);
+                        encoder.set_color(ColorType::Rgba);
+                        encoder.set_depth(BitDepth::Eight);
+
+                        encoder.set_compression(png::Compression::NoCompression);
+                        encoder.set_filter(Filter::NoFilter);
+                        let start = Instant::now();
+                        let mut png_writer = encoder.write_header().unwrap();
+                        png_writer.write_image_data(&body).unwrap();
+                        log::error!("save image time: {:?}", start.elapsed());
                         Response::builder()
                             .status(200)
                             .body(b"success".to_vec())
