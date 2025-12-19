@@ -338,14 +338,12 @@ impl AppWindow {
     fn copy_image_to_clipboard(image_data: Vec<u8>) {
         match ClipboardContext::new() {
             Ok(mut ctx) => {
-                let str = if cfg!(target_os = "macos") {
-                    "public.png"
-                } else {
-                    "image/png"
-                };
-                match ctx.set_buffer(&str, image_data) {
-                    Ok(_) => println!("图像已成功复制到剪贴板"),
-                    Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                match RustImageData::from_bytes(&image_data) {
+                    Ok(rust_image) => match ctx.set_image(rust_image) {
+                        Ok(_) => println!("图像已成功复制到剪贴板"),
+                        Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                    },
+                    Err(e) => eprintln!("将图像数据转换为RustImageData失败: {}", e),
                 }
             }
             Err(e) => eprintln!("创建剪贴板上下文失败: {}", e),
