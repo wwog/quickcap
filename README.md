@@ -1,46 +1,44 @@
 # Screenshot Tool
 
-[中文文档](./README.cn.md)
-
 ## Technical Implementation
 
-Windows uses GDI. Although DXGI and GraphicCapture offer faster single-frame capture speeds and don't require manual multi-monitor stitching, these newer APIs are primarily designed for remote desktop and video scenarios. For our architecture's CPU-heavy processing use cases, they are slower and more complex than GDI.
+Windows uses GDI for screen capture. The reason is that whether it's DXGI or GraphicCapture, GDI is faster for single-frame capture and doesn't require manual multi-monitor stitching. These two new APIs primarily serve remote and video scenarios, which are slower than GDI and more complex for most CPU-processing scenarios in the current architecture.
 
-macOS uses the initial implementation of ScreenCaptureKit, including window enumeration with the same API to maintain balance between window retrieval and capture. Due to macOS desktop spaces being bound to displays, two display-sized windows are used as overlay layers (Windows doesn't have this limitation). Additionally, we forked the screencapture-rs library to add CGDisplayCreateImage implementation and other features. This project also implements enumerate_windows_cg for compatibility needs. CGWindowListCopyWindowInfo and CGDisplayCreateImage support most macOS versions.
+macOS uses the initial implementation of ScreenCaptureKit, including window enumeration, which is also part of this API to ensure balance between window acquisition and capture. Since macOS desktop space is bound to display presentation, there will be two display-sized windows as overlays, which Windows doesn't have this limitation. Additionally, the screencapture-rs library was forked, adding CGDisplayCreateImage implementation and some other features. This project also implements enumerate_windows_cg for compatibility needs. CGWindowListCopyWindowInfo and CGDisplayCreateImage can support most macOS versions.
 
-Early commits used wgpu for background rendering, but it doesn't support external textures. The optimal solution might be platform-specific implementation or Skia. However, considering complexity and platform differences, we chose webview.
+Early commits used wgpu for background rendering, but it doesn't support external textures. The best solution might be platform-specific implementations or Skia. However, considering complexity and platform differences, webview was chosen.
 
-Early commits also experimented with DXGI and Graphic.Capture.
+Early commits also attempted DXGI and Graphic.Capture.
 
-Screenshot and system calls are handled by Rust. The main latency source is webview cold start. Future optimization could consider a service-style hidden window approach. A 4K screenshot window can be opened in about 100ms.
+Screenshot capture and a series of system calls are handled by Rust. The main latency comes from webview cold start. Subsequent optimizations could consider a service-style hidden window. It can complete 4K screen capture window opening in around 100ms.
 
 ## Features
 
 - Multi-monitor support
 - Cross-platform support (macOS, Windows)
-- Fast response (around 300ms to display on Mac with dual 4K monitors; around 300ms on Windows with dual 2K monitors and older CPU)
+- Fast response (around 300ms to complete display on macOS with dual 4K monitors) (around 300ms to complete display on Windows with dual 2K monitors, even with old CPUs)
 - Window awareness
 - Clipboard, brush, and other common features
 
-## Optimization Opportunities
+## Optimization Points
 
-There are many optimization opportunities in this project. To achieve instant startup like WeChat, it could be changed to a service-style approach—initializing the webview (the heaviest dependency) and keeping it hidden. Memory usage is not particularly high.
+There are still many optimization points in the project. To achieve WeChat's instant startup, it can be changed to a service-style approach, initializing the webview (the heaviest dependency) and then hiding it. Memory usage is not particularly high.
 
-Alternatively, if complexity isn't a concern, using Swift & C# for single-platform implementation is recommended. Without webview, replacing GDI on Windows, both platforms can directly capture textures for fast rendering, achieving zero-copy. Both also support direct BGRA usage.
+Alternatively, if complexity is not a concern, it's recommended to use Swift && C# for single-platform implementation. Instead of using webview, replace GDI on Windows. Both can directly capture textures for fast rendering, achieving zero-copy. Both also support direct use of BGRA.
 
-Another option is using Skia while keeping Rust for cross-platform support. Based on research (not yet tested), Skia should support `CVImageBuffer`, `IOSurface`, and Windows' `D3D11Texture`. It also facilitates drawing operations like frames and annotations before final export.
+Another option is to use Skia, keeping Rust for cross-platform. Skia has been researched but not tried. It should support `CVImageBuffer`, `IOSurface`, and Windows' `D3D11Texture`. It can also conveniently draw, frame, and other operations for final export.
 
-The best cross-platform implementation is Skia—it offers high cold-start efficiency and moderate complexity.
+The best cross-platform implementation is Skia, with very high cold start efficiency and not particularly high complexity.
 
-## Notes
+## Others
 
-At the time of writing, cross-application communication hasn't been completed. If not implemented when you read this, it might use stdio, with the caller detecting standard output to determine program execution status. Additionally, all code is implemented in the lib crate, so you can easily build dynamic libraries for invocation, such as Node.js native modules or platform dynamic libraries. Note that when used as a dynamic library, this feature blocks the main thread. Most systems require the UI thread on the main thread, which is extremely difficult to solve—meaning when you call this dynamic library from your application, the original application will be unresponsive until the operation completes.
+At the time of writing this documentation, cross-application communication has not been completed. If it's not implemented when you see this, it may use stdio format, with the initiator detecting standard output to determine the dynamic execution of the program. Additionally, all code implementations are in the lib crate. You can also easily build dynamic libraries for calls, such as Node.js native modules or platform dynamic libraries. Note that if this functionality is used as a dynamic library, it will block the main thread. Most systems require the UI thread to be on the main thread, which is extremely difficult to solve. That is, when you call this dynamic library during your own application execution, the original application will be unresponsive until the operation is complete.
 
-## System Requirements
+## Requirements
 
-- macOS 12.3+ (internally uses ScreenCapture for single-frame capture)
-- Most Windows versions supported (uses GDI for multi-monitor support due to its simplicity)
+macOS 12.3+ (uses screencapture internally for single-frame capture)
+Most Windows versions supported (needs multi-monitor support, so uses simpler GDI for acquisition)
 
-## Information exchange
+## Communication
 
-unix/linux stdio. stderr is log, stdout is data.
+Unix/Linux stdio. stderr is log, stdout is data.
