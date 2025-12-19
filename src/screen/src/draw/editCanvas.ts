@@ -270,7 +270,7 @@ export class EditCanvas {
     return this.editCtx;
   }
 
-  private async getImageDataUrl() {
+  private async generateImageData() {
     this.baseCtx.drawImage(
       this.mosaicCanvas,
       0,
@@ -298,7 +298,7 @@ export class EditCanvas {
     return Promise.resolve(imgData);
     /* return new Promise((resolve) => {
       this.baseCanvas.toBlob((blob) => {
-        console.log("🚀 ~ EditCanvas ~ getImageDataUrl ~ blob:", blob);
+        console.log("🚀 ~ EditCanvas ~ generateImageData ~ blob:", blob);
         if (blob) {
           blob.arrayBuffer().then((arrayBuffer) => {
             resolve(arrayBuffer);
@@ -311,9 +311,10 @@ export class EditCanvas {
 
   writeToClipboard = async () => {
     console.log("writeToClipboard");
-    const imgData = await this.getImageDataUrl();
+    const imgData = await this.generateImageData();
     // const imgData = this.baseCtx.getImageData(0, 0, this.lastImg!.width * DPR, this.lastImg!.height * DPR);
-    (window as any).app.copyToClipboard(imgData);
+    await (window as any).app.copyToClipboard(imgData);
+    (window as any).app.exit();
     /*  await this.baseCanvas.toBlob(async (blob) => {
       if (blob) {
         try {
@@ -361,8 +362,9 @@ export class EditCanvas {
 
   saveImageToFolder = async () => {
     console.log("saveImageToFolder");
-    const imageData = await this.getImageDataUrl();
-    (window as any).app.saveImageToFolder(imageData);
+    const imageData = await this.generateImageData();
+    await (window as any).app.saveImageToFolder(imageData);
+    (window as any).app.exit();
   };
 
   setImg({
