@@ -1,6 +1,6 @@
 import { DrawScreen } from "./draw";
 import "./style.css";
-import testImg from "./test.png";
+// import testImg from "./test.png";
 import { exitApp, getScreenImageData } from "./utils";
 
 const appDom = document.querySelector("#app") as HTMLDivElement;
@@ -29,7 +29,7 @@ function init() {
   //   imgDom.setAttribute("src", testImg);
   // }
 
-  const setImgDom = () => {
+  /* const setImgDom = () => {
     const imgDom = document.createElement("img");
     imgDom.onload = () => {
       (window as any).drawScreen = drawScreen;
@@ -42,7 +42,7 @@ function init() {
   };
   (window as any).setImgDom = setImgDom;
 
-  setImgDom();
+  setImgDom(); */
 
   getScreenImageData()
     .then((imgData) => {
