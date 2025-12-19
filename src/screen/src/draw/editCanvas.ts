@@ -294,19 +294,26 @@ export class EditCanvas {
       this.lastImg!.height
     );
     // return this.baseCanvas.toDataURL("image/png");
-    return new Promise((resolve) => {
+    const imgData = this.baseCtx.getImageData(0, 0, this.lastImg!.width * DPR, this.lastImg!.height * DPR);
+    return Promise.resolve(imgData);
+    /* return new Promise((resolve) => {
       this.baseCanvas.toBlob((blob) => {
+        console.log("🚀 ~ EditCanvas ~ getImageDataUrl ~ blob:", blob);
         if (blob) {
-          resolve(blob.arrayBuffer());
+          blob.arrayBuffer().then((arrayBuffer) => {
+            resolve(arrayBuffer);
+          });
+          // resolve(blob);
         }
-      });
-    })
+      }, "image/png", 1);
+    }) */
   }
 
   writeToClipboard = async () => {
     console.log("writeToClipboard");
-    const dataURL = await this.getImageDataUrl();
-    (window as any).app.copyToClipboard(dataURL);
+    const imgData = await this.getImageDataUrl();
+    // const imgData = this.baseCtx.getImageData(0, 0, this.lastImg!.width * DPR, this.lastImg!.height * DPR);
+    (window as any).app.copyToClipboard(imgData);
     /*  await this.baseCanvas.toBlob(async (blob) => {
       if (blob) {
         try {
@@ -354,8 +361,8 @@ export class EditCanvas {
 
   saveImageToFolder = async () => {
     console.log("saveImageToFolder");
-    const dataURL = await this.getImageDataUrl();
-    (window as any).app.saveImageToFolder(dataURL);
+    const imageData = await this.getImageDataUrl();
+    (window as any).app.saveImageToFolder(imageData);
   };
 
   setImg({

@@ -23,11 +23,23 @@ window.app = {
         // post发送二进制数据
         await fetch("/copy", {
             method: "POST",
-            body: imageData,
+            headers: {
+                'x-frame-width': imageData.width,
+                'x-frame-height': imageData.height,
+            },
+            body: imageData.data,
         })
     },
     saveImageToFolder: async (imageData) => {
-        window.ipc.postMessage('save:' + imageData.replace('data:image/png;base64,', ''));
+        // window.ipc.postMessage('save:' + imageData.replace('data:image/png;base64,', ''));
+        await fetch("/save", {
+            method: "POST",
+            headers: {
+                'x-frame-width': imageData.width,
+                'x-frame-height': imageData.height,
+            },
+            body: imageData.data,
+        })
     },
     getWindows: async () => {
         const response = await fetch('/windows');
