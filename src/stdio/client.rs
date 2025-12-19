@@ -8,9 +8,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-// --- 1. 定义三大核心结构 (User Facing) ---
 
-/// 1. 请求：有 ID，期望回复
 #[derive(Debug, Clone)]
 pub struct RpcRequest {
     pub method: String,
@@ -18,14 +16,12 @@ pub struct RpcRequest {
     pub id: Value, // ID 可以是 Number 或 String
 }
 
-/// 2. 通知：无 ID，不期望回复
 #[derive(Debug, Clone)]
 pub struct RpcNotification {
     pub method: String,
     pub params: Option<Value>,
 }
 
-/// 3. 响应：有 ID，包含结果或错误
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RpcResponse {
     pub jsonrpc: String,
@@ -43,8 +39,7 @@ pub struct RpcError {
     pub data: Option<Value>,
 }
 
-// --- 2. 内部通用解析结构 (Internal) ---
-// 用于先接收所有字段，再通过逻辑判断分类，比 serde(untagged) 更稳健
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct RawMessage {
     jsonrpc: Option<String>,
@@ -55,7 +50,6 @@ struct RawMessage {
     id: Option<Value>,
 }
 
-// --- 3. RPC 客户端单例 ---
 
 static INSTANCE: OnceLock<StdRpcClient> = OnceLock::new();
 
