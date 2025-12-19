@@ -357,3 +357,39 @@ export function pointsInCircleClipped(cx: number, cy: number, r: number, maxX: n
   }
   return pts;
 }
+
+/**
+ * 在两点之间生成均匀分布的插值点
+ * @param {number} x1 起点x坐标
+ * @param {number} y1 起点y坐标
+ * @param {number} x2 终点x坐标
+ * @param {number} y2 终点y坐标
+ * @param {number} radius 圆半径，用于计算合适的插值点数量
+ * @returns {Array<{x: number, y: number}>} 插值点数组
+ */
+export function interpolatePoints(x1: number, y1: number, x2: number, y2: number, radius: number) {
+  const points: Array<{x: number, y: number}> = [];
+  
+  // 计算两点之间的距离
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // 根据半径计算需要的插值点数量，确保圆之间有一定重叠
+  // 重叠因子设为0.5，确保相邻圆之间有50%的重叠区域
+  // 两个圆的中心距离应该是：2 * radius * (1 - overlapFactor)
+  const overlapFactor = 0.5;
+  const step = 2 * radius * (1 - overlapFactor);
+  const numPoints = Math.max(2, Math.ceil(distance / step));
+  
+  // 生成插值点
+  for (let i = 0; i < numPoints; i++) {
+    const t = i / numPoints;
+    const x = x1 + dx * t;
+    const y = y1 + dy * t;
+    points.push({ x, y });
+  }
+  points.push({ x: x2, y: y2 });
+  
+  return points;
+}

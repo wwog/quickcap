@@ -1,5 +1,5 @@
 import { DPR } from "../const";
-import { generateUID } from "../utils";
+import { generateUID, interpolatePoints } from "../utils";
 import {
   calculateEllipseFromRect,
   calculateRectFromPoints,
@@ -178,14 +178,34 @@ export class EditCanvas {
                 r: this.drawState.attr.radius,
                 fresh: true,
               });
+            } else {
+              // 获取上一个记录的点
+              const lastPoint = this.drawState.attr.path[this.drawState.attr.path.length - 1];
+              
+              // 在当前点和上一个点之间生成插值点
+              const interpolatedPoints = interpolatePoints(
+                lastPoint.x,
+                lastPoint.y,
+                x,
+                y,
+                this.drawState.attr.radius
+              );
+              
+              // 跳过第一个点（已经处理过）
+              for (let i = 1; i < interpolatedPoints.length; i++) {
+                const interpolatedPoint = interpolatedPoints[i];
+                this.drawState.attr.path.push({
+                  x: interpolatedPoint.x,
+                  y: interpolatedPoint.y,
+                });
+                this.mosaic?.drawMosaicForCircle({
+                  cx: interpolatedPoint.x,
+                  cy: interpolatedPoint.y,
+                  r: this.drawState.attr.radius,
+                  fresh: true,
+                });
+              }
             }
-            this.drawState.attr.path.push({ x: x, y: y });
-            this.mosaic?.drawMosaicForCircle({
-              cx: x,
-              cy: y,
-              r: this.drawState.attr.radius,
-              fresh: true,
-            });
             break;
           case "arrow":
             this.drawState.attr = {
