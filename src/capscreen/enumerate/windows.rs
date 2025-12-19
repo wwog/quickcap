@@ -59,7 +59,7 @@ unsafe extern "system" fn monitor_enum_proc(
             ..Default::default()
         };
         if GetMonitorInfoW(hmonitor, &mut monitor_info).as_bool() == false {
-            println!("GetMonitorInfoW failed,hmonitor: {hmonitor:?}");
+            log::error!("GetMonitorInfoW failed,hmonitor: {hmonitor:?}");
             return true.into();
         }
         let is_primary = (monitor_info.dwFlags & 1) != 0;
@@ -99,7 +99,7 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
         };
 
         if let Err(e) = GetWindowInfo(hwnd, &mut window_info) {
-            println!("GetWindowInfo failed,HWND is {hwnd:?} error: {:?}", e);
+            log::error!("GetWindowInfo failed,HWND is {hwnd:?} error: {:?}", e);
             return true.into();
         }
 
@@ -113,7 +113,7 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
         if let Err(e) =
             DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &mut cloaked as *mut _ as *mut _, 4)
         {
-            println!(
+            log::error!(
                 "DwmGetWindowAttribute failed,HWND is {hwnd:?} error: {:?}",
                 e
             );
@@ -141,7 +141,7 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
             &mut visual_rect as *mut _ as *mut _,
             core::mem::size_of::<RECT>() as u32,
         ) {
-            println!(
+            log::error!(
                 "DwmGetWindowAttribute failed,HWND is {hwnd:?} error: {:?}",
                 e
             );
