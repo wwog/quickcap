@@ -1,14 +1,15 @@
 use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
 use crate::capscreen::enumerate::enumerate_windows;
-use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
+use clipboard_rs::common::RustImage;
+use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat, RustImageData};
 use std::{
     sync::{Arc, Condvar, Mutex},
     time::Instant,
 };
 
 use tao::{
-    event_loop::{EventLoop,EventLoopProxy},
+    event_loop::{EventLoop, EventLoopProxy},
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
 };
@@ -19,8 +20,8 @@ use tao::{
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
 
 use crate::app::user_event::UserEvent as AppEvent;
+use chrono::{DateTime, Local};
 use dirs;
-use chrono::{Local, DateTime};
 use rfd::FileDialog;
 use std::path::PathBuf;
 use wry::{
@@ -300,15 +301,36 @@ impl AppWindow {
     fn copy_image_to_clipboard(image_data: Vec<u8>) {
         match ClipboardContext::new() {
             Ok(mut ctx) => {
-                let str = if cfg!(target_os = "macos") {
-                    "public.png"
-                } else {
-                    "image/png"
-                };
-                match ctx.set_buffer(&str, image_data) {
-                    Ok(_) => println!("图像已成功复制到剪贴板"),
-                    Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                match RustImageData::from_bytes(&image_data) {
+                    Ok(rust_image) => match ctx.set_image(rust_image) {
+                        Ok(_) => println!("图像已成功复制到剪贴板"),
+                        Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                    },
+                    Err(e) => eprintln!("将图像数据转换为RustImageData失败: {}", e),
                 }
+                /* if cfg!(target_os = "windows") {
+                    // 在Windows平台上，使用set_image函数以支持CF_DIB格式，确保最大兼容性
+                    match RustImageData::from_bytes(&image_data) {
+                        Ok(rust_image) => {
+                            match ctx.set_image(rust_image) {
+                                Ok(_) => println!("图像已成功复制到剪贴板"),
+                                Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                            }
+                        }
+                        Err(e) => eprintln!("将图像数据转换为RustImageData失败: {}", e),
+                    }
+                } else {
+                    // 在其他平台上，使用原有的set_buffer方法
+                    let format = if cfg!(target_os = "macos") {
+                        "public.png"
+                    } else {
+                        "image/png"
+                    };
+                    match ctx.set_buffer(format, image_data) {
+                        Ok(_) => println!("图像已成功复制到剪贴板"),
+                        Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                    }
+                } */
             }
             Err(e) => eprintln!("创建剪贴板上下文失败: {}", e),
         }
