@@ -1,4 +1,4 @@
-window.app = {
+const app = {
     exit: () => window.ipc.postMessage('exit'),
     getImage: async () => {
         const response = await fetch('/bg');
@@ -15,7 +15,7 @@ window.app = {
         }
     },
     copyToClipboard: async (imageData) => {
-        await fetch("/copy", {
+        return await fetch("/copy", {
             method: "POST",
             headers: {
                 'x-frame-width': imageData.width,
@@ -25,7 +25,7 @@ window.app = {
         })
     },
     saveImageToFolder: async (imageData) => {
-        await fetch("/save", {
+        return await fetch("/save", {
             method: "POST",
             headers: {
                 'x-frame-width': imageData.width,
@@ -47,3 +47,5 @@ window.app = {
         }));
     }
 }
+
+window.app = app;

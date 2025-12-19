@@ -181,7 +181,7 @@ export class EditCanvas {
             } else {
               // 获取上一个记录的点
               const lastPoint = this.drawState.attr.path[this.drawState.attr.path.length - 1];
-              
+
               // 在当前点和上一个点之间生成插值点
               const interpolatedPoints = interpolatePoints(
                 lastPoint.x,
@@ -190,7 +190,7 @@ export class EditCanvas {
                 y,
                 this.drawState.attr.radius
               );
-              
+
               // 跳过第一个点（已经处理过）
               for (let i = 1; i < interpolatedPoints.length; i++) {
                 const interpolatedPoint = interpolatedPoints[i];
@@ -307,9 +307,12 @@ export class EditCanvas {
   saveImageToFolder = async () => {
     console.log("saveImageToFolder");
     const imageData = await this.generateImageData();
-    const result = await (window as any).app.saveImageToFolder(imageData);
-    console.log(result)
-    // (window as any).app.exit();
+    const result = await window.app.saveImageToFolder(imageData);
+    if (result.status === 201) {
+
+    } else {
+      window.app.exit();
+    }
   };
 
   setImg({

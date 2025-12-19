@@ -210,7 +210,7 @@ impl AppWindow {
                             .save_file();
                         if file_path.is_none() {
                             return Response::builder()
-                                .status(400)
+                                .status(201)
                                 .body(b"cancel".to_vec())
                                 .unwrap()
                                 .map(Into::into);
