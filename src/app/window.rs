@@ -1,11 +1,11 @@
 use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
 use crate::capscreen::enumerate::enumerate_windows;
+use arboard::ImageData;
 use clipboard_rs::{Clipboard, ClipboardContext, RustImageData, common::RustImage};
 use image::DynamicImage;
 use std::{
-    sync::{Arc, Condvar, Mutex},
-    time::Instant,
+    borrow::Cow, sync::{Arc, Condvar, Mutex}, time::Instant
 };
 
 use tao::{
@@ -214,16 +214,16 @@ impl AppWindow {
                             .unwrap()
                             .to_str()
                             .unwrap()
-                            .parse::<u32>()
+                            .parse::<usize>()
                             .unwrap();
                         let height = headers
                             .get("x-frame-height")
                             .unwrap()
                             .to_str()
                             .unwrap()
-                            .parse::<u32>()
+                            .parse::<usize>()
                             .unwrap();
-                        let body = req.into_body();
+                        let body = req.body();
                         let Ok(ctx) = ClipboardContext::new() else {
                             log::error!("create clipboard context failed");
                             return Response::builder()
@@ -232,12 +232,16 @@ impl AppWindow {
                                 .unwrap()
                                 .map(Into::into);
                         };
-                        let image = image::ImageBuffer::from_vec(width, height, body).unwrap();
-                        let image_data =
-                            RustImageData::from_dynamic_image(DynamicImage::ImageRgba8(image));
-                        let before_set_image_time = Instant::now();
-                        let _ = ctx.set_image(image_data);
-                        log::error!("set image time: {:?}", before_set_image_time.elapsed());
+                        let start = Instant::now();
+                        let image = ImageData {
+                            width,
+                            height,
+                            bytes: Cow::Borrowed(body),
+                        };
+                        log::error!("create image time: {:?}", start.elapsed());
+                        arboard::Clipboard::new().unwrap().set_image(image).unwrap();
+                        log::error!("set image time: {:?}", start.elapsed());
+                        
                         Response::builder()
                             .status(200)
                             .body(b"success".to_vec())
@@ -337,15 +341,13 @@ impl AppWindow {
     // 将图像复制到剪切板的辅助函数
     fn copy_image_to_clipboard(image_data: Vec<u8>) {
         match ClipboardContext::new() {
-            Ok(mut ctx) => {
-                match RustImageData::from_bytes(&image_data) {
-                    Ok(rust_image) => match ctx.set_image(rust_image) {
-                        Ok(_) => println!("图像已成功复制到剪贴板"),
-                        Err(e) => eprintln!("写入剪贴板失败: {}", e),
-                    },
-                    Err(e) => eprintln!("将图像数据转换为RustImageData失败: {}", e),
-                }
-            }
+            Ok(mut ctx) => match RustImageData::from_bytes(&image_data) {
+                Ok(rust_image) => match ctx.set_image(rust_image) {
+                    Ok(_) => println!("图像已成功复制到剪贴板"),
+                    Err(e) => eprintln!("写入剪贴板失败: {}", e),
+                },
+                Err(e) => eprintln!("将图像数据转换为RustImageData失败: {}", e),
+            },
             Err(e) => eprintln!("创建剪贴板上下文失败: {}", e),
         }
     }
