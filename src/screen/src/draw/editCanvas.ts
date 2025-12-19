@@ -270,7 +270,7 @@ export class EditCanvas {
     return this.editCtx;
   }
 
-  private getImageDataUrl() {
+  private async getImageDataUrl() {
     this.baseCtx.drawImage(
       this.mosaicCanvas,
       0,
@@ -293,12 +293,19 @@ export class EditCanvas {
       this.lastImg!.width,
       this.lastImg!.height
     );
-    return this.baseCanvas.toDataURL("image/png");
+    // return this.baseCanvas.toDataURL("image/png");
+    return new Promise((resolve) => {
+      this.baseCanvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob.arrayBuffer());
+        }
+      });
+    })
   }
 
   writeToClipboard = async () => {
     console.log("writeToClipboard");
-    const dataURL = this.getImageDataUrl();
+    const dataURL = await this.getImageDataUrl();
     (window as any).app.copyToClipboard(dataURL);
     /*  await this.baseCanvas.toBlob(async (blob) => {
       if (blob) {
@@ -347,7 +354,7 @@ export class EditCanvas {
 
   saveImageToFolder = async () => {
     console.log("saveImageToFolder");
-    const dataURL = this.getImageDataUrl();
+    const dataURL = await this.getImageDataUrl();
     (window as any).app.saveImageToFolder(dataURL);
   };
 
