@@ -1,6 +1,6 @@
+use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
 use crate::capscreen::enumerate::enumerate_windows;
-use crate::app::user_event::UserEvent;
 use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
 use std::{
     sync::{Arc, Condvar, Mutex},
@@ -8,26 +8,28 @@ use std::{
 };
 
 use tao::{
-    event_loop::EventLoop,
+    event_loop::{EventLoop,EventLoopProxy},
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
 };
-use wgpu::rwh::HasWindowHandle;
+// use wgpu::rwh::HasWindowHandle;
 
 #[allow(unused_imports)]
 #[cfg(target_os = "windows")]
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
 
+use crate::app::user_event::UserEvent as AppEvent;
+use dirs;
+use chrono::{Local, DateTime};
+use rfd::FileDialog;
+use std::path::PathBuf;
 use wry::{
     WebView, WebViewBuilder,
     http::{Response, header},
 };
-use crate::app::AppEvent;
-use dirs;
-use rfd::FileDialog;
-use std::path::PathBuf;
 
-static FILEDATA: &[u8] = include_bytes!("demo.html");
+// static FILEDATA: &[u8] = include_bytes!("demo.html");
+static FILEDATA: &[u8] = include_bytes!("index.html");
 
 #[allow(dead_code)]
 pub struct AppWindow {
@@ -69,8 +71,10 @@ impl AppWindow {
             let x_virtual_screen = GetSystemMetrics(SM_XVIRTUALSCREEN);
             let y_virtual_screen = GetSystemMetrics(SM_YVIRTUALSCREEN);
             // 使用虚拟桌面原点和整体尺寸，保证跨屏时位置正确
-            let position =  tao::dpi::LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
-            let size =  tao::dpi::LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
+            let position =
+                tao::dpi::LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
+            let size =
+                tao::dpi::LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
             log::error!(
                 "create attributes: position={:?}, size={:?}",
                 position,
@@ -115,7 +119,7 @@ impl AppWindow {
             log::error!("capscreen time: {:?}", start_capscreen_time.elapsed());
 
             // 只克隆 Arc，不克隆底层数据
-        let (lock, cvar) = &*capture_state_for_thread;
+            let (lock, cvar) = &*capture_state_for_thread;
             let mut state = lock.lock().unwrap();
             match result {
                 Ok(frame) => {
@@ -134,10 +138,6 @@ impl AppWindow {
         let monitor_for_enum = monitor.clone();
 
         let webview = WebViewBuilder::new()
-            // .with_html(include_str!("demo.html"))
-            // .with_html(include_str!("dist/index.html"))
-            // .with_url("quickcap://index.html/")
-            .with_url("http://localhost:5173/")
             .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
@@ -151,41 +151,41 @@ impl AppWindow {
                             log::error!("send event failed: {:?}", e);
                         });
                     }
-                    body.starts_with("clipboard:") => {
+                    body if body.starts_with("clipboard:") => {
                         // 处理剪切板操作
-                                        let base64_data = if body.starts_with("clipboard:base64:") {
-                                            // 新格式
-                                            body.split("clipboard:base64:").nth(1).unwrap_or("")
-                                        } else {
-                                            // 兼容旧格式（clipboard:base64）
-                                            body.split(":").nth(1).unwrap_or("")
-                                        };
+                        let base64_data = if body.starts_with("clipboard:base64:") {
+                            // 新格式
+                            body.split("clipboard:base64:").nth(1).unwrap_or("")
+                        } else {
+                            // 兼容旧格式（clipboard:base64）
+                            body.split(":").nth(1).unwrap_or("")
+                        };
 
-                                        if !base64_data.is_empty() {
-                                            match base64::decode(base64_data) {
-                                                Ok(image_data) => {
-                                                    Self::copy_image_to_clipboard(image_data);
-                                                }
-                                                Err(e) => {
-                                                    log::error!("Failed to decode base64 image data: {}", e);
-                                                }
-                                            }
-                                        }
-                                        proxy.send_event(AppEvent::Exit);Ï
-                        }
-                    body.starts_with("save:") => {
-                                    let base64_data = body.split("save:").nth(1).unwrap_or("");
-                                    if !base64_data.is_empty() {
-                                        match base64::decode(base64_data) {
-                                            Ok(image_data) => {
-                                                Self::save_image_to_folder(image_data, proxy.clone());
-                                            }
-                                            Err(e) => {
-                                                log::error!("Failed to decode base64 image data: {}", e);
-                                            }
-                                        }
-                                    }
+                        if !base64_data.is_empty() {
+                            match base64::decode(base64_data) {
+                                Ok(image_data) => {
+                                    Self::copy_image_to_clipboard(image_data);
                                 }
+                                Err(e) => {
+                                    log::error!("Failed to decode base64 image data: {}", e);
+                                }
+                            }
+                        }
+                        proxy.send_event(AppEvent::Exit);
+                    }
+                    body if body.starts_with("save:") => {
+                        let base64_data = body.split("save:").nth(1).unwrap_or("");
+                        if !base64_data.is_empty() {
+                            match base64::decode(base64_data) {
+                                Ok(image_data) => {
+                                    Self::save_image_to_folder(image_data, proxy.clone());
+                                }
+                                Err(e) => {
+                                    log::error!("Failed to decode base64 image data: {}", e);
+                                }
+                            }
+                        }
+                    }
                     _ => {
                         // 尝试解析 JSON 消息
                         if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
@@ -226,18 +226,6 @@ impl AppWindow {
                                 .unwrap()
                                 .map(Into::into);
                         }
-                // 处理 OPTIONS 预检请求
-                if method.as_str() == "OPTIONS" {
-                    return Response::builder()
-                        .header("Access-Control-Allow-Origin", "*")
-                        .header("Access-Control-Allow-Methods", "GET, OPTIONS")
-                        .header("Access-Control-Allow-Headers", "*")
-                        .status(200)
-                        .body(vec![])
-                        .unwrap()
-                        .map(Into::into);
-                }
-
                         // 获取截图数据
                         if let Some(frame) = &state.frame {
                             let data = frame.data.clone();
@@ -308,7 +296,7 @@ impl AppWindow {
         }
     }
 
-// 将图像复制到剪切板的辅助函数
+    // 将图像复制到剪切板的辅助函数
     fn copy_image_to_clipboard(image_data: Vec<u8>) {
         match ClipboardContext::new() {
             Ok(mut ctx) => {
@@ -326,24 +314,15 @@ impl AppWindow {
         }
     }
 
-    fn save_image_to_folder(image_data: Vec<u8>, proxy: EventLoopProxy<AppEvent>) {
+    fn save_image_to_folder(image_data: Vec<u8>, proxy: EventLoopProxy<UserEvent>) {
         // 设置默认目录为下载目录，如果不存在则使用根目录
         let download_dir = dirs::download_dir().unwrap_or_else(|| PathBuf::from("/"));
 
         // 生成默认文件名（使用友好格式）
-        let now = chrono::Local::now();
+        let now = Local::now();
         let date_str = now.format("%Y%m%d");
         let time_str = now.format("%H%M%S");
         let default_name = format!("screenshot{}{}.png", date_str, time_str);
-
-        /* let file_path = DialogBuilder::file()
-        .set_filename(&default_name)
-        .set_owner(&window.window_handle().unwrap())
-        .set_location(&download_dir)
-        .add_filter("PNG 图像", &["png"])
-        .save_single_file()
-        .show()
-        .unwrap(); */
 
         // 使用文件保存对话框，用户可以查看和修改文件名
         let file_path = FileDialog::new()
