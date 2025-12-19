@@ -138,7 +138,8 @@ impl AppWindow {
             state.done = true;
             cvar.notify_all();
         });
-
+        
+        let window_for_dialog = Arc::clone(&window);
         let capture_state_for_bg = Arc::clone(&capture_state);
         let monitor_for_enum = monitor.clone();
 
@@ -206,9 +207,15 @@ impl AppWindow {
                             .set_directory(&download_dir)
                             .set_can_create_directories(true)
                             .set_file_name(&default_name)
-                            // .set_parent(&window.window_handle().unwrap())
+                            .set_parent(&*window_for_dialog)
                             .save_file();
-
+                        if file_path.is_none() {
+                            return Response::builder()
+                                .status(200)
+                                .body(b"cancel".to_vec())
+                                .unwrap()
+                                .map(Into::into);
+                        }
                         let file = File::create(file_path.unwrap()).unwrap();
                         let writer = BufWriter::new(file);
 
