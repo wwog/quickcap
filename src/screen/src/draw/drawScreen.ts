@@ -483,7 +483,8 @@ export class DrawScreen {
       `%c🎄 mouse down`,
       "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
       e.clientX,
-      e.clientY
+      e.clientY,
+      this.mode
     );
     if (this.mode === "select") {
       this.selectStart(e);
