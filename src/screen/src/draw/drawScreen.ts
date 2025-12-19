@@ -55,6 +55,13 @@ export class DrawScreen {
   private selectWidth = 0;
   private selectHeight = 0;
 
+  private matchedWindow: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | undefined = undefined;
+
   private _mode: TMode = "select";
 
   /**
@@ -312,6 +319,8 @@ export class DrawScreen {
       this.selectRectDom.style.top = `${this.selectY - 1}px`;
       this.selectRectDom.style.width = `${this.selectWidth}px`;
       this.selectRectDom.style.height = `${this.selectHeight}px`;
+    } else {
+      this.selectRectDom.remove();
     }
   };
 
@@ -341,7 +350,9 @@ export class DrawScreen {
         y: e.clientY,
         windows: this.windows,
       });
+      this.matchedWindow = window;
       if (!window) {
+        this.matchedWindow = undefined;
         return;
       }
 
@@ -475,6 +486,13 @@ export class DrawScreen {
   };
 
   private onMouseDown = (e: MouseEvent) => {
+    console.log(
+      `%c🎄 mouse down`,
+      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+      this.mode,
+      e.clientX,
+      e.clientY
+    );
     if (this.mode === "edit") return;
     const isSelectRect =
       e.target === this.selectRectDom ||
@@ -485,13 +503,7 @@ export class DrawScreen {
       width: this.selectWidth,
       height: this.selectHeight,
     });
-    console.log(
-      `%c🎄 mouse down`,
-      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
-      e.clientX,
-      e.clientY,
-      this.mode
-    );
+
     if (this.mode === "select") {
       this.selectStart(e);
     } else {
@@ -500,6 +512,13 @@ export class DrawScreen {
   };
 
   private onMouseMove = (e: MouseEvent) => {
+    console.log(
+      `%c🎄 mouse move`,
+      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+      this.mode,
+      e.clientX,
+      e.clientY
+    );
     if (this.mode === "edit") return;
     if (this.mode === "select") {
       this.selectMove(e);
@@ -521,20 +540,23 @@ export class DrawScreen {
   };
 
   private onMouseUp = (e: MouseEvent) => {
+    console.log(
+      `%c🎄 mouse up`,
+      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+      this.mode,
+      this.startX,
+      this.startY,
+      e.clientX,
+      e.clientY,
+      this.selectWidth,
+      this.selectHeight
+    );
     if (this.mode === "edit") return;
     switch (this.mode) {
       case "select":
         e.stopPropagation();
         e.preventDefault();
-        console.log(
-          `%c🎄 mouse up`,
-          "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
-          this.startX,
-          this.startY,
-          e.clientX,
-          e.clientY
-        );
-        if (this.selectWidth || this.selectHeight) {
+        if (this.selectWidth && this.selectHeight) {
           this.selectEnd();
           this.editTools.render(true, {
             x: this.selectX,
@@ -542,7 +564,15 @@ export class DrawScreen {
             width: this.selectWidth,
             height: this.selectHeight,
           });
+          this.drawMask();
         } else {
+          if (this.matchedWindow) {
+            this.selectX = this.matchedWindow.x;
+            this.selectY = this.matchedWindow.y;
+            this.selectWidth = this.matchedWindow.width;
+            this.selectHeight = this.matchedWindow.height;
+          }
+          this.drawMask();
           this.isSelecting = false;
         }
         break;
@@ -597,10 +627,10 @@ export class DrawScreen {
 
   private initListener = () => {
     // Selection logic
-    this.canvasContainer.addEventListener("mousedown", this.onMouseDown);
-    this.canvasContainer.addEventListener("mousemove", this.onMouseMove);
-    this.canvasContainer.addEventListener("mouseup", this.onMouseUp);
-    this.canvasContainer.addEventListener("mouseleave", this.onMouseLeave);
+    document.body.addEventListener("mousedown", this.onMouseDown);
+    document.body.addEventListener("mousemove", this.onMouseMove);
+    document.body.addEventListener("mouseup", this.onMouseUp);
+    document.body.addEventListener("mouseleave", this.onMouseLeave);
 
     bindDoubleClick(this.selectRectDom, () => {
       console.log("================double click================");
