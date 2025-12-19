@@ -309,7 +309,7 @@ export class EditCanvas {
     const imageData = await this.generateImageData();
     const result = await window.app.saveImageToFolder(imageData);
     if (result.status === 201) {
-
+      //不处理
     } else {
       window.app.exit();
     }

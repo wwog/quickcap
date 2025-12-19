@@ -11,9 +11,10 @@ interface App {
     notify: (method: any, params?: {}) => void;
 }
 
-
 declare global {
     interface Window {
         app: App;
     }
 }
+
+export {};
