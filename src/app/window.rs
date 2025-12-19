@@ -1,14 +1,15 @@
 use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
 use crate::capscreen::enumerate::enumerate_windows;
-use clipboard_rs::{Clipboard, ClipboardContext, ContentFormat};
+use clipboard_rs::{Clipboard, ClipboardContext, RustImageData, common::RustImage};
+use image::DynamicImage;
 use std::{
     sync::{Arc, Condvar, Mutex},
     time::Instant,
 };
 
 use tao::{
-    event_loop::{EventLoop,EventLoopProxy},
+    event_loop::{EventLoop, EventLoopProxy},
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
 };
@@ -19,8 +20,8 @@ use tao::{
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
 
 use crate::app::user_event::UserEvent as AppEvent;
+use chrono::{DateTime, Local};
 use dirs;
-use chrono::{Local, DateTime};
 use rfd::FileDialog;
 use std::path::PathBuf;
 use wry::{
@@ -206,6 +207,43 @@ impl AppWindow {
                 let path = req.uri().path().to_string();
                 // log::error!("path: {:?}", path);
                 match path.as_str() {
+                    "/copy" => {
+                        let headers = req.headers();
+                        let width = headers
+                            .get("x-frame-width")
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .parse::<u32>()
+                            .unwrap();
+                        let height = headers
+                            .get("x-frame-height")
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .parse::<u32>()
+                            .unwrap();
+                        let body = req.into_body();
+                        let Ok(ctx) = ClipboardContext::new() else {
+                            log::error!("create clipboard context failed");
+                            return Response::builder()
+                                .status(400)
+                                .body(b"create clipboard context failed".to_vec())
+                                .unwrap()
+                                .map(Into::into);
+                        };
+                        let image = image::ImageBuffer::from_vec(width, height, body).unwrap();
+                        let image_data =
+                            RustImageData::from_dynamic_image(DynamicImage::ImageRgba8(image));
+                        let before_set_image_time = Instant::now();
+                        let _ = ctx.set_image(image_data);
+                        log::error!("set image time: {:?}", before_set_image_time.elapsed());
+                        Response::builder()
+                            .status(200)
+                            .body(b"success".to_vec())
+                            .unwrap()
+                            .map(Into::into)
+                    }
                     "/bg" => {
                         let (lock, cvar) = &*capture_state_for_bg;
                         let mut state = lock.lock().unwrap();
