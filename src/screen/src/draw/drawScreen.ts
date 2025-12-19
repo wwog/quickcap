@@ -322,6 +322,12 @@ export class DrawScreen {
     this.isSelecting = true;
     this.startX = e.clientX;
     this.startY = e.clientY;
+    console.log(
+      `%c🎄 select start`,
+      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+      this.startX,
+      this.startY
+    );
   };
 
   private selectMove = (e: MouseEvent) => {
@@ -523,18 +529,22 @@ export class DrawScreen {
         console.log(
           `%c🎄 mouse up`,
           "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
-          this.selectX,
-          this.selectY,
+          this.startX,
+          this.startY,
           e.clientX,
           e.clientY
         );
-        this.selectEnd();
-        this.editTools.render(true, {
-          x: this.selectX,
-          y: this.selectY,
-          width: this.selectWidth,
-          height: this.selectHeight,
-        });
+        if (this.selectX || this.selectY) {
+          this.selectEnd();
+          this.editTools.render(true, {
+            x: this.selectX,
+            y: this.selectY,
+            width: this.selectWidth,
+            height: this.selectHeight,
+          });
+        } else {
+          this.isSelecting = false;
+        }
         break;
       case "waitEdit":
       case "move":
