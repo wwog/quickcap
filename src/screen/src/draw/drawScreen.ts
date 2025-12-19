@@ -479,6 +479,12 @@ export class DrawScreen {
       width: this.selectWidth,
       height: this.selectHeight,
     });
+    console.log(
+      `%c🎄 mouse down`,
+      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+      e.clientX,
+      e.clientY
+    );
     if (this.mode === "select") {
       this.selectStart(e);
     } else {
@@ -513,6 +519,14 @@ export class DrawScreen {
       case "select":
         e.stopPropagation();
         e.preventDefault();
+        console.log(
+          `%c🎄 mouse up`,
+          "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+          this.selectX,
+          this.selectY,
+          e.clientX,
+          e.clientY
+        );
         this.selectEnd();
         this.editTools.render(true, {
           x: this.selectX,
