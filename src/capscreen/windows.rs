@@ -12,7 +12,7 @@ use windows::Win32::{
     },
 };
 
-use crate::app::capscreen::{CaptureError, Frame};
+use crate::capscreen::{CaptureError, Frame};
 
 pub fn capscreen() -> Result<Frame, CaptureError> {
     unsafe {
