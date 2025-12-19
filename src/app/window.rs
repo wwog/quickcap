@@ -10,7 +10,6 @@ use std::{
     sync::{Arc, Condvar, Mutex},
     time::Instant,
 };
-use tao::platform::macos::WindowBuilderExtMacOS;
 
 use tao::{
     event_loop::EventLoop,
@@ -91,7 +90,6 @@ impl AppWindow {
             .with_resizable(false)
             .with_transparent(true)
             .with_position(position)
-            .with_movable_by_window_background(false)
             .with_inner_size(size);
 
         #[cfg(target_os = "macos")]
