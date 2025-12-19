@@ -16,7 +16,6 @@ use tao::{
     monitor::MonitorHandle,
     window::{Window, WindowBuilder},
 };
-// use wgpu::rwh::HasWindowHandle;
 
 #[allow(unused_imports)]
 #[cfg(target_os = "windows")]
@@ -90,7 +89,10 @@ impl AppWindow {
             .with_resizable(false)
             .with_transparent(true)
             .with_position(position)
-            .with_inner_size(size);
+            .with_min_inner_size(size)
+            .with_minimizable(false)
+            .with_maximizable(false)
+            .with_always_on_top(true);
 
         #[cfg(target_os = "macos")]
         {
@@ -115,7 +117,6 @@ impl AppWindow {
             Condvar::new(),
         ));
 
-        // 启动后台截图线程
         let capture_state_for_thread = Arc::clone(&capture_state);
         let monitor_for_capture = monitor.clone();
         std::thread::spawn(move || {
@@ -123,7 +124,6 @@ impl AppWindow {
             let result = capscreen(&monitor_for_capture);
             log::error!("capscreen time: {:?}", start_capscreen_time.elapsed());
 
-            // 只克隆 Arc，不克隆底层数据
             let (lock, cvar) = &*capture_state_for_thread;
             let mut state = lock.lock().unwrap();
             match result {
@@ -158,7 +158,6 @@ impl AppWindow {
                         });
                     }
                     _ => {
-                        // 尝试解析 JSON 消息
                         if let Ok(msg) = serde_json::from_str::<serde_json::Value>(body) {
                             if msg.get("type").and_then(|t| t.as_str()) == Some("notify") {
                                 if let (Some(method), Some(params)) = (

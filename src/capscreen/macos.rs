@@ -69,6 +69,11 @@ pub fn configure_overlay_window(window: &Window) {
         ns_window.setHidesOnDeactivate(false);
         ns_window.setIgnoresMouseEvents(false);
 
-        log::error!("Configured window as overlay with NSScreenSaverWindowLevel");
+        // let frame = ns_window.frame();
+        // let current_size = frame.size;
+        // ns_window.setMinSize(current_size);
+        // ns_window.setMaxSize(current_size);
+
+        log::error!("Configured window as overlay with NSScreenSaverWindowLevel, disabled resize");
     }
 }
