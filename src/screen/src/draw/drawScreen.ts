@@ -534,7 +534,7 @@ export class DrawScreen {
           e.clientX,
           e.clientY
         );
-        if (this.selectX || this.selectY) {
+        if (this.selectWidth || this.selectHeight) {
           this.selectEnd();
           this.editTools.render(true, {
             x: this.selectX,
