@@ -19,7 +19,7 @@ export default defineConfig({
       },
     },
     // 设置构建输出目录
-    outDir: "dist",
+    outDir: "../app",
     // 生成source map
     sourcemap: false,
   },
