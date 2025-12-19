@@ -91,8 +91,8 @@ impl AppWindow {
             .with_position(position)
             .with_min_inner_size(size)
             .with_minimizable(false)
-            .with_maximizable(false)
-            .with_always_on_top(true);
+            .with_maximizable(false);
+            // .with_always_on_top(true);
 
         #[cfg(target_os = "macos")]
         {
@@ -106,7 +106,7 @@ impl AppWindow {
         }
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        crate::capscreen::configure_overlay_window(&window);
+        // crate::capscreen::configure_overlay_window(&window);
 
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
             Mutex::new(CaptureState {
@@ -210,7 +210,7 @@ impl AppWindow {
                             .save_file();
                         if file_path.is_none() {
                             return Response::builder()
-                                .status(200)
+                                .status(400)
                                 .body(b"cancel".to_vec())
                                 .unwrap()
                                 .map(Into::into);

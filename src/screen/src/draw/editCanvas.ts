@@ -293,78 +293,23 @@ export class EditCanvas {
       this.lastImg!.width,
       this.lastImg!.height
     );
-    // return this.baseCanvas.toDataURL("image/png");
     const imgData = this.baseCtx.getImageData(0, 0, this.lastImg!.width * DPR, this.lastImg!.height * DPR);
     return Promise.resolve(imgData);
-    /* return new Promise((resolve) => {
-      this.baseCanvas.toBlob((blob) => {
-        console.log("🚀 ~ EditCanvas ~ generateImageData ~ blob:", blob);
-        if (blob) {
-          blob.arrayBuffer().then((arrayBuffer) => {
-            resolve(arrayBuffer);
-          });
-          // resolve(blob);
-        }
-      }, "image/png", 1);
-    }) */
   }
 
   writeToClipboard = async () => {
     console.log("writeToClipboard");
     const imgData = await this.generateImageData();
-    // const imgData = this.baseCtx.getImageData(0, 0, this.lastImg!.width * DPR, this.lastImg!.height * DPR);
     await (window as any).app.copyToClipboard(imgData);
     (window as any).app.exit();
-    /*  await this.baseCanvas.toBlob(async (blob) => {
-      if (blob) {
-        try {
-          // 将blob转换为ArrayBuffer，然后通过IPC发送
-          const arrayBuffer = await blob.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          
-          // 使用IPC剪切板API
-          if ((window as any).app && (window as any).app.copyToClipboard) {
-            await (window as any).app.copyToClipboard(uint8Array);
-            console.log("图片已通过IPC复制到剪贴板");
-            (window as any).app.exit();
-          } else {
-            // 降级方案：在新窗口中打开图片，用户可以手动保存
-            const url = URL.createObjectURL(blob);
-            const newWindow = window.open(url, '_blank');
-            if (newWindow) {
-              alert("由于浏览器安全限制，无法直接复制到剪贴板。图片已在新窗口中打开，您可以右键保存图片或手动复制。");
-            } else {
-              // 如果连新窗口都无法打开，则提供下载链接
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `screenshot_${Date.now()}.png`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              alert("由于浏览器安全限制，无法直接复制到剪贴板。图片已开始下载。");
-            }
-          }
-        } catch (error) {
-          console.error("复制到剪贴板失败:", error);
-          // 降级方案：创建下载链接
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `screenshot_${Date.now()}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          alert("复制到剪贴板失败，图片已开始下载。");
-        }
-      }
-    }, "image/png"); */
   };
 
   saveImageToFolder = async () => {
     console.log("saveImageToFolder");
     const imageData = await this.generateImageData();
-    await (window as any).app.saveImageToFolder(imageData);
-    (window as any).app.exit();
+    const result = await (window as any).app.saveImageToFolder(imageData);
+    console.log(result)
+    // (window as any).app.exit();
   };
 
   setImg({
