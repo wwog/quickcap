@@ -14,7 +14,6 @@ use std::{
 use tao::{
     event_loop::EventLoop,
     monitor::MonitorHandle,
-    platform::macos::MonitorHandleExtMacOS,
     window::{Window, WindowBuilder},
 };
 

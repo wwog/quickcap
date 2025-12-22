@@ -24,7 +24,6 @@ function init() {
   window.addEventListener("keydown", (e) => {
     console.log("🚀 ~ init ~ e:", e.key, e.keyCode);
     if (e.key === "Escape") {
-      alert("Escape pressed");
       exitApp();
     }
   });
