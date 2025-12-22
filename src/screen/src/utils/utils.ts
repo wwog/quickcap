@@ -1,4 +1,5 @@
-import { editToolGap, editToolHeight } from "../const";
+import { DPR, editToolGap, editToolHeight } from "../const";
+import { isWindows } from "./device";
 
 let promise: Promise<{
   imageData: ImageData;
@@ -281,12 +282,18 @@ export const getRectForWindow = ({
   width: number;
   height: number;
 }) => {
+
+  const rx = isWindows() ? x / DPR : x;
+  const ry = isWindows() ? y / DPR : y;
+  const rwidth = isWindows() ? width / DPR : width;
+  const rheight = isWindows() ? height / DPR : height;
+
   const maxX = window.innerWidth;
   const maxY = window.innerHeight;
-  const endX = Math.min(x + width, maxX);
-  const endY = Math.min(y + height, maxY);
-  const startX = Math.max(x, 0);
-  const startY = Math.max(y, 0);
+  const endX = Math.min(rx + rwidth, maxX);
+  const endY = Math.min(ry + rheight, maxY);
+  const startX = Math.max(rx, 0);
+  const startY = Math.max(ry, 0);
   return {
     x: startX,
     y: startY,

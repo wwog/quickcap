@@ -1,8 +1,8 @@
 import { DPR } from "../const";
-import { pointsInCircleClipped } from "../utils";
+import { isWindows, pointsInCircleClipped } from "../utils";
 import type { TShapeMosaic } from "./editType";
 
-const MOSAIC_SIZE = 10 * DPR;
+const MOSAIC_SIZE = isWindows() ? 10 : 10 * DPR;
 
 export class Mosaic {
   private imageData: ImageData;
