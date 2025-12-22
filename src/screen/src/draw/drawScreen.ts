@@ -387,7 +387,11 @@ export class DrawScreen {
       y: e.clientY,
     });
     if (this.mode === "otherTab") {
-      this.mode = "select";
+      if (this.selectHeight || this.selectWidth) {
+        this.mode = "waitEdit";
+      } else  {
+        this.mode = "select";
+      }
       return;
     }
   };
