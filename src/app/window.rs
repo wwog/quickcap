@@ -356,7 +356,7 @@ impl AppWindow {
             .with_transparent(true)
             .with_url("app://localhost")
             .with_bounds(wry::Rect {
-                position: tao::dpi::Position::Logical(tao::dpi::LogicalPosition::new(0.0, 0.0)),
+                position: tao::dpi::Position::Physical(tao::dpi::PhysicalPosition::new(0, 0)),
                 size: tao::dpi::Size::Physical(tao::dpi::PhysicalSize::new(size.width as u32, size.height as u32)),
             })
             .build_as_child(&window)
