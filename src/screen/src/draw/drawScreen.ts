@@ -1,4 +1,4 @@
-import { resizeHandles } from "../const";
+import { DPR, resizeHandles } from "../const";
 import {
   bindDoubleClick,
   // calcEditToolTop,
@@ -159,6 +159,7 @@ export class DrawScreen {
   ];
 
   constructor(appDom: HTMLDivElement) {
+    console.log(`%c🏓 DPR: ${DPR}`,'background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;');
     // this.imgDom = imgDom;
     this.imgDom = null;
     this.canvasContainer.classList.add("canvas-container");
@@ -246,6 +247,7 @@ export class DrawScreen {
             height: number;
           }[] = [];
           windows.forEach((win) => {
+            console.log("🚀 ~ DrawScreen ~ constructor ~ windows:", windows);
             if (win.name !== "tao window") {
               const { x, y, width, height } = win.bounds;
 
@@ -546,13 +548,13 @@ export class DrawScreen {
   };
 
   private onMouseDown = (e: MouseEvent) => {
-    console.log(
+    /* console.log(
       `%c🎄 mouse down`,
       "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
       this.mode,
       e.clientX,
       e.clientY
-    );
+    ); */
     if (this.mode === "edit" || this.mode === "forbidden") return;
     this.activeWindow(e);
     if (this.mode === "otherTab") return;
@@ -574,13 +576,13 @@ export class DrawScreen {
   };
 
   private onMouseMove = (e: MouseEvent) => {
-    console.log(
+    /* console.log(
       `%c🎄 mouse move`,
       "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
       this.mode,
       e.clientX,
       e.clientY
-    );
+    ); */
     if (this.mode === "edit" || this.mode === "forbidden") return;
     this.activeWindow(e);
     if (this.mode === "otherTab") return;
@@ -604,7 +606,7 @@ export class DrawScreen {
   };
 
   private onMouseUp = (e: MouseEvent) => {
-    console.log(
+    /* console.log(
       `%c🎄 mouse up`,
       "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
       this.mode,
@@ -614,7 +616,7 @@ export class DrawScreen {
       e.clientY,
       this.selectWidth,
       this.selectHeight
-    );
+    ); */
     if (this.mode === "edit" || this.mode === "forbidden") return;
     this.activeWindow(e);
     if (this.mode === "otherTab") return;
