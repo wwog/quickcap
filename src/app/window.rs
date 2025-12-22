@@ -377,7 +377,7 @@ impl AppWindow {
                     )),
                 })
                 .build_as_child(&window)
-                .unwrap();
+                .unwrap()
         };
         Self {
             window,
