@@ -36,3 +36,8 @@ objc2-core-foundation = "0.3.2"
 objc2-core-graphics = "0.3.2"
 
 [dev-dependencies]
+
+[profile.release]
+opt-level = 3        
+lto = "fat"         
+codegen-units = 1   
