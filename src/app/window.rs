@@ -78,9 +78,9 @@ impl AppWindow {
             let y_virtual_screen = GetSystemMetrics(SM_YVIRTUALSCREEN);
             // 使用虚拟桌面原点和整体尺寸，保证跨屏时位置正确
             let position =
-                tao::dpi::LogicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
+                tao::dpi::PhysicalPosition::new(x_virtual_screen as f64, y_virtual_screen as f64);
             let size =
-                tao::dpi::LogicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
+                tao::dpi::PhysicalSize::new(cx_virtual_screen as f64, cy_virtual_screen as f64);
             log::error!(
                 "create attributes: position={:?}, size={:?}",
                 position,
@@ -357,7 +357,7 @@ impl AppWindow {
             .with_url("app://localhost")
             .with_bounds(wry::Rect {
                 position: tao::dpi::Position::Logical(tao::dpi::LogicalPosition::new(0.0, 0.0)),
-                size: tao::dpi::Size::Logical(size),
+                size: tao::dpi::Size::Physical(tao::dpi::PhysicalSize::new(size.width as u32, size.height as u32)),
             })
             .build_as_child(&window)
             .unwrap();
