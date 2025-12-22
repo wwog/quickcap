@@ -412,9 +412,9 @@ dependencies = [
 
 [[package]]
 name = "capscreen_macos"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "035c8b67acbde9d874840604a59d29e4bd43898f44c5216c64251a33a7e76c3e"
+checksum = "0bd8fce7341cc34c0894b046104db2f896b581af72e51ac04c5f1f4dfb482744"
 
 [[package]]
 name = "cc"
