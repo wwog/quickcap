@@ -121,6 +121,21 @@ impl App {
                         *control_flow = tao::event_loop::ControlFlow::Exit;
                     }
                 }
+                Event::WindowEvent {
+                    window_id,
+                    event: WindowEvent::CursorEntered { device_id },
+                    ..
+                } => {
+                    if let Some(window) = self.windows.get_mut(&window_id) {
+                        window.window.set_focus();
+                    }
+                }
+                Event::WindowEvent {
+                    event: WindowEvent::CursorLeft { device_id },
+                    ..
+                } => {
+                    log::error!("CursorLeft: {:?}", device_id);
+                }
                 Event::UserEvent(UserEvent::RpcMessage(req)) => {
                     log::error!("RpcMessage: {:?}", req);
                 }
