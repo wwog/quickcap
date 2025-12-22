@@ -12,6 +12,7 @@ function init() {
 
   const drawScreen = new DrawScreen(appDom);
   console.log("🚀 ~ init ~ drawScreen:", drawScreen);
+  (window as any).drawScreen = drawScreen;
 
   getScreenImageData()
     .then((imgData) => {
