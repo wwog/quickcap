@@ -14,6 +14,12 @@ import type { EditCanvasMode, TShape } from "./editType";
 import { Mosaic } from "./mosaic";
 import { ResizeAssist } from "./resizeAssist";
 
+declare global {
+  interface Window {
+    editCanvas: EditCanvas;
+  }
+}
+
 export class EditCanvas {
   private lastImg: null | {
     x: number;
@@ -85,7 +91,7 @@ export class EditCanvas {
 
     console.log("editCanvas created", this.resizeAssist);
 
-    (window as any).editCanvas = this;
+    window.editCanvas = this;
   }
 
   private getCanvasPos = (clientX: number, clientY: number) => {
@@ -300,8 +306,8 @@ export class EditCanvas {
   writeToClipboard = async () => {
     console.log("writeToClipboard");
     const imgData = await this.generateImageData();
-    await (window as any).app.copyToClipboard(imgData);
-    (window as any).app.exit();
+    await window.app.copyToClipboard(imgData);
+    window.app.exit();
   };
 
   saveImageToFolder = async () => {

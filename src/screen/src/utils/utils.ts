@@ -7,38 +7,11 @@ let promise: Promise<{
 }> | null = null;
 
 export function exitApp() {
-  // (window as any).ipc.postMessage("escape_pressed");
-  (window as any).app.exit();
+  window.app.exit();
 }
 
 export async function getScreenImageData() {
   if (promise) return promise;
-  /* promise = new Promise((resolve, reject) => {
-    try {
-      (window as any).onRegionData = function (result: any) {
-        console.log("Region data received:", result);
-        if (result.error) {
-          console.error("Error:", result.error);
-          reject(result.error);
-        } else {
-          console.log(
-            "Region extracted:",
-            result.x,
-            result.y,
-            result.w,
-            result.h
-          );
-          console.log("Data length:", result.data.length);
-          // 这里可以处理返回的区域数据
-          // result.data 是 base64 编码的 RGBA 数据
-          resolve(result);
-        }
-      };
-      (window as any).ipc.postMessage(JSON.stringify([x, y, width, height]));
-    } catch (err) {
-      reject(err);
-    }
-  }); */
   promise = new Promise<{
     imageData: ImageData;
     height: number;
@@ -46,7 +19,7 @@ export async function getScreenImageData() {
   }>((resolve, reject) => {
     (async () => {
       try {
-        const imageData = await (window as any).app.getImage();
+        const imageData = await window.app.getImage();
         const { width, height, arrayBuffer } = imageData;
         resolve({
           imageData: new ImageData(
@@ -368,20 +341,20 @@ export function pointsInCircleClipped(cx: number, cy: number, r: number, maxX: n
  * @returns {Array<{x: number, y: number}>} 插值点数组
  */
 export function interpolatePoints(x1: number, y1: number, x2: number, y2: number, radius: number) {
-  const points: Array<{x: number, y: number}> = [];
-  
+  const points: Array<{ x: number, y: number }> = [];
+
   // 计算两点之间的距离
   const dx = x2 - x1;
   const dy = y2 - y1;
   const distance = Math.sqrt(dx * dx + dy * dy);
-  
+
   // 根据半径计算需要的插值点数量，确保圆之间有一定重叠
   // 重叠因子设为0.5，确保相邻圆之间有50%的重叠区域
   // 两个圆的中心距离应该是：2 * radius * (1 - overlapFactor)
   const overlapFactor = 0.5;
   const step = 2 * radius * (1 - overlapFactor);
   const numPoints = Math.max(2, Math.ceil(distance / step));
-  
+
   // 生成插值点
   for (let i = 0; i < numPoints; i++) {
     const t = i / numPoints;
@@ -390,6 +363,6 @@ export function interpolatePoints(x1: number, y1: number, x2: number, y2: number
     points.push({ x, y });
   }
   points.push({ x: x2, y: y2 });
-  
+
   return points;
 }
