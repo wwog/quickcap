@@ -21,6 +21,10 @@ use tao::{
 #[cfg(target_os = "windows")]
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
 
+#[allow(unused_imports)]
+#[cfg(target_os = "macos")]
+use tao::platform::macos::MonitorHandleExtMacOS;
+
 use chrono::Local;
 use dirs;
 use rfd::FileDialog;
