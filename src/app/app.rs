@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use env_logger::fmt::style::{AnsiColor, Color, Style};
 use std::io::Write;
 use tao::{
-    event::{Event, WindowEvent},
+    event::{Event, KeyEvent, WindowEvent},
     event_loop::{EventLoop, EventLoopBuilder},
     window::WindowId,
 };
@@ -112,6 +112,18 @@ impl App {
                 Event::NewEvents(tao::event::StartCause::Init) => {}
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
+                    ..
+                }
+                | Event::WindowEvent {
+                    event:
+                        WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    logical_key: tao::keyboard::Key::Escape,
+                                    ..
+                                },
+                            ..
+                        },
                     ..
                 }
                 | Event::UserEvent(UserEvent::Exit) => {
