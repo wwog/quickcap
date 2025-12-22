@@ -192,7 +192,7 @@ export class DrawScreen {
       },
     ]);
 
-    (window as any).app
+    window.app
       ?.getWindows?.()
       .then(
         (

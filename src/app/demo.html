@@ -87,11 +87,20 @@
             <button id="windows">Windows</button>
             <button id="close">Close</button>
             <button id="notify">Notify</button>
+            <button id="window_msg">WinMsg</button>
         </div>
     </div>
 
 
     <script>
+        window.addEventListener('storage', (e) => {
+            console.log('storage event', e)
+        })
+
+        document.getElementById('window_msg').addEventListener('click', () => {
+            localStorage.setItem('selected', true)
+        })
+
         document.getElementById('windows').addEventListener('click', () => {
             window.app.getWindows().then(windows => {
                 console.log(windows);
@@ -105,7 +114,7 @@
         document.getElementById('notify').addEventListener('click', () => {
             window.app.notify('test', { message: 'Hello, world!' });
         });
-        
+
         async function loadBackground() {
             try {
                 const { width, height, arrayBuffer } = await window.app.getImage();

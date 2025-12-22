@@ -1,5 +1,11 @@
+const exitCleanStorageKeys = ['selected']
 const app = {
-    exit: () => window.ipc.postMessage('exit'),
+    exit: () => {
+        exitCleanStorageKeys.forEach(item => {
+            localStorage.removeItem(item)
+        })
+        window.ipc.postMessage('exit')
+    },
     getImage: async () => {
         const response = await fetch('/bg');
         const width = parseInt(response.headers.get('x-frame-width') || '0');
