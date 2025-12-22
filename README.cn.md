@@ -2,7 +2,7 @@
 
 ## 技术实现
 
-Windows使用GDI，原因无论是DXGI还是GraphicCapture，在单帧截取速度更快，并且不需要自己拼接多显示器，因为这两个新的api主要服务远程和视频，对于目前架构的大部分cpu处理的场景慢于GDI且复杂度高。
+Windows使用GDI进行截屏，原因无论是DXGI还是GraphicCapture，GDI在单帧截取速度更快，并且不需要自己拼接多显示器，因为这两个新的api主要服务远程和视频，对于目前架构的大部分cpu处理的场景慢于GDI且复杂度高。
 
 Macos使用ScreenCaptureKit的最初实现完成，包括窗口枚举也是这套api，以确保窗口获取和截取保持平衡，由于Macos桌面空间与显示器呈现绑定状态，所以会有两个显示器尺寸的窗口作为蒙层，windows没有这个限制。另外，fork了screencapture-rs这个库，追加了CGDisplayCreateImage的实现和一些其他功能。本项目也实现了enumerate_windows_cg用于需要兼容性的实现。CGWindowListCopyWindowInfo和CGDisplayCreateImage可以支持大部分macos。
 
