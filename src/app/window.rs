@@ -55,9 +55,9 @@ impl AppWindow {
         let proxy = event_loop.create_proxy();
         #[cfg(target_os = "macos")]
         let (position, size) = {
-            let scale_factor = monitor.scale_factor();
-            let position = monitor.position().to_logical::<f64>(scale_factor);
-            let size = monitor.size().to_logical::<f64>(scale_factor);
+            // let scale_factor = monitor.scale_factor();
+            let position = monitor.position();
+            let size = monitor.size();
             log::error!(
                 "create attributes: position: {:?}, size: {:?}",
                 position,
