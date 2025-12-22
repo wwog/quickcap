@@ -15,7 +15,7 @@ import { EditTools } from "./editTools";
 // import { onClickFinish } from "./func";
 import { SizeDisplay } from "./sizeDisplay";
 
-type TMode = "select" | "waitEdit" | "resizing" | "edit" | "move";
+type TMode = "otherTab" | "select" | "waitEdit" | "resizing" | "edit" | "move" | "forbidden";
 
 /**
  * Manages interface drawing and interaction, including selection, editing, moving, etc.
@@ -55,12 +55,18 @@ export class DrawScreen {
   private selectWidth = 0;
   private selectHeight = 0;
 
-  private matchedWindow: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | undefined = undefined;
+  broadcastChannel = new BroadcastChannel("broadcast");
+
+  private id = Math.random().toString(36).substring(2);
+
+  private matchedWindow:
+    | {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      }
+    | undefined = undefined;
 
   private _mode: TMode = "select";
 
@@ -92,6 +98,31 @@ export class DrawScreen {
           this.canvasContainer.style.cursor = "";
           this.selectRectDom.style.cursor = "crosshair";
           this.canvasContainer.classList.add("edit-mode");
+          this.broadcastChannel.postMessage({
+            type: "startEdit",
+            id: this.id,
+          });
+          break;
+        }
+        case "forbidden":
+        case "otherTab": {
+          this.selectX = 0;
+          this.selectY = 0;
+          this.selectWidth = 0;
+          this.selectHeight = 0;
+          this.drawMask();
+          this.editTools.render(false, {
+            x: 0,
+            y: 0,
+            height: 0,
+            width: 0,
+          });
+          this.sizeDisplay.render(false, {
+            x: 0,
+            y: 0,
+            height: 0,
+            width: 0,
+          });
           break;
         }
       }
@@ -232,6 +263,22 @@ export class DrawScreen {
         }
       )
       .catch((err: any) => console.error(err));
+
+    this.broadcastChannel.onmessage = (event) => {
+      // console.log("🚀 ~ DrawScreen ~ constructor ~ event:", event.data, event);
+      const { type, id, x, y } = event?.data || {};
+      if (type === "activeWindow" && id !== this.id) {
+        this.mode = "otherTab";
+      } else if (
+        type === "activeWindow" &&
+        id === this.id &&
+        this.mode === "otherTab"
+      ) {
+        this.mode = "select";
+      } else if (type === "startEdit" && id && id !== this.id) {
+        this.mode = "forbidden";
+      }
+    };
   }
 
   setImgDom = (imgDom: HTMLImageElement) => {
@@ -298,6 +345,19 @@ export class DrawScreen {
       width: this.boxWidth,
       height: this.boxHeight,
     });
+  };
+
+  private activeWindow = (e: MouseEvent) => {
+    this.broadcastChannel.postMessage({
+      type: "activeWindow",
+      id: this.id,
+      x: e.clientX,
+      y: e.clientY,
+    });
+    if (this.mode === "otherTab") {
+      this.mode = "select";
+      return;
+    }
   };
 
   private drawMask = () => {
@@ -493,7 +553,9 @@ export class DrawScreen {
       e.clientX,
       e.clientY
     );
-    if (this.mode === "edit") return;
+    if (this.mode === "edit" || this.mode === "forbidden") return;
+    this.activeWindow(e);
+    if (this.mode === "otherTab") return;
     const isSelectRect =
       e.target === this.selectRectDom ||
       this.selectRectDom.contains(e.target as HTMLElement);
@@ -519,7 +581,9 @@ export class DrawScreen {
       e.clientX,
       e.clientY
     );
-    if (this.mode === "edit") return;
+    if (this.mode === "edit" || this.mode === "forbidden") return;
+    this.activeWindow(e);
+    if (this.mode === "otherTab") return;
     if (this.mode === "select") {
       this.selectMove(e);
       this.sizeDisplay.render(true, {
@@ -551,7 +615,9 @@ export class DrawScreen {
       this.selectWidth,
       this.selectHeight
     );
-    if (this.mode === "edit") return;
+    if (this.mode === "edit" || this.mode === "forbidden") return;
+    this.activeWindow(e);
+    if (this.mode === "otherTab") return;
     switch (this.mode) {
       case "select":
         e.stopPropagation();
@@ -625,12 +691,18 @@ export class DrawScreen {
     }
   };
 
+  private onMouseEnter = (e: MouseEvent) => {
+    if (this.mode === "edit" || this.mode === "forbidden") return;
+    this.activeWindow(e);
+  };
+
   private initListener = () => {
     // Selection logic
     document.body.addEventListener("mousedown", this.onMouseDown);
     document.body.addEventListener("mousemove", this.onMouseMove);
     document.body.addEventListener("mouseup", this.onMouseUp);
     document.body.addEventListener("mouseleave", this.onMouseLeave);
+    document.body.addEventListener("mouseenter", this.onMouseEnter);
 
     bindDoubleClick(this.selectRectDom, () => {
       console.log("================double click================");
