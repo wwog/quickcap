@@ -1,6 +1,6 @@
 import { DrawScreen } from "./draw";
 import "./style.css";
-import { getScreenImageData } from "./utils";
+import { exitApp, getScreenImageData } from "./utils";
 
 const appDom = document.querySelector("#app") as HTMLDivElement;
 
@@ -19,6 +19,12 @@ function init() {
       drawScreen.putImageData(imgData);
     })
     .catch((err) => console.error(err));
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      exitApp();
+    }
+  });
 }
 
 init();
