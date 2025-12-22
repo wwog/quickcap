@@ -267,7 +267,7 @@ export class DrawScreen {
       .catch((err: any) => console.error(err));
 
     this.broadcastChannel.onmessage = (event) => {
-      console.log("🚀 ~ DrawScreen ~ constructor ~ event:", event.data, this.mode);
+      // console.log("🚀 ~ DrawScreen ~ constructor ~ event:", event.data, this.mode);
       const { type, id, x, y, act } = event?.data || {};
 
       if (act === "selectStart" && id !== this.id && (this.selectHeight || this.selectWidth)) {
