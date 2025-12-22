@@ -12,6 +12,7 @@ pub mod macos;
 #[cfg(target_os = "windows")]
 pub mod windows;
 
+#[allow(unused)]
 pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
     #[cfg(target_os = "macos")]
     {
@@ -25,7 +26,7 @@ pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
     }
 }
 
-#[allow(dead_code)]
+#[allow(unused)]
 pub fn configure_overlay_window(window: &Window) {
     #[cfg(target_os = "macos")]
     {

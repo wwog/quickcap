@@ -1,3 +1,5 @@
+use super::structs::WindowInfo;
+use crate::capscreen::enumerate::structs::Rect;
 use objc2_core_foundation::{
     CFArray, CFDictionary, CFNumber, CFRetained, CFShow, CFString, CFType,
 };
@@ -5,8 +7,6 @@ use objc2_core_graphics::{
     CGWindowListCopyWindowInfo, CGWindowListOption, kCGNullWindowID, kCGWindowBounds, kCGWindowName,
 };
 use screencapturekit::prelude::SCShareableContent;
-use crate::capscreen::enumerate::structs::Rect;
-use super::structs::WindowInfo;
 
 /// 枚举当前显示器上的所有窗口,排除自身进程,另外api使用和fork screencapture-rs 相同的api,确保窗口合理
 pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
@@ -20,10 +20,11 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
         .into_iter()
         .find(|display| display.display_id() == display_id)?;
     let frame = display_info.frame();
-    let display_left = frame.origin().x;
-    let display_right = frame.origin().x + frame.size().width;
-    let display_top = frame.origin().y;
-    let display_bottom = frame.origin().y + frame.size().height;
+    let display_origin = frame.origin();
+    let display_left = display_origin.x;
+    let display_right = display_origin.x + frame.size().width;
+    let display_top = display_origin.y;
+    let display_bottom = display_origin.y + frame.size().height;
 
     let current_pid = std::process::id() as i32;
 
@@ -53,16 +54,25 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
         let window_right = window_origin.x + window_size.width;
         let window_top = window_origin.y;
         let window_bottom = window_origin.y + window_size.height;
-        
-        if window_right < display_left || window_left > display_right || window_bottom < display_top || window_top > display_bottom {
+
+        // 检查窗口是否与当前显示器有交集
+        if window_right < display_left
+            || window_left > display_right
+            || window_bottom < display_top
+            || window_top > display_bottom
+        {
             continue;
         }
-        log::error!("window: {:?}", window);
+
+        // 将窗口坐标转换为相对于当前显示器的坐标
+        // 前端绘制时每个显示器都以(0,0)为原点，所以需要减去显示器的origin
+        let relative_x = window_origin.x - display_origin.x;
+        let relative_y = window_origin.y - display_origin.y;
         window_infos.push(WindowInfo {
             name: window.title().unwrap_or_default(),
             bounds: Rect {
-                x: window_left,
-                y: window_top,
+                x: relative_x,
+                y: relative_y,
                 width: window_size.width,
                 height: window_size.height,
             },

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use env_logger::fmt::style::{AnsiColor, Color, Style};
 use std::io::Write;
 use tao::{
-    event::{Event, WindowEvent},
+    event::{Event, KeyEvent, WindowEvent},
     event_loop::{EventLoop, EventLoopBuilder},
     window::WindowId,
 };
@@ -114,11 +114,32 @@ impl App {
                     event: WindowEvent::CloseRequested,
                     ..
                 }
+                | Event::WindowEvent {
+                    event:
+                        WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    logical_key: tao::keyboard::Key::Escape,
+                                    ..
+                                },
+                            ..
+                        },
+                    ..
+                }
                 | Event::UserEvent(UserEvent::Exit) => {
                     if !self.windows.is_empty() {
                         log::error!("WindowEvent::CloseRequested");
                         self.windows.clear();
                         *control_flow = tao::event_loop::ControlFlow::Exit;
+                    }
+                }
+                Event::WindowEvent {
+                    window_id,
+                    event: WindowEvent::CursorEntered { .. },
+                    ..
+                } => {
+                    if let Some(window) = self.windows.get_mut(&window_id) {
+                        window.window.set_focus();
                     }
                 }
                 Event::UserEvent(UserEvent::RpcMessage(req)) => {

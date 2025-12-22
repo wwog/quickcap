@@ -8,6 +8,7 @@ mod windows;
 pub use structs::WindowInfo;
 use tao::monitor::MonitorHandle;
 
+#[allow(unused)]
 pub fn enumerate_windows(handle: &MonitorHandle) -> Vec<WindowInfo> {
     #[cfg(target_os = "macos")]
     {

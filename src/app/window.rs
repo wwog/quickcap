@@ -21,6 +21,10 @@ use tao::{
 #[cfg(target_os = "windows")]
 use tao::platform::windows::{MonitorHandleExtWindows, WindowBuilderExtWindows};
 
+#[allow(unused_imports)]
+#[cfg(target_os = "macos")]
+use tao::platform::macos::MonitorHandleExtMacOS;
+
 use chrono::Local;
 use dirs;
 use rfd::FileDialog;
@@ -92,7 +96,7 @@ impl AppWindow {
             .with_min_inner_size(size)
             .with_minimizable(false)
             .with_maximizable(false);
-            // .with_always_on_top(true);
+        // .with_always_on_top(true);
 
         #[cfg(target_os = "macos")]
         {
@@ -138,7 +142,7 @@ impl AppWindow {
             state.done = true;
             cvar.notify_all();
         });
-        
+
         let window_for_dialog = Arc::clone(&window);
         let capture_state_for_bg = Arc::clone(&capture_state);
         let monitor_for_enum = monitor.clone();
@@ -316,6 +320,11 @@ impl AppWindow {
                     }
                     "/windows" => {
                         let windows = enumerate_windows(&monitor_for_enum);
+                        log::error!(
+                            "monitor: {}, windows: {:?}",
+                            monitor_for_enum.native_id(),
+                            windows
+                        );
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
                         Response::builder()
@@ -346,7 +355,11 @@ impl AppWindow {
             })
             .with_transparent(true)
             .with_url("app://localhost")
-            .build(&window)
+            .with_bounds(wry::Rect {
+                position: tao::dpi::Position::Logical(tao::dpi::LogicalPosition::new(0.0, 0.0)),
+                size: tao::dpi::Size::Logical(size),
+            })
+            .build_as_child(&window)
             .unwrap();
 
         Self {
