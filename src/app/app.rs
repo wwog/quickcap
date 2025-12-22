@@ -19,6 +19,7 @@ pub struct App {
 }
 
 impl App {
+    /// 将标准错误接口的输出用作输出，标准输出的接口的输出用作STDIO
     pub fn new() -> Self {
         let mut logger_builder = env_logger::builder();
 
@@ -31,23 +32,19 @@ impl App {
                 .fg_color(Some(Color::Ansi(AnsiColor::Green)))
                 .bold();
             let style_white = Style::new().fg_color(Some(Color::Ansi(AnsiColor::White)));
-
+              
             writeln!(
                 buf,
                 "{}{}{} {}{}{} {}{}{} {}{}{}",
-                // 1. 时间戳 (灰色)
                 style_gray.render(),
                 buf.timestamp_millis(),
                 style_gray.render_reset(),
-                // 2. [INFO] 伪装标签 (绿色)
                 style_green.render(),
                 "[INFO]",
-                style_green.render_reset(), // <--- 之前这里用了 info_reset= 写法导致报错，现已修正
-                // 3. 模块路径 (青色)
+                style_green.render_reset(),
                 style_cyan.render(),
                 record.target(),
                 style_cyan.render_reset(),
-                // 4. 日志内容 (白色)
                 style_white.render(),
                 record.args(),
                 style_white.render_reset(),
