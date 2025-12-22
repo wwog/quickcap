@@ -253,12 +253,12 @@ export class DrawScreen {
             }
           });
           // Add the main window area
-          arr.push({
-            x: 0,
-            y: 0,
-            width: maxX,
-            height: maxY,
-          });
+          // arr.push({
+          //   x: 0,
+          //   y: 0,
+          //   width: maxX,
+          //   height: maxY,
+          // });
           this.windows = arr;
         }
       )
