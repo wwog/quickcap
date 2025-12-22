@@ -76,7 +76,6 @@ impl StdRpcClient {
         self.write_raw(msg);
     }
 
-    /// 发起请求并等待响应 (Electron <- Rust)
     pub fn call(
         &self,
         method: &str,
@@ -208,12 +207,10 @@ impl StdRpcClient {
                     continue;
                 }
 
-                // 1. 解析为通用结构 RawMessage
                 match serde_json::from_str::<RawMessage>(trimmed) {
                     Ok(raw) => {
                         let client = Self::global();
 
-                        // 2. 逻辑分类
                         if let Some(method) = raw.method {
                             // --- 有 Method: 是 请求 或 通知 ---
                             if let Some(id) = raw.id {
