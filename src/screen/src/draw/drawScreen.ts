@@ -15,7 +15,14 @@ import { EditTools } from "./editTools";
 // import { onClickFinish } from "./func";
 import { SizeDisplay } from "./sizeDisplay";
 
-type TMode = "otherTab" | "select" | "waitEdit" | "resizing" | "edit" | "move" | "forbidden";
+type TMode =
+  | "otherTab"
+  | "select"
+  | "waitEdit"
+  | "resizing"
+  | "edit"
+  | "move"
+  | "forbidden";
 
 /**
  * Manages interface drawing and interaction, including selection, editing, moving, etc.
@@ -104,25 +111,15 @@ export class DrawScreen {
           });
           break;
         }
-        case "forbidden":
+        case "forbidden": {
+          this.clearSelectRect();
+          break;
+        }
         case "otherTab": {
-          this.selectX = 0;
-          this.selectY = 0;
-          this.selectWidth = 0;
-          this.selectHeight = 0;
-          this.drawMask();
-          this.editTools.render(false, {
-            x: 0,
-            y: 0,
-            height: 0,
-            width: 0,
-          });
-          this.sizeDisplay.render(false, {
-            x: 0,
-            y: 0,
-            height: 0,
-            width: 0,
-          });
+          if (oldMode === "waitEdit") {
+            break;
+          }
+          this.clearSelectRect();
           break;
         }
       }
@@ -159,7 +156,10 @@ export class DrawScreen {
   ];
 
   constructor(appDom: HTMLDivElement) {
-    console.log(`%c🏓 DPR: ${DPR}`,'background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;');
+    console.log(
+      `%c🏓 DPR: ${DPR}`,
+      "background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;"
+    );
     // this.imgDom = imgDom;
     this.imgDom = null;
     this.canvasContainer.classList.add("canvas-container");
@@ -267,8 +267,14 @@ export class DrawScreen {
       .catch((err: any) => console.error(err));
 
     this.broadcastChannel.onmessage = (event) => {
-      // console.log("🚀 ~ DrawScreen ~ constructor ~ event:", event.data, event);
-      const { type, id, x, y } = event?.data || {};
+      console.log("🚀 ~ DrawScreen ~ constructor ~ event:", event.data, this.mode);
+      const { type, id, x, y, act } = event?.data || {};
+
+      if (act === "selectStart" && id !== this.id && (this.selectHeight || this.selectWidth)) {
+        console.log(`%c🏓 clearSelectRect`,'background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;');
+        this.clearSelectRect();
+      }
+
       if (type === "activeWindow" && id !== this.id) {
         this.mode = "otherTab";
       } else if (
@@ -282,6 +288,26 @@ export class DrawScreen {
       }
     };
   }
+
+  private clearSelectRect = () => {
+    this.selectX = 0;
+    this.selectY = 0;
+    this.selectWidth = 0;
+    this.selectHeight = 0;
+    this.drawMask();
+    this.editTools.render(false, {
+      x: 0,
+      y: 0,
+      height: 0,
+      width: 0,
+    });
+    this.sizeDisplay.render(false, {
+      x: 0,
+      y: 0,
+      height: 0,
+      width: 0,
+    });
+  };
 
   setImgDom = (imgDom: HTMLImageElement) => {
     this.imgDom = imgDom;
@@ -349,9 +375,13 @@ export class DrawScreen {
     });
   };
 
-  private activeWindow = (e: MouseEvent) => {
+  private activeWindow = (
+    e: MouseEvent,
+    act: "selectStart" | "move" | "selectEnd" | "enter"
+  ) => {
     this.broadcastChannel.postMessage({
       type: "activeWindow",
+      act,
       id: this.id,
       x: e.clientX,
       y: e.clientY,
@@ -556,7 +586,7 @@ export class DrawScreen {
       e.clientY
     ); */
     if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e);
+    this.activeWindow(e, "selectStart");
     if (this.mode === "otherTab") return;
     const isSelectRect =
       e.target === this.selectRectDom ||
@@ -584,7 +614,7 @@ export class DrawScreen {
       e.clientY
     ); */
     if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e);
+    this.activeWindow(e, "move");
     if (this.mode === "otherTab") return;
     if (this.mode === "select") {
       this.selectMove(e);
@@ -618,7 +648,7 @@ export class DrawScreen {
       this.selectHeight
     ); */
     if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e);
+    this.activeWindow(e, "selectEnd");
     if (this.mode === "otherTab") return;
     switch (this.mode) {
       case "select":
@@ -695,7 +725,7 @@ export class DrawScreen {
 
   private onMouseEnter = (e: MouseEvent) => {
     if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e);
+    this.activeWindow(e, "enter");
   };
 
   private initListener = () => {
