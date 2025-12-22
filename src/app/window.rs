@@ -55,9 +55,9 @@ impl AppWindow {
         let proxy = event_loop.create_proxy();
         #[cfg(target_os = "macos")]
         let (position, size) = {
-            // let scale_factor = monitor.scale_factor();
-            let position = monitor.position();
-            let size = monitor.size();
+            let scale_factor = monitor.scale_factor();
+            let position = monitor.position().to_logical::<f64>(scale_factor);
+            let size = monitor.size().to_logical::<f64>(scale_factor);
             log::error!(
                 "create attributes: position: {:?}, size: {:?}",
                 position,
@@ -354,14 +354,31 @@ impl AppWindow {
                 }
             })
             .with_transparent(true)
-            .with_url("app://localhost")
-            .with_bounds(wry::Rect {
-                position: tao::dpi::Position::Physical(tao::dpi::PhysicalPosition::new(0, 0)),
-                size: tao::dpi::Size::Physical(tao::dpi::PhysicalSize::new(size.width as u32, size.height as u32)),
-            })
-            .build_as_child(&window)
-            .unwrap();
+            .with_url("app://localhost");
 
+        #[cfg(target_os = "macos")]
+        let webview = {
+            webview
+                .with_bounds(wry::Rect {
+                    position: tao::dpi::Position::Logical(tao::dpi::LogicalPosition::new(0.0, 0.0)),
+                    size: tao::dpi::Size::Logical(tao::dpi::LogicalSize::new(size.width, size.height)),
+                })
+                .build_as_child(&window)
+                .unwrap()
+        };
+        #[cfg(target_os = "windows")]
+        let webview = {
+            webview
+                .with_bounds(wry::Rect {
+                    position: tao::dpi::Position::Physical(tao::dpi::PhysicalPosition::new(0, 0)),
+                    size: tao::dpi::Size::Physical(tao::dpi::PhysicalSize::new(
+                        size.width as u32,
+                        size.height as u32,
+                    )),
+                })
+                .build_as_child(&window)
+                .unwrap();
+        };
         Self {
             window,
             webview,
