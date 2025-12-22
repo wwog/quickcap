@@ -1,9 +1,5 @@
-const exitCleanStorageKeys = ['selected']
 const app = {
     exit: () => {
-        exitCleanStorageKeys.forEach(item => {
-            localStorage.removeItem(item)
-        })
         window.ipc.postMessage('exit')
     },
     getImage: async () => {
