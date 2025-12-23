@@ -224,21 +224,23 @@ jobs:
             cd ..
           fi
           
-          # macOS Intel
+          # macOS Intel - 只上传 tar.gz，保留执行权限
           if [ -d "artifacts/macOS-Intel" ] && [ -f "artifacts/macOS-Intel/quickcap" ]; then
             cp artifacts/macOS-Intel/quickcap release-assets/quickcap-macos-intel
             chmod +x release-assets/quickcap-macos-intel
             cd release-assets
             tar -czf quickcap-macos-intel.tar.gz quickcap-macos-intel
+            rm quickcap-macos-intel  # 删除原始文件，只保留 tar.gz
             cd ..
           fi
           
-          # macOS ARM
+          # macOS ARM - 只上传 tar.gz，保留执行权限
           if [ -d "artifacts/macOS-ARM" ] && [ -f "artifacts/macOS-ARM/quickcap" ]; then
             cp artifacts/macOS-ARM/quickcap release-assets/quickcap-macos-arm
             chmod +x release-assets/quickcap-macos-arm
             cd release-assets
             tar -czf quickcap-macos-arm.tar.gz quickcap-macos-arm
+            rm quickcap-macos-arm  # 删除原始文件，只保留 tar.gz
             cd ..
           fi
           
@@ -265,13 +267,17 @@ jobs:
           ## 下载
           请根据您的系统下载对应的可执行文件：
           - Windows: \`quickcap-windows-x64.exe\` 或 \`quickcap-windows-x64.zip\`
-          - macOS Intel: \`quickcap-macos-intel\` 或 \`quickcap-macos-intel.tar.gz\`
-          - macOS ARM: \`quickcap-macos-arm\` 或 \`quickcap-macos-arm.tar.gz\`
+          - macOS Intel: \`quickcap-macos-intel.tar.gz\`
+          - macOS ARM: \`quickcap-macos-arm.tar.gz\`
           
           ## 安装说明
           1. 下载对应平台的文件
-          2. 解压（如需要）
-          3. 运行可执行文件
+          2. **Windows**: 直接运行 \`quickcap-windows-x64.exe\` 或解压 \`quickcap-windows-x64.zip\`
+          3. **macOS**: 解压 tar.gz 文件后运行可执行文件
+             \`\`\`bash
+             tar -xzf quickcap-macos-intel.tar.gz  # 或 quickcap-macos-arm.tar.gz
+             ./quickcap
+             \`\`\`
           
           ---
           *此版本由 GitHub Actions 自动构建*
