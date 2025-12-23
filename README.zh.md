@@ -49,6 +49,12 @@ windows大部分支持 (需要支持多显示器，所以使用了较为简单�
 
 unix/linux stdio. stderr is log, stdout is data.
 
+进程结束前会发起两个消息
+
+save_image_to_folder 代表保存成功
+copy_to_clipboard    代表拷贝成功
+
+
 ## CI/CD 工作流
 
 项目使用 GitHub Actions 进行自动化构建和发布，配置文件位于 `.github/workflows/release.yml`。

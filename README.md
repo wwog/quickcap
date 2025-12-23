@@ -47,6 +47,11 @@ Most Windows versions supported (needs multi-monitor support, so uses simpler GD
 
 Unix/Linux stdio. stderr is log, stdout is data.
 
+Before the process exits, two messages are emitted:
+
+- `save_image_to_folder` — indicates the image was saved successfully
+- `copy_to_clipboard` — indicates the image was copied successfully
+
 ## CI/CD Workflow
 
 The project uses GitHub Actions for automated builds and releases. The workflow configuration is located at `.github/workflows/release.yml`.
