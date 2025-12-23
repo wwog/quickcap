@@ -128,12 +128,19 @@ jobs:
           
           # 构建项目（使用详细输出以便调试）
           echo "开始构建..."
-          cargo build --release --target ${{ matrix.target }} --verbose 2>&1 | head -100
+          set +e  # 允许命令失败，以便我们可以检查退出码
+          cargo build --release --target ${{ matrix.target }} --verbose
+          BUILD_EXIT_CODE=$?
+          set -e  # 恢复错误时退出
           
-          # 如果构建失败，检查 Swift 对象文件架构
-          if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ] && [ $? -ne 0 ]; then
-            echo "构建失败，检查 Swift 对象文件架构..."
-            find target -name "*.swift.o" -exec file {} \; 2>/dev/null | head -20 || true
+          # 如果构建失败，显示错误信息并检查 Swift 对象文件架构
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "构建失败，退出码: $BUILD_EXIT_CODE"
+            if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+              echo "检查 Swift 对象文件架构..."
+              find target -name "*.swift.o" -exec file {} \; 2>/dev/null | head -20 || true
+            fi
+            exit $BUILD_EXIT_CODE
           fi
         env:
           MACOSX_DEPLOYMENT_TARGET: "12.3"
