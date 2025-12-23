@@ -171,7 +171,10 @@ jobs:
               echo "未找到 Windows 可执行文件: target/${{ matrix.target }}/release/quickcap.exe"
               exit 1
             fi
+            # 1) 打包为 tar.gz
             tar -czf "dist/quickcap-windows-x64.tar.gz" -C "target/${{ matrix.target }}/release" "quickcap.exe"
+            # 2) 同时拷贝裸 exe，方便在 Release 中直接下载，不会丢失执行权限
+            cp "target/${{ matrix.target }}/release/quickcap.exe" "dist/quickcap-windows-x64.exe"
             echo "已生成 dist/quickcap-windows-x64.tar.gz"
           elif [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
             # macOS Intel 可执行文件打包
@@ -200,7 +203,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.package_name }}
+          # 直接上传整个 dist 目录：
+          # - Windows: 包含 tar.gz + exe
+          # - macOS: 目前只包含 tar.gz
+          path: dist/
           retention-days: 30
 
   release:
@@ -245,6 +251,10 @@ jobs:
           # Windows: 直接使用构建阶段生成的 tar.gz
           if [ -d "artifacts/Windows-x64" ] && [ -f "artifacts/Windows-x64/quickcap-windows-x64.tar.gz" ]; then
             cp artifacts/Windows-x64/quickcap-windows-x64.tar.gz release-assets/quickcap-windows-x64.tar.gz
+          fi
+          # Windows: 同时提供裸 exe
+          if [ -d "artifacts/Windows-x64" ] && [ -f "artifacts/Windows-x64/quickcap-windows-x64.exe" ]; then
+            cp artifacts/Windows-x64/quickcap-windows-x64.exe release-assets/quickcap-windows-x64.exe
           fi
           
           # macOS Intel: 直接使用构建阶段生成的 tar.gz
