@@ -1,101 +1,99 @@
-# 截图程序 
+# Screenshot Tool
 
-[English](./README.en.md)
+[中文](./README.zh.md)
 
-## 技术实现
+## Technical Implementation
 
-Windows使用GDI进行截屏，原因无论是DXGI还是GraphicCapture，GDI在单帧截取速度更快，并且不需要自己拼接多显示器，因为这两个新的api主要服务远程和视频，对于目前架构的大部分cpu处理的场景慢于GDI且复杂度高。
+Windows uses GDI for screen capture. The reason is that whether it's DXGI or GraphicCapture, GDI is faster for single-frame capture and doesn't require manual multi-monitor stitching. These two new APIs primarily serve remote and video scenarios, which are slower than GDI and more complex for most CPU-processing scenarios in the current architecture.
 
-Macos使用ScreenCaptureKit的最初实现完成，包括窗口枚举也是这套api，以确保窗口获取和截取保持平衡，由于Macos桌面空间与显示器呈现绑定状态，所以会有两个显示器尺寸的窗口作为蒙层，windows没有这个限制。另外，我fork了screencapture-rs这个库，追加了CGDisplayCreateImage的实现和一些其他功能，也提交PR让原始模块能够支持不按系统构建Swift而是根据Rust features。[ForkVersion](https://github.com/wwog/screencapturekit-rs),在此库实现中支持了交叉编译，原有实现强依赖系统。会导致你需要macos intel，也需要macos arm,且几个关节节点的系统版本都需要。
+macOS uses the initial implementation of ScreenCaptureKit, including window enumeration, which is also part of this API to ensure balance between window acquisition and capture. Since macOS desktop space is bound to display presentation, there will be two display-sized windows as overlays, which Windows doesn't have this limitation. Additionally, I forked the screencapture-rs library, adding CGDisplayCreateImage implementation and some other features. [ForkVersion](https://github.com/wwog/screencapturekit-rs). This library implementation supports cross-compilation, while the original implementation strongly depends on the system. This would require you to have both macOS Intel and macOS ARM, and several key system versions are needed.
 
-本项目也实现了enumerate_windows_cg用于需要兼容性的实现。CGWindowListCopyWindowInfo和CGDisplayCreateImage可以支持大部分macos。
+This project also implements enumerate_windows_cg for compatibility needs. CGWindowListCopyWindowInfo and CGDisplayCreateImage can support most macOS versions.
 
-早期提交采用了wgpu进行绘制背景，但并不支持外部纹理，可能最佳方案是平台特定实现或者skia。但考虑复杂度和平台差异选用webview。
+Early commits used wgpu for background rendering, but it doesn't support external textures. The best solution might be platform-specific implementations or Skia. However, considering complexity and platform differences, webview was chosen.
 
-早期提交也尝试了DXGI和Craphic.Capture。
+Early commits also attempted DXGI and Graphic.Capture.
 
-截图和一系列系统调用由rust负责。主要的延迟来源于webview的冷启动，后续优化可以考虑为服务式隐藏窗口。可以在100ms左右完成4k的截屏窗口打开。
+Screenshot capture and a series of system calls are handled by Rust. The main latency comes from webview cold start. Subsequent optimizations could consider a service-style hidden window. It can complete 4K screen capture window opening in around 100ms.
 
-## 特性
+## Features
 
- -  多显示器支持
- -  跨平台支持(macos,windows)
- -  快速响应 (双4k显示器的mac下，300ms左右完成展示)(双2k显示器的windows，cpu很老在300ms左右完成展示)
- -  窗口感知
- -  粘贴板，画笔等常见功能。
+- Multi-monitor support
+- Cross-platform support (macOS, Windows)
+- Fast response (around 300ms to complete display on macOS with dual 4K monitors) (around 300ms to complete display on Windows with dual 2K monitors, even with old CPUs)
+- Window awareness
+- Clipboard, brush, and other common features
 
-## 优化点
+## Optimization Points
 
-项目的优化点还是比较多，如果要达到微信的秒启动，可以更改为服务式，初始化好webview这个最重的依赖然后隐藏。内存使用并不算高。
+There are still many optimization points in the project. To achieve WeChat's instant startup, it can be changed to a service-style approach, initializing the webview (the heaviest dependency) and then hiding it. Memory usage is not particularly high.
 
-其次如果不考虑复杂度，推荐使用swift && c#来单端实现。不去使用webview，windows替换掉GDI，他们都可以直接截取纹理，进行快速渲染，可以达到0拷贝。并且都支持bgra的直接使用。
+Alternatively, if complexity is not a concern, it's recommended to use Swift && C# for single-platform implementation. Instead of using webview, replace GDI on Windows. Both can directly capture textures for fast rendering, achieving zero-copy. Both also support direct use of BGRA.
 
-还有一种选择是使用skia，保持rust进行跨平台，skia根据调研但并未尝试，应该是支持`CVImageBuffer``IOSurface`和windows的`D3D11Texture`。也可以方便的绘图，画框等操作到最后导出。
+Another option is to use Skia, keeping Rust for cross-platform. Skia has been researched but not tried. It should support `CVImageBuffer`, `IOSurface`, and Windows' `D3D11Texture`. It can also conveniently draw, frame, and other operations for final export.
 
-跨平台的最佳实现就是skia，冷启动的效率也会非常高，复杂度也不算特别高。
+The best cross-platform implementation is Skia, with very high cold start efficiency and not particularly high complexity.
 
+## Others
 
-## 其他
+At the time of writing this documentation, cross-application communication has not been completed. If it's not implemented when you see this, it may use stdio format, with the initiator detecting standard output to determine the dynamic execution of the program. Additionally, all code implementations are in the lib crate. You can also easily build dynamic libraries for calls, such as Node.js native modules or platform dynamic libraries. Note that if this functionality is used as a dynamic library, it will block the main thread. Most systems require the UI thread to be on the main thread, which is extremely difficult to solve. That is, when you call this dynamic library during your own application execution, the original application will be unresponsive until the operation is complete.
 
-文档编写时，还未完成跨应用的通信，如果看到时没有实现，那可能采用的stdio的形式，由发起方进行标准输出的检测来判定程序执行的动态。另外，所有代码实现在lib crate,你也可以轻松的构建动态库来进行调用，例如nodejs的native module。或者平台动态库。需要注意的是，此功能如果作为动态库，会阻塞主线程，大多数系统要求ui线程位于主线程，此处极难解决，也就是在你本身应用执行时调用此动态库，原有的应用会在操作完成前无响应。
+## Requirements
 
-## 运行要求
+macOS 12.3+ (uses screencapture internally for single-frame capture)
+Most Windows versions supported (needs multi-monitor support, so uses simpler GDI for acquisition)
 
-macos12.3以上 (内部使用screencapture截取单帧)
-windows大部分支持 (需要支持多显示器，所以使用了较为简单的GDI进行获取)
+## Communication
 
+Unix/Linux stdio. stderr is log, stdout is data.
 
-## 通信
+## CI/CD Workflow
 
-unix/linux stdio. stderr is log, stdout is data.
+The project uses GitHub Actions for automated builds and releases. The workflow configuration is located at `.github/workflows/release.yml`.
 
-## CI/CD 工作流
+### Trigger Conditions
 
-项目使用 GitHub Actions 进行自动化构建和发布，配置文件位于 `.github/workflows/release.yml`。
+- **Version Tag Push**: Pushing version tags (e.g., `v0.1.0`) triggers the build and automatically publishes a Release
 
-### 触发条件
+### Build Platforms
 
-- **版本标签推送**：推送版本标签（如 `v0.1.0`）时触发构建并自动发布 Release
+The project supports automated builds for the following platforms:
 
-### 构建平台
+- **Windows x64 (MSVC)** - uses `windows-latest` runner
+- **macOS Intel (x86_64)** - uses `macos-latest` runner, supports cross-compilation on ARM runners
+- **macOS ARM (Apple Silicon)** - uses `macos-latest` runner
 
-项目支持以下平台的自动化构建：
+### Build Optimizations
 
-- **Windows x64 (MSVC)** - 使用 `windows-latest` runner
-- **macOS Intel (x86_64)** - 使用 `macos-latest` runner，支持 ARM runner 上的交叉编译
-- **macOS ARM (Apple Silicon)** - 使用 `macos-latest` runner
+- ✅ Caches Cargo dependencies to speed up builds
+- ✅ Automatic macOS x86_64 cross-compilation environment configuration
+- ✅ Automatically cleans build cache with incorrect architectures
+- ✅ macOS minimum version set to 12.3
 
-### 构建优化
+### Automatic Release
 
-- ✅ 缓存 Cargo 依赖以加速构建
-- ✅ macOS x86_64 交叉编译环境自动配置
-- ✅ 自动清理错误架构的构建缓存
-- ✅ macOS 最低版本设置为 12.3
+When pushing version tags, the workflow automatically:
 
-### 自动发布
+- 📦 Creates GitHub Release
+- 📝 Generates Release Notes including:
+  - Version number
+  - Build time and date
+  - Git commit information
+- 📎 Generates executables and compressed packages for each platform:
+  - Windows: `quickcap-windows-x64.exe` and `quickcap-windows-x64.zip`
+  - macOS Intel: `quickcap-macos-intel` and `quickcap-macos-intel.tar.gz`
+  - macOS ARM: `quickcap-macos-arm` and `quickcap-macos-arm.tar.gz`
 
-当推送版本标签时，工作流会自动：
+### Usage
 
-- 📦 创建 GitHub Release
-- 📝 生成包含以下信息的 Release Notes：
-  - 版本号
-  - 构建时间与日期
-  - Git 提交信息
-- 📎 为每个平台生成可执行文件和压缩包：
-  - Windows: `quickcap-windows-x64.exe` 和 `quickcap-windows-x64.zip`
-  - macOS Intel: `quickcap-macos-intel` 和 `quickcap-macos-intel.tar.gz`
-  - macOS ARM: `quickcap-macos-arm` 和 `quickcap-macos-arm.tar.gz`
-
-### 使用方法
-
-创建版本标签并发布：
+Create a version tag and publish:
 
 ```bash
-# 创建版本标签
+# Create version tag
 git tag v0.1.0
 
-# 推送标签（将自动触发构建和发布）
+# Push tag (will automatically trigger build and release)
 git push origin v0.1.0
 ```
 
-推送标签后，GitHub Actions 会自动开始构建，完成后会在 Releases 页面创建新的发布版本。
+After pushing the tag, GitHub Actions will automatically start the build process. Once completed, a new release will be created on the Releases page.
