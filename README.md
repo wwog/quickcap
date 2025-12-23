@@ -53,39 +53,6 @@ The project uses GitHub Actions for automated builds and releases. The workflow 
 
 ### Trigger Conditions
 
-- **Version Tag Push**: Pushing version tags (e.g., `v0.1.0`) triggers the build and automatically publishes a Release
-
-### Build Platforms
-
-The project supports automated builds for the following platforms:
-
-- **Windows x64 (MSVC)** - uses `windows-latest` runner
-- **macOS Intel (x86_64)** - uses `macos-latest` runner, supports cross-compilation on ARM runners
-- **macOS ARM (Apple Silicon)** - uses `macos-latest` runner
-
-### Build Optimizations
-
-- ✅ Caches Cargo dependencies to speed up builds
-- ✅ Automatic macOS x86_64 cross-compilation environment configuration
-- ✅ Automatically cleans build cache with incorrect architectures
-- ✅ macOS minimum version set to 12.3
-
-### Automatic Release
-
-When pushing version tags, the workflow automatically:
-
-- 📦 Creates GitHub Release
-- 📝 Generates Release Notes including:
-  - Version number
-  - Build time and date
-  - Git commit information
-- 📎 Generates executables and compressed packages for each platform:
-  - Windows: `quickcap-windows-x64.exe` and `quickcap-windows-x64.zip`
-  - macOS Intel: `quickcap-macos-intel` and `quickcap-macos-intel.tar.gz`
-  - macOS ARM: `quickcap-macos-arm` and `quickcap-macos-arm.tar.gz`
-
-### Usage
-
 Create a version tag and publish:
 
 ```bash

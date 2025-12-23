@@ -20,15 +20,15 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             artifact_name: Windows-x64
-            artifact_ext: .exe
+            package_name: quickcap-windows-x64.tar.gz
           - target: x86_64-apple-darwin
             os: macos-latest  # GitHub Actions macOS runner 是 ARM，但支持 Rosetta 2
             artifact_name: macOS-Intel
-            artifact_ext: ""
+            package_name: quickcap-macos-intel.tar.gz
           - target: aarch64-apple-darwin
             os: macos-latest
             artifact_name: macOS-ARM
-            artifact_ext: ""
+            package_name: quickcap-macos-arm.tar.gz
 
     steps:
       - name: Checkout code
@@ -161,20 +161,46 @@ jobs:
       - name: Prepare artifact
         shell: bash
         run: |
-          mkdir -p dist/${{ matrix.artifact_name }}
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            cp target/${{ matrix.target }}/release/quickcap.exe dist/${{ matrix.artifact_name }}/quickcap.exe
+          mkdir -p dist
+
+          echo "打包构建产物为 tar.gz 并移动到 dist/ 目录..."
+
+          if [ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]; then
+            # Windows 可执行文件打包
+            if [ ! -f "target/${{ matrix.target }}/release/quickcap.exe" ]; then
+              echo "未找到 Windows 可执行文件: target/${{ matrix.target }}/release/quickcap.exe"
+              exit 1
+            fi
+            tar -czf "dist/quickcap-windows-x64.tar.gz" -C "target/${{ matrix.target }}/release" "quickcap.exe"
+            echo "已生成 dist/quickcap-windows-x64.tar.gz"
+          elif [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+            # macOS Intel 可执行文件打包
+            if [ ! -f "target/${{ matrix.target }}/release/quickcap" ]; then
+              echo "未找到 macOS Intel 可执行文件: target/${{ matrix.target }}/release/quickcap"
+              exit 1
+            fi
+            chmod +x "target/${{ matrix.target }}/release/quickcap"
+            tar -czf "dist/quickcap-macos-intel.tar.gz" -C "target/${{ matrix.target }}/release" "quickcap"
+            echo "已生成 dist/quickcap-macos-intel.tar.gz"
+          elif [ "${{ matrix.target }}" == "aarch64-apple-darwin" ]; then
+            # macOS ARM 可执行文件打包
+            if [ ! -f "target/${{ matrix.target }}/release/quickcap" ]; then
+              echo "未找到 macOS ARM 可执行文件: target/${{ matrix.target }}/release/quickcap"
+              exit 1
+            fi
+            chmod +x "target/${{ matrix.target }}/release/quickcap"
+            tar -czf "dist/quickcap-macos-arm.tar.gz" -C "target/${{ matrix.target }}/release" "quickcap"
+            echo "已生成 dist/quickcap-macos-arm.tar.gz"
           else
-            cp target/${{ matrix.target }}/release/quickcap dist/${{ matrix.artifact_name }}/quickcap
-            # 为 macOS 可执行文件添加执行权限
-            chmod +x dist/${{ matrix.artifact_name }}/quickcap
+            echo "未知构建目标: ${{ matrix.target }}"
+            exit 1
           fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.artifact_name }}/
+          path: dist/${{ matrix.package_name }}
           retention-days: 30
 
   release:
@@ -216,32 +242,19 @@ jobs:
         run: |
           mkdir -p release-assets
           
-          # Windows
-          if [ -d "artifacts/Windows-x64" ] && [ -f "artifacts/Windows-x64/quickcap.exe" ]; then
-            cp artifacts/Windows-x64/quickcap.exe release-assets/quickcap-windows-x64.exe
-            cd release-assets
-            zip quickcap-windows-x64.zip quickcap-windows-x64.exe
-            cd ..
+          # Windows: 直接使用构建阶段生成的 tar.gz
+          if [ -d "artifacts/Windows-x64" ] && [ -f "artifacts/Windows-x64/quickcap-windows-x64.tar.gz" ]; then
+            cp artifacts/Windows-x64/quickcap-windows-x64.tar.gz release-assets/quickcap-windows-x64.tar.gz
           fi
           
-          # macOS Intel - 只上传 tar.gz，保留执行权限
-          if [ -d "artifacts/macOS-Intel" ] && [ -f "artifacts/macOS-Intel/quickcap" ]; then
-            cp artifacts/macOS-Intel/quickcap release-assets/quickcap-macos-intel
-            chmod +x release-assets/quickcap-macos-intel
-            cd release-assets
-            tar -czf quickcap-macos-intel.tar.gz quickcap-macos-intel
-            rm quickcap-macos-intel  # 删除原始文件，只保留 tar.gz
-            cd ..
+          # macOS Intel: 直接使用构建阶段生成的 tar.gz
+          if [ -d "artifacts/macOS-Intel" ] && [ -f "artifacts/macOS-Intel/quickcap-macos-intel.tar.gz" ]; then
+            cp artifacts/macOS-Intel/quickcap-macos-intel.tar.gz release-assets/quickcap-macos-intel.tar.gz
           fi
           
-          # macOS ARM - 只上传 tar.gz，保留执行权限
-          if [ -d "artifacts/macOS-ARM" ] && [ -f "artifacts/macOS-ARM/quickcap" ]; then
-            cp artifacts/macOS-ARM/quickcap release-assets/quickcap-macos-arm
-            chmod +x release-assets/quickcap-macos-arm
-            cd release-assets
-            tar -czf quickcap-macos-arm.tar.gz quickcap-macos-arm
-            rm quickcap-macos-arm  # 删除原始文件，只保留 tar.gz
-            cd ..
+          # macOS ARM: 直接使用构建阶段生成的 tar.gz
+          if [ -d "artifacts/macOS-ARM" ] && [ -f "artifacts/macOS-ARM/quickcap-macos-arm.tar.gz" ]; then
+            cp artifacts/macOS-ARM/quickcap-macos-arm.tar.gz release-assets/quickcap-macos-arm.tar.gz
           fi
           
           echo "Release assets prepared:"
@@ -264,18 +277,15 @@ jobs:
           - ✅ macOS Intel (x86_64)
           - ✅ macOS ARM (Apple Silicon)
           
-          ## 下载
-          请根据您的系统下载对应的可执行文件：
-          - Windows: \`quickcap-windows-x64.exe\` 或 \`quickcap-windows-x64.zip\`
-          - macOS Intel: \`quickcap-macos-intel.tar.gz\`
-          - macOS ARM: \`quickcap-macos-arm.tar.gz\`
-          
           ## 安装说明
-          1. 下载对应平台的文件
-          2. **Windows**: 直接运行 \`quickcap-windows-x64.exe\` 或解压 \`quickcap-windows-x64.zip\`
-          3. **macOS**: 解压 tar.gz 文件后运行可执行文件
+          1. 下载对应平台的 \`.tar.gz\` 压缩包：
+             - Windows: \`quickcap-windows-x64.tar.gz\`
+             - macOS Intel: \`quickcap-macos-intel.tar.gz\`
+             - macOS ARM: \`quickcap-macos-arm.tar.gz\`
+          2. 解压压缩包并运行可执行文件：
              \`\`\`bash
-             tar -xzf quickcap-macos-intel.tar.gz  # 或 quickcap-macos-arm.tar.gz
+             # 示例（macOS）
+             tar -xzf quickcap-macos-intel.tar.gz   # 或 quickcap-macos-arm.tar.gz
              ./quickcap
              \`\`\`
           
