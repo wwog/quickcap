@@ -59,12 +59,16 @@ jobs:
           echo "设置 x86_64 macOS 交叉编译环境..."
           echo "当前架构: $(uname -m)"
           
-          # 清理可能存在的错误架构构建缓存（在设置环境变量之前）
+          # 完全清理 x86_64 目标的构建缓存，确保重新编译
+          echo "清理 x86_64 构建缓存..."
           if [ -d "target/x86_64-apple-darwin" ]; then
-            echo "清理 x86_64 构建缓存..."
-            find target/x86_64-apple-darwin -path "*/capscreen_macos-*/out" -type d -exec rm -rf {} + 2>/dev/null || true
-            find target/x86_64-apple-darwin -name "*.swift.o" -type f -delete 2>/dev/null || true
-            find target/x86_64-apple-darwin -name "libscreencapturekit*.rlib" -type f -delete 2>/dev/null || true
+            rm -rf target/x86_64-apple-darwin
+            echo "已删除 target/x86_64-apple-darwin 目录"
+          fi
+          
+          # 清理可能存在的 capscreen_macos 构建产物
+          if [ -d "target/release/build" ]; then
+            find target/release/build -name "capscreen_macos-*" -type d -exec rm -rf {} + 2>/dev/null || true
           fi
           
           # 设置环境变量（确保在构建步骤中可用）
@@ -74,13 +78,23 @@ jobs:
           echo "SWIFT_TARGET_TRIPLE=x86_64-apple-macosx12.3" >> $GITHUB_ENV
           echo "CC_x86_64_apple_darwin=clang -arch x86_64 -mmacosx-version-min=12.3" >> $GITHUB_ENV
           echo "CXX_x86_64_apple_darwin=clang++ -arch x86_64 -mmacosx-version-min=12.3" >> $GITHUB_ENV
-          echo "SWIFTFLAGS=-target x86_64-apple-macosx12.3" >> $GITHUB_ENV
+          
+          # Swift 编译器参数（多个可能的变量名，确保被识别）
+          SDK_PATH=$(xcrun --show-sdk-path)
+          echo "SWIFTFLAGS=-target x86_64-apple-macosx12.3 -sdk $SDK_PATH -arch x86_64" >> $GITHUB_ENV
+          echo "SWIFT_ARCHS=x86_64" >> $GITHUB_ENV
+          echo "SWIFT_BUILD_ARCH=x86_64" >> $GITHUB_ENV
+          echo "SWIFT_PLATFORM_PREFERRED_ARCH=x86_64" >> $GITHUB_ENV
+          
+          # 设置构建工具链环境变量
+          echo "TOOLCHAINS=com.apple.dt.toolchain.XcodeDefault" >> $GITHUB_ENV
           
           # 验证环境变量设置
           echo "环境变量已设置:"
-          echo "  ARCHS=$ARCHS"
-          echo "  SWIFT_TARGET_TRIPLE=$SWIFT_TARGET_TRIPLE"
-          echo "  CC_x86_64_apple_darwin=$CC_x86_64_apple_darwin"
+          echo "  ARCHS=x86_64"
+          echo "  SWIFT_TARGET_TRIPLE=x86_64-apple-macosx12.3"
+          echo "  CC_x86_64_apple_darwin=clang -arch x86_64 -mmacosx-version-min=12.3"
+          echo "  SWIFTFLAGS=$SWIFTFLAGS"
 
       - name: Build
         shell: bash
@@ -91,9 +105,35 @@ jobs:
             if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
               echo "交叉编译 x86_64 macOS (在 ARM runner 上)"
               echo "使用编译器: $CC_x86_64_apple_darwin"
+              echo "Swift 目标: $SWIFT_TARGET_TRIPLE"
+              echo "Swift 标志: $SWIFTFLAGS"
+              
+              # 验证 Swift 编译器可用
+              if command -v swiftc &> /dev/null; then
+                echo "Swift 编译器版本:"
+                swiftc -version
+              fi
             fi
           fi
-          cargo build --release --target ${{ matrix.target }}
+          
+          # 强制重新构建依赖（特别是 capscreen_macos）
+          # 清理整个构建目录以确保重新编译
+          if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+            echo "强制清理 capscreen_macos 构建缓存..."
+            cargo clean -p capscreen_macos 2>/dev/null || true
+            # 清理可能存在的 Swift 构建产物
+            find ~/.cargo -name "*capscreen_macos*" -type d -exec rm -rf {} + 2>/dev/null || true
+          fi
+          
+          # 构建项目（使用详细输出以便调试）
+          echo "开始构建..."
+          cargo build --release --target ${{ matrix.target }} --verbose 2>&1 | head -100
+          
+          # 如果构建失败，检查 Swift 对象文件架构
+          if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ] && [ $? -ne 0 ]; then
+            echo "构建失败，检查 Swift 对象文件架构..."
+            find target -name "*.swift.o" -exec file {} \; 2>/dev/null | head -20 || true
+          fi
         env:
           MACOSX_DEPLOYMENT_TARGET: "12.3"
 
