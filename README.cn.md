@@ -44,3 +44,54 @@ windows大部分支持 (需要支持多显示器，所以使用了较为简单�
 ## 通信
 
 unix/linux stdio. stderr is log, stdout is data.
+
+## CI/CD 工作流
+
+项目使用 GitHub Actions 进行自动化构建和发布，配置文件位于 `.github/workflows/release.yml`。
+
+### 触发条件
+
+- **版本标签推送**：推送版本标签（如 `v0.1.0`）时触发构建并自动发布 Release
+
+### 构建平台
+
+项目支持以下平台的自动化构建：
+
+- **Windows x64 (MSVC)** - 使用 `windows-latest` runner
+- **macOS Intel (x86_64)** - 使用 `macos-latest` runner，支持 ARM runner 上的交叉编译
+- **macOS ARM (Apple Silicon)** - 使用 `macos-latest` runner
+
+### 构建优化
+
+- ✅ 缓存 Cargo 依赖以加速构建
+- ✅ macOS x86_64 交叉编译环境自动配置
+- ✅ 自动清理错误架构的构建缓存
+- ✅ macOS 最低版本设置为 12.3
+
+### 自动发布
+
+当推送版本标签时，工作流会自动：
+
+- 📦 创建 GitHub Release
+- 📝 生成包含以下信息的 Release Notes：
+  - 版本号
+  - 构建时间与日期
+  - Git 提交信息
+- 📎 为每个平台生成可执行文件和压缩包：
+  - Windows: `quickcap-windows-x64.exe` 和 `quickcap-windows-x64.zip`
+  - macOS Intel: `quickcap-macos-intel` 和 `quickcap-macos-intel.tar.gz`
+  - macOS ARM: `quickcap-macos-arm` 和 `quickcap-macos-arm.tar.gz`
+
+### 使用方法
+
+创建版本标签并发布：
+
+```bash
+# 创建版本标签
+git tag v0.1.0
+
+# 推送标签（将自动触发构建和发布）
+git push origin v0.1.0
+```
+
+推送标签后，GitHub Actions 会自动开始构建，完成后会在 Releases 页面创建新的发布版本。
