@@ -54,11 +54,20 @@ jobs:
 
       - name: Set up macOS x86_64 cross-compilation
         if: matrix.target == 'x86_64-apple-darwin' && runner.os == 'macOS'
+        shell: bash
         run: |
           echo "设置 x86_64 macOS 交叉编译环境..."
           echo "当前架构: $(uname -m)"
           
-          # 设置环境变量
+          # 清理可能存在的错误架构构建缓存（在设置环境变量之前）
+          if [ -d "target/x86_64-apple-darwin" ]; then
+            echo "清理 x86_64 构建缓存..."
+            find target/x86_64-apple-darwin -path "*/capscreen_macos-*/out" -type d -exec rm -rf {} + 2>/dev/null || true
+            find target/x86_64-apple-darwin -name "*.swift.o" -type f -delete 2>/dev/null || true
+            find target/x86_64-apple-darwin -name "libscreencapturekit*.rlib" -type f -delete 2>/dev/null || true
+          fi
+          
+          # 设置环境变量（确保在构建步骤中可用）
           echo "ARCHS=x86_64" >> $GITHUB_ENV
           echo "ARCH=x86_64" >> $GITHUB_ENV
           echo "TARGET_ARCH=x86_64" >> $GITHUB_ENV
@@ -67,27 +76,30 @@ jobs:
           echo "CXX_x86_64_apple_darwin=clang++ -arch x86_64 -mmacosx-version-min=12.3" >> $GITHUB_ENV
           echo "SWIFTFLAGS=-target x86_64-apple-macosx12.3" >> $GITHUB_ENV
           
-          # 清理可能存在的错误架构构建缓存
-          if [ -d "target/x86_64-apple-darwin" ]; then
-            echo "清理 x86_64 构建缓存..."
-            find target/x86_64-apple-darwin -path "*/capscreen_macos-*/out" -type d -exec rm -rf {} + 2>/dev/null || true
-            find target/x86_64-apple-darwin -name "*.swift.o" -type f -delete 2>/dev/null || true
-          fi
+          # 验证环境变量设置
+          echo "环境变量已设置:"
+          echo "  ARCHS=$ARCHS"
+          echo "  SWIFT_TARGET_TRIPLE=$SWIFT_TARGET_TRIPLE"
+          echo "  CC_x86_64_apple_darwin=$CC_x86_64_apple_darwin"
 
       - name: Build
         shell: bash
         run: |
-          if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ] && [ "$(uname -m)" == "arm64" ]; then
-            echo "在 ARM Mac 上构建 x86_64，使用 Rosetta 2..."
-            arch -x86_64 cargo build --release --target ${{ matrix.target }}
-          else
-            cargo build --release --target ${{ matrix.target }}
+          echo "构建目标: ${{ matrix.target }}"
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            echo "当前架构: $(uname -m)"
+            if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+              echo "交叉编译 x86_64 macOS (在 ARM runner 上)"
+              echo "使用编译器: $CC_x86_64_apple_darwin"
+            fi
           fi
+          cargo build --release --target ${{ matrix.target }}
         env:
           MACOSX_DEPLOYMENT_TARGET: "12.3"
 
       - name: Get build info
         id: build_info
+        shell: bash
         run: |
           BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           BUILD_COMMIT=$(git rev-parse --short HEAD)
