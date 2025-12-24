@@ -1,8 +1,8 @@
 import path from "node:path";
-import { defineConfig, Plugin } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile"
 
-const outDir = path.resolve(__dirname, "../src/app");
+const outDir = path.resolve(__dirname, "./src/app");
 
 function htmlMinify(): Plugin {
   return {
