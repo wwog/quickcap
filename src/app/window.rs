@@ -1,7 +1,9 @@
 use crate::app::config::AppConfig;
 use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
-use crate::capscreen::enumerate::{WindowInfo, enumerate_windows};
+use crate::capscreen::enumerate::WindowInfo;
+#[cfg(target_os = "macos")]
+use crate::capscreen::enumerate::filter_windows_by_display;
 use arboard::ImageData;
 use png::{BitDepth, ColorType, Encoder, Filter};
 use std::{
@@ -57,6 +59,7 @@ impl AppWindow {
         monitor: MonitorHandle,
         event_loop: &EventLoop<UserEvent>,
         config: &AppConfig,
+        all_windows: Arc<Vec<WindowInfo>>,
     ) -> Self {
         let proxy = event_loop.create_proxy();
         #[cfg(target_os = "macos")]
@@ -129,19 +132,37 @@ impl AppWindow {
         ));
         let capture_state_for_thread = Arc::clone(&capture_state);
         let monitor_for_capture = monitor.clone();
+        // 使用Arc共享，避免clone整个窗口列表
+        let all_windows_for_thread = Arc::clone(&all_windows);
+        
         std::thread::spawn(move || {
-            // 在截屏前一刻执行窗口枚举，确保layer层级正确
-            let start_enumerate_time = Instant::now();
-            let windows = enumerate_windows(&monitor_for_capture);
-            log::error!(
-                "enumerate windows time: {:?}",
-                start_enumerate_time.elapsed()
-            );
-            log::error!(
-                "monitor: {}, windows count: {}",
-                monitor_for_capture.native_id(),
-                windows.len()
-            );
+            // macOS: 对已枚举的窗口列表进行显示器筛选
+            // Windows: 直接使用全部窗口
+            #[cfg(target_os = "macos")]
+            let windows = {
+                use tao::platform::macos::MonitorHandleExtMacOS;
+                let start_filter_time = Instant::now();
+                let display_id = monitor_for_capture.native_id();
+                // 使用Arc的引用，避免clone
+                let filtered = filter_windows_by_display(&*all_windows_for_thread, display_id)
+                    .unwrap_or_default();
+                log::error!(
+                    "filter windows by display time: {:?}",
+                    start_filter_time.elapsed()
+                );
+                log::error!(
+                    "monitor: {}, windows count: {}",
+                    display_id,
+                    filtered.len()
+                );
+                filtered
+            };
+            
+            #[cfg(not(target_os = "macos"))]
+            let windows = {
+                // Windows直接使用全部窗口，坐标已经是基于虚拟桌面的
+                (*all_windows_for_thread).clone()
+            };
 
             // 执行截屏
             let start_capscreen_time = Instant::now();

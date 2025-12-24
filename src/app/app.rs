@@ -11,8 +11,9 @@ use tao::{
 use crate::{
     AppConfig, StdRpcClient,
     app::{user_event::UserEvent, window::AppWindow},
+    capscreen::enumerate::enumerate_all_windows,
 };
-use std::time::Instant;
+use std::{sync::Arc, time::Instant};
 pub struct App {
     windows: HashMap<WindowId, AppWindow>,
     event_loop: EventLoop<UserEvent>,
@@ -70,6 +71,15 @@ impl App {
             },
         );
 
+        // 在创建所有窗口之前，统一枚举一次所有窗口，避免重复执行
+        let start_enumerate_time = Instant::now();
+        let all_windows = Arc::new(enumerate_all_windows().unwrap_or_default());
+        log::error!(
+            "enumerate all windows time: {:?}, count: {}",
+            start_enumerate_time.elapsed(),
+            all_windows.len()
+        );
+
         // Windows和Macos的逻辑并不一致，Windows是用虚拟桌面
         #[cfg(target_os = "macos")]
         let windows = {
@@ -78,7 +88,7 @@ impl App {
                 .into_iter()
                 .map(|monitor| {
                     log::error!("Monitor: {:?}", monitor);
-                    AppWindow::new(monitor, &event_loop, &config)
+                    AppWindow::new(monitor, &event_loop, &config, Arc::clone(&all_windows))
                 })
                 .map(|window| (window.window.id(), window))
                 .collect();
@@ -89,7 +99,7 @@ impl App {
             let monitor = event_loop.primary_monitor().unwrap();
             // 保留一个窗口，在windows中monitor并不是必要参数，但macos先开发，所以保留一个传参
             // 后续优化点: 添加AppWindowBuilder，根据不同的操作系统创建不同的AppWindow
-            let window = AppWindow::new(monitor, &event_loop, &config);
+            let window = AppWindow::new(monitor, &event_loop, &config, Arc::clone(&all_windows));
             HashMap::from([(window.window.id(), window)])
         };
         log::error!("windows time: {:?}", start_time.elapsed());
