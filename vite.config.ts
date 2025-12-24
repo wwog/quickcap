@@ -66,6 +66,8 @@ export default defineConfig(({ command, mode }) => {
       cssMinify: isProduction,
       emptyOutDir: false,
       rollupOptions: {
+        // 指定入口 HTML 文件位置（相对于项目根目录）
+        input: path.resolve(__dirname, "./web/index.html"),
         output: {
           manualChunks: undefined,
           inlineDynamicImports: true,
