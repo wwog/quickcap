@@ -270,8 +270,15 @@ export class DrawScreen {
       // console.log("🚀 ~ DrawScreen ~ constructor ~ event:", event.data, this.mode);
       const { type, id, x, y, act } = event?.data || {};
 
-      if (act === "selectStart" && id !== this.id && (this.selectHeight || this.selectWidth)) {
-        console.log(`%c🏓 clearSelectRect`,'background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;');
+      if (
+        act === "selectStart" &&
+        id !== this.id &&
+        (this.selectHeight || this.selectWidth)
+      ) {
+        console.log(
+          `%c🏓 clearSelectRect`,
+          "background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;"
+        );
         this.clearSelectRect();
       }
 
@@ -389,7 +396,7 @@ export class DrawScreen {
     if (this.mode === "otherTab") {
       if (this.selectHeight || this.selectWidth) {
         this.mode = "waitEdit";
-      } else  {
+      } else {
         this.mode = "select";
       }
       return;
@@ -658,6 +665,17 @@ export class DrawScreen {
       case "select":
         e.stopPropagation();
         e.preventDefault();
+        console.log('mouseup selectEnd', this.selectWidth, this.selectHeight, this.matchedWindow);
+        if (
+          this.selectWidth <= 10 &&
+          this.selectHeight <= 10 &&
+          this.matchedWindow
+        ) {
+          this.selectX = this.matchedWindow.x;
+          this.selectY = this.matchedWindow.y;
+          this.selectWidth = this.matchedWindow.width;
+          this.selectHeight = this.matchedWindow.height;
+        }
         if (this.selectWidth && this.selectHeight) {
           this.selectEnd();
           this.editTools.render(true, {
