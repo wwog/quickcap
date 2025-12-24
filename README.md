@@ -69,3 +69,15 @@ git push origin v0.1.0
 ```
 
 After pushing the tag, GitHub Actions will automatically start the build process. Once completed, a new release will be created on the Releases page.
+
+## Permissions (macOS only)
+
+This software maintains flexibility and extensibility. When permissions are not granted, the integration side needs to handle this themselves. On first run, the screenshot API will trigger a system permission dialog (it will not appear again whether accepted or rejected). Although the dialog is triggered, the application does not poll and monitor settings or block execution. So the first time, the dialog and application startup (just a transparent window, without screenshot and window awareness data) will appear.
+
+Solution:
+
+macOS is designed so the dialog only appears once, but we strongly depend on permissions. Therefore, the integration side needs to display their own dialog and check permissions to block execution. I originally wanted to try implementing a dialog internally, but due to multi-language and customization requirements, I don't plan to add this later.
+
+## Integration
+
+To launch the window, you need the business side to start the corresponding executable binary program on the corresponding system. Note that macOS Mach-O files lose execution permissions during transfer, so they are packaged in tar.gz format for similar business layer workflows. Windows doesn't require this but is also packaged. Additionally, embedding into macOS application bundles requires consistent signatures and cannot be ignored. Mach-O files within the bundle cannot obtain permissions if not signed. Even if you authorize the upper-level application, it will not be shared with the Mach-O file. This is an effective means to prevent hackers from replacing executable files within the bundle. You can consider calling external Mach-O files (download or unpack and run, theoretically possible).
