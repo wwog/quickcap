@@ -168,13 +168,13 @@ export class EditCanvas {
             this.renderPreview();
             break;
           case "mosaic":
-            console.log(
+            /* console.log(
               `%c🎄 mosaic`,
               "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
               x,
               y,
               this.mosaic
-            );
+            ); */
             if (!this.drawState.attr.path.length) {
               this.drawState.attr.path.push({
                 x: this.currentDrawPos.x1,
@@ -200,6 +200,7 @@ export class EditCanvas {
                 this.drawState.attr.radius
               );
 
+              const t0 = performance.now();
               // 跳过第一个点（已经处理过）
               for (let i = 1; i < interpolatedPoints.length; i++) {
                 const interpolatedPoint = interpolatedPoints[i];
@@ -207,13 +208,16 @@ export class EditCanvas {
                   x: interpolatedPoint.x,
                   y: interpolatedPoint.y,
                 });
-                this.mosaic?.drawMosaicForCircle({
-                  cx: interpolatedPoint.x,
-                  cy: interpolatedPoint.y,
-                  r: this.drawState.attr.radius,
-                  fresh: true,
-                });
+                // this.mosaic?.drawMosaicForCircle({
+                //   cx: interpolatedPoint.x,
+                //   cy: interpolatedPoint.y,
+                //   r: this.drawState.attr.radius,
+                //   fresh: true,
+                // });
               }
+              this.mosaic?.drawMosaic(this.drawState);
+              const t1 = performance.now();
+              console.log(`drawMosaic ${interpolatedPoints.length} cost ${t1 - t0} ms`);
             }
             break;
           case "arrow":
