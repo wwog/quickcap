@@ -24,6 +24,10 @@ Screenshot capture and a series of system calls are handled by Rust. The main la
 - Window awareness
 - Clipboard, brush, and other common features
 
+## Execution Parameters
+
+`--debug`: In normal mode, the window is set to screensaver-level topmost. Debug mode means you can switch to foreground.
+
 ## Optimization Points
 
 There are still many optimization points in the project. To achieve WeChat's instant startup, it can be changed to a service-style approach, initializing the webview (the heaviest dependency) and then hiding it. Memory usage is not particularly high.

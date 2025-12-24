@@ -1,3 +1,4 @@
+use crate::app::config::AppConfig;
 use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
 use crate::capscreen::enumerate::enumerate_windows;
@@ -51,7 +52,11 @@ struct CaptureState {
 }
 
 impl AppWindow {
-    pub fn new(monitor: MonitorHandle, event_loop: &EventLoop<UserEvent>) -> Self {
+    pub fn new(
+        monitor: MonitorHandle,
+        event_loop: &EventLoop<UserEvent>,
+        config: &AppConfig,
+    ) -> Self {
         let proxy = event_loop.create_proxy();
         #[cfg(target_os = "macos")]
         let (position, size) = {
@@ -108,9 +113,14 @@ impl AppWindow {
             use tao::platform::windows::WindowBuilderExtWindows;
             win_builder = win_builder.with_undecorated_shadow(false);
         }
+        if !config.is_debug() {
+            win_builder = win_builder.with_always_on_top(true);
+        }
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        // crate::capscreen::configure_overlay_window(&window);
+        if !config.is_debug() {
+            crate::capscreen::configure_overlay_window(&window);
+        }
 
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
             Mutex::new(CaptureState {
@@ -230,7 +240,8 @@ impl AppWindow {
                         let start = Instant::now();
                         let mut png_writer = encoder.write_header().unwrap();
                         png_writer.write_image_data(&body).unwrap();
-                        crate::StdRpcClient::global().send_notification("save_image_to_folder", None);
+                        crate::StdRpcClient::global()
+                            .send_notification("save_image_to_folder", None);
                         log::error!("save image time: {:?}", start.elapsed());
                         Response::builder()
                             .status(200)

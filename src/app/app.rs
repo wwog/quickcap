@@ -9,20 +9,22 @@ use tao::{
 };
 
 use crate::{
-    StdRpcClient,
+    AppConfig, StdRpcClient,
     app::{user_event::UserEvent, window::AppWindow},
 };
 use std::time::Instant;
 pub struct App {
     windows: HashMap<WindowId, AppWindow>,
     event_loop: EventLoop<UserEvent>,
+    config: AppConfig,
 }
 
 impl App {
     /// 将标准错误接口的输出用作输出，标准输出的接口的输出用作STDIO
-    pub fn new() -> Self {
+    pub fn new(config: Option<AppConfig>) -> Self {
+        let config = config.unwrap_or_default();
         let mut logger_builder = env_logger::builder();
-
+        println!("config: {:?}", config);
         logger_builder.format(|buf, record| {
             let style_gray = Style::new().fg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
             let style_cyan = Style::new()
@@ -32,7 +34,7 @@ impl App {
                 .fg_color(Some(Color::Ansi(AnsiColor::Green)))
                 .bold();
             let style_white = Style::new().fg_color(Some(Color::Ansi(AnsiColor::White)));
-              
+
             writeln!(
                 buf,
                 "{}{}{} {}{}{} {}{}{} {}{}{}",
@@ -77,7 +79,7 @@ impl App {
                 .into_iter()
                 .map(|monitor| {
                     log::error!("Monitor: {:?}", monitor);
-                    AppWindow::new(monitor, &event_loop)
+                    AppWindow::new(monitor, &event_loop, &config)
                 })
                 .map(|window| (window.window.id(), window))
                 .collect();
@@ -88,7 +90,7 @@ impl App {
             let monitor = event_loop.primary_monitor().unwrap();
             // 保留一个窗口，在windows中monitor并不是必要参数，但macos先开发，所以保留一个传参
             // 后续优化点: 添加AppWindowBuilder，根据不同的操作系统创建不同的AppWindow
-            let window = AppWindow::new(monitor, &event_loop);
+            let window = AppWindow::new(monitor, &event_loop, &config);
             HashMap::from([(window.window.id(), window)])
         };
         log::error!("windows time: {:?}", start_time.elapsed());
@@ -96,6 +98,7 @@ impl App {
         Self {
             windows,
             event_loop,
+            config,
         }
     }
 

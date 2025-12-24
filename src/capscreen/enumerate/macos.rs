@@ -163,6 +163,6 @@ mod tests {
     // #[test]
     // fn test_enumerate_windows_cg() {
     //     let window_infos = enumerate_windows_cg(1);
-    //     // println!("window_infos: {:#?}", window_infos);
+    //     println!("window_infos: {:#?}", window_infos);
     // }
 }
