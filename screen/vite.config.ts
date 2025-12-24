@@ -1,5 +1,8 @@
+import path from "node:path";
 import { defineConfig, Plugin } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile"
+
+const outDir = path.resolve(__dirname, "../src/app");
 
 function htmlMinify(): Plugin {
   return {
@@ -67,7 +70,7 @@ export default defineConfig(({ command, mode }) => {
           inlineDynamicImports: true,
         }
       },
-      outDir: "../app",
+      outDir,
       sourcemap: false,
     },
     plugins,
