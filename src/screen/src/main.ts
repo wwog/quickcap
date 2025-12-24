@@ -14,6 +14,13 @@ function init() {
   console.log("🚀 ~ init ~ drawScreen:", drawScreen);
   (window as any).drawScreen = drawScreen;
 
+  window.oncontextmenu = (e) => {
+    console.log("🚀 ~ init ~ e:", e, window.app?.isDebug);
+    if (!window.app?.isDebug) {
+      e.preventDefault();
+    }
+  };
+
   getScreenImageData()
     .then((imgData) => {
       drawScreen.putImageData(imgData);

@@ -54,6 +54,8 @@ export class EditCanvas {
 
   private drawing = false;
 
+  private listener: ((stack: number) => void)[] = [];
+
   // private dragging = false;
 
   get mode() {
@@ -186,7 +188,8 @@ export class EditCanvas {
               });
             } else {
               // 获取上一个记录的点
-              const lastPoint = this.drawState.attr.path[this.drawState.attr.path.length - 1];
+              const lastPoint =
+                this.drawState.attr.path[this.drawState.attr.path.length - 1];
 
               // 在当前点和上一个点之间生成插值点
               const interpolatedPoints = interpolatePoints(
@@ -242,6 +245,7 @@ export class EditCanvas {
           e.stopPropagation();
           this.shapeArr.push(this.drawState);
           this.setShape(this.drawState.shape);
+          this.emitEditingStack(this.shapeArr.length);
         }
       }
     });
@@ -299,7 +303,12 @@ export class EditCanvas {
       this.lastImg!.width,
       this.lastImg!.height
     );
-    const imgData = this.baseCtx.getImageData(0, 0, this.lastImg!.width * DPR, this.lastImg!.height * DPR);
+    const imgData = this.baseCtx.getImageData(
+      0,
+      0,
+      this.lastImg!.width * DPR,
+      this.lastImg!.height * DPR
+    );
     return Promise.resolve(imgData);
   }
 
@@ -480,5 +489,32 @@ export class EditCanvas {
       return;
     }
     drawShape(this.editCtx, this.drawState);
+  };
+
+  execUndo = () => {
+    if (this.shapeArr.length === 0) {
+      return;
+    }
+    const lastShape = this.shapeArr.pop()!;
+    this.editCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+    if (lastShape.shape === 'mosaic') {
+      this.mosaic?.clearMosaic();
+    }
+    this.shapeArr.forEach((shape) => {
+      if (shape.shape === 'mosaic') {
+        this.mosaic?.drawMosaic(shape);
+      } else  {
+        drawShape(this.editCtx, shape);
+      }
+    });
+    this.emitEditingStack(this.shapeArr.length);
+  };
+
+  private emitEditingStack = (stack: number) => {
+    this.listener.forEach((cb) => cb(stack));
+  };
+
+  onEditingStack = (cb: (stack: number) => void) => {
+    this.listener.push(cb);
   };
 }

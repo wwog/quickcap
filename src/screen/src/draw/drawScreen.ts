@@ -186,43 +186,11 @@ export class DrawScreen {
     this.initData();
 
     this.drawMask();
-    this.initListener();
-
+   
     this.sizeDisplay = new SizeDisplay(this.canvasContainer);
     this.editTools = new EditTools();
 
-    this.editTools.addListener([
-      {
-        role: "edit",
-        listener: (shape?: string) => {
-          this.setEditCanvasBg();
-          this.editCanvas.setMode("edit");
-          const newShape = shape === this.editTools.active ? "" : shape || "";
-          this.editCanvas.setShape(newShape);
-          this.editTools.active = newShape;
-        },
-      },
-      {
-        role: "download",
-        listener: () => {
-          this.setEditCanvasBg();
-          this.editCanvas.saveImageToFolder();
-        },
-      },
-      {
-        role: "finish",
-        listener: () => {
-          this.setEditCanvasBg();
-          this.editCanvas.writeToClipboard();
-        },
-      },
-      {
-        role: "cancel",
-        listener: () => {
-          exitApp();
-        },
-      },
-    ]);
+     this.initListener();
 
     window.app
       ?.getWindows?.()
@@ -589,13 +557,17 @@ export class DrawScreen {
   };
 
   private onMouseDown = (e: MouseEvent) => {
-    /* console.log(
+    console.log(
       `%c🎄 mouse down`,
       "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
       this.mode,
       e.clientX,
-      e.clientY
-    ); */
+      e.clientY,
+      e
+    );
+    if (e.button !== 0) {
+      return;
+    }
     if (this.mode === "edit" || this.mode === "forbidden") return;
     this.activeWindow(e, "selectStart");
     if (this.mode === "otherTab") return;
@@ -665,7 +637,12 @@ export class DrawScreen {
       case "select":
         e.stopPropagation();
         e.preventDefault();
-        console.log('mouseup selectEnd', this.selectWidth, this.selectHeight, this.matchedWindow);
+        console.log(
+          "mouseup selectEnd",
+          this.selectWidth,
+          this.selectHeight,
+          this.matchedWindow
+        );
         if (
           this.selectWidth <= 10 &&
           this.selectHeight <= 10 &&
@@ -762,6 +739,49 @@ export class DrawScreen {
       console.log("================double click================");
       this.setEditCanvasBg();
       this.editCanvas.writeToClipboard();
+    });
+
+    this.editTools.addListener([
+      {
+        role: "undo",
+        listener: () => {
+          this.editCanvas.execUndo();
+        },
+      },
+      {
+        role: "edit",
+        listener: (shape?: string) => {
+          this.setEditCanvasBg();
+          this.editCanvas.setMode("edit");
+          const newShape = shape === this.editTools.active ? "" : shape || "";
+          this.editCanvas.setShape(newShape);
+          this.editTools.active = newShape;
+        },
+      },
+      {
+        role: "download",
+        listener: () => {
+          this.setEditCanvasBg();
+          this.editCanvas.saveImageToFolder();
+        },
+      },
+      {
+        role: "finish",
+        listener: () => {
+          this.setEditCanvasBg();
+          this.editCanvas.writeToClipboard();
+        },
+      },
+      {
+        role: "cancel",
+        listener: () => {
+          exitApp();
+        },
+      },
+    ]);
+
+    this.editCanvas.onEditingStack((len) => {
+      this.editTools.undoActive = len > 0;
     });
   };
 
