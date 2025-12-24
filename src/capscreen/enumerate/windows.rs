@@ -8,7 +8,7 @@ use windows::{
             Gdi::{GetMonitorInfoW, HDC, HMONITOR, MONITORINFO},
         },
         UI::WindowsAndMessaging::{
-            self, GetSystemMetrics, GetWindowInfo, GetWindowThreadProcessId, SM_XVIRTUALSCREEN,
+            self, GetSystemMetrics, GetWindowInfo, IsIconic, SM_XVIRTUALSCREEN,
             SM_YVIRTUALSCREEN, WINDOWINFO, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
         },
     },
@@ -91,6 +91,11 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     unsafe {
         let is_visible: bool = WindowsAndMessaging::IsWindowVisible(hwnd).into();
         if !is_visible {
+            return true.into();
+        }
+        // 排除最小化的窗口
+        let is_minimized: bool = IsIconic(hwnd).into();
+        if is_minimized {
             return true.into();
         }
         let mut window_info = WINDOWINFO {
