@@ -390,9 +390,8 @@ impl AppWindow {
                                 .map(Into::into);
                         }
 
-                        // 返回缓存的窗口枚举结果，与截图数据保持一致
                         let windows = state.windows.clone().unwrap_or_default();
-                        log::error!("return cached windows, count: {}", windows.len());
+                        log::error!("return cached windows: {:?}", windows);
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
                         Response::builder()
