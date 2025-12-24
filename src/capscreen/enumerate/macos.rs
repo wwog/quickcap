@@ -8,8 +8,56 @@ use objc2_core_graphics::{
 };
 use screencapturekit::prelude::SCShareableContent;
 
-/// 枚举当前显示器上的所有窗口,排除自身进程,另外api使用和fork screencapture-rs 相同的api,确保窗口合理
-pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
+/// 枚举所有窗口（不筛选显示器），排除自身进程
+/// 返回使用绝对坐标的窗口列表
+pub fn enumerate_all_windows() -> Option<Vec<WindowInfo>> {
+    let content = SCShareableContent::with_options()
+        .on_screen_windows_only(true)
+        .get()
+        .ok()?;
+
+    let windows = content.windows();
+    let mut window_infos = vec![];
+    
+    for window in windows {
+        if window.window_layer() != 0 {
+            continue;
+        }
+        if window.frame().is_empty() || window.frame().is_null() {
+            continue;
+        }
+
+        // 排除自身进程的窗口,当前执行时机变化，不再需要
+        // if let Some(owner) = window.owning_application() {
+        //     if owner.process_id() == current_pid {
+        //         continue;
+        //     }
+        // }
+
+        let window_frame = window.frame();
+        let window_origin = window_frame.origin();
+        let window_size = window_frame.size();
+        
+        window_infos.push(WindowInfo {
+            name: window.title().unwrap_or_default(),
+            bounds: Rect {
+                x: window_origin.x,
+                y: window_origin.y,
+                width: window_size.width,
+                height: window_size.height,
+            },
+        });
+    }
+    Some(window_infos)
+}
+
+/// 根据显示器ID筛选窗口，并将坐标转换为相对于显示器的坐标
+/// 输入：使用绝对坐标的窗口列表
+/// 输出：使用相对于显示器坐标的窗口列表
+pub fn filter_windows_by_display(
+    all_windows: &[WindowInfo],
+    display_id: u32,
+) -> Option<Vec<WindowInfo>> {
     let content = SCShareableContent::with_options()
         .on_screen_windows_only(true)
         .get()
@@ -26,36 +74,16 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
     let display_top = display_origin.y;
     let display_bottom = display_origin.y + frame.size().height;
 
-    let current_pid = std::process::id() as i32;
-
-    let windows = content.windows();
     let mut window_infos = vec![];
-    for window in windows {
-        if window.window_layer() != 0 {
-            continue;
-        }
-        if window.frame().is_empty() || window.frame().is_null() {
-            continue;
-        }
-
-        // 排除自身进程的窗口
-        if let Some(owner) = window.owning_application() {
-            if owner.process_id() == current_pid {
-                continue;
-            }
-        }
-
-        //因为窗口可能会溢出当前显示器，所以不能用桌面frame包含来判断是否在当前显示器上
-        //这里应该是只要有交集就认为在当前显示器上
-        let window_frame = window.frame();
-        let window_origin = window_frame.origin();
-        let window_size = window_frame.size();
-        let window_left = window_origin.x;
-        let window_right = window_origin.x + window_size.width;
-        let window_top = window_origin.y;
-        let window_bottom = window_origin.y + window_size.height;
+    for window in all_windows {
+        let window_left = window.bounds.x;
+        let window_right = window.bounds.x + window.bounds.width;
+        let window_top = window.bounds.y;
+        let window_bottom = window.bounds.y + window.bounds.height;
 
         // 检查窗口是否与当前显示器有交集
+        // 因为窗口可能会溢出当前显示器，所以不能用桌面frame包含来判断是否在当前显示器上
+        // 这里应该是只要有交集就认为在当前显示器上
         if window_right < display_left
             || window_left > display_right
             || window_bottom < display_top
@@ -66,19 +94,26 @@ pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
 
         // 将窗口坐标转换为相对于当前显示器的坐标
         // 前端绘制时每个显示器都以(0,0)为原点，所以需要减去显示器的origin
-        let relative_x = window_origin.x - display_origin.x;
-        let relative_y = window_origin.y - display_origin.y;
+        let relative_x = window.bounds.x - display_origin.x;
+        let relative_y = window.bounds.y - display_origin.y;
         window_infos.push(WindowInfo {
-            name: window.title().unwrap_or_default(),
+            name: window.name.clone(),
             bounds: Rect {
                 x: relative_x,
                 y: relative_y,
-                width: window_size.width,
-                height: window_size.height,
+                width: window.bounds.width,
+                height: window.bounds.height,
             },
         });
     }
     Some(window_infos)
+}
+
+/// 枚举当前显示器上的所有窗口,排除自身进程,另外api使用和fork screencapture-rs 相同的api,确保窗口合理
+/// 保持向后兼容，内部使用新的拆分函数
+pub fn enumerate_windows(display_id: u32) -> Option<Vec<WindowInfo>> {
+    let all_windows = enumerate_all_windows()?;
+    filter_windows_by_display(&all_windows, display_id)
 }
 
 /// 如果后续兼容12.3以下，可以考虑使用这个函数，暂时不考虑使用

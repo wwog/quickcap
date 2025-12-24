@@ -147,11 +147,12 @@ extern "system" fn enum_window_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
             );
             return true.into();
         }
-        let mut pid: u32 = 0;
-        GetWindowThreadProcessId(hwnd, Some(&mut pid));
-        if pid == std::process::id() {
-            return true.into();
-        }
+        // 排除自身进程的窗口，当前执行时机变化，不再需要
+        // let mut pid: u32 = 0;
+        // GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        // if pid == std::process::id() {
+        //     return true.into();
+        // }
         let window_infos = lparam.0 as *mut Vec<WindowInfo>;
         if let Some(window_infos) = window_infos.as_mut() {
             window_infos.push(WindowInfo {
