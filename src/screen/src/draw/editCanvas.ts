@@ -200,6 +200,7 @@ export class EditCanvas {
                 this.drawState.attr.radius
               );
 
+              const t0 = performance.now();
               // 跳过第一个点（已经处理过）
               for (let i = 1; i < interpolatedPoints.length; i++) {
                 const interpolatedPoint = interpolatedPoints[i];
@@ -207,13 +208,10 @@ export class EditCanvas {
                   x: interpolatedPoint.x,
                   y: interpolatedPoint.y,
                 });
-                this.mosaic?.drawMosaicForCircle({
-                  cx: interpolatedPoint.x,
-                  cy: interpolatedPoint.y,
-                  r: this.drawState.attr.radius,
-                  fresh: true,
-                });
               }
+              this.mosaic?.drawMosaic(this.drawState);
+              const t1 = performance.now();
+              console.log(`drawMosaic ${interpolatedPoints.length} cost ${t1 - t0} ms`);
             }
             break;
           case "arrow":
