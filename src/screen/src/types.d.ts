@@ -9,6 +9,7 @@ interface App {
     saveImageToFolder: (imageData: any) => Promise<Response>;
     getWindows: () => Promise<any>;
     notify: (method: any, params?: {}) => void;
+    isDebug: boolean;
 }
 
 declare global {

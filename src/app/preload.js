@@ -47,7 +47,8 @@ const app = {
             method,
             params
         }));
-    }
+    },
+    isDebug: undefined,
 }
 
 window.app = app;

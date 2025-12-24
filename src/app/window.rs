@@ -178,6 +178,7 @@ impl AppWindow {
             .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
+            .with_initialization_script(format!("window.app.isDebug = {}", config.is_debug()))
             .with_ipc_handler(move |req| {
                 let body = req.body();
                 log::error!("ipc body: {:?}", body);
