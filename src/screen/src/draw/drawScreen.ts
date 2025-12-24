@@ -665,25 +665,18 @@ export class DrawScreen {
       case "select":
         e.stopPropagation();
         e.preventDefault();
-        if (this.selectWidth && this.selectHeight) {
-          this.selectEnd();
-          this.editTools.render(true, {
-            x: this.selectX,
-            y: this.selectY,
-            width: this.selectWidth,
-            height: this.selectHeight,
-          });
-          this.drawMask();
-        } else if (
-          this.selectWidth < 10 &&
-          this.selectHeight < 10 &&
+        console.log('mouseup selectEnd', this.selectWidth, this.selectHeight, this.matchedWindow);
+        if (
+          this.selectWidth <= 10 &&
+          this.selectHeight <= 10 &&
           this.matchedWindow
         ) {
           this.selectX = this.matchedWindow.x;
           this.selectY = this.matchedWindow.y;
           this.selectWidth = this.matchedWindow.width;
           this.selectHeight = this.matchedWindow.height;
-
+        }
+        if (this.selectWidth && this.selectHeight) {
           this.selectEnd();
           this.editTools.render(true, {
             x: this.selectX,
