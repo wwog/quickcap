@@ -1,4 +1,1884 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><link rel="icon" type="image/svg+xml" href="./vite.svg" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>screen</title>  <script type="module" crossorigin>(function(){let e=document.createElement(`link`).relList;if(e&&e.supports&&e.supports(`modulepreload`))return;for(let e of document.querySelectorAll(`link[rel="modulepreload"]`))n(e);new MutationObserver(e=>{for(let t of e)if(t.type===`childList`)for(let e of t.addedNodes)e.tagName===`LINK`&&e.rel===`modulepreload`&&n(e)}).observe(document,{childList:!0,subtree:!0});function t(e){let t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),e.crossOrigin===`use-credentials`?t.credentials=`include`:e.crossOrigin===`anonymous`?t.credentials=`omit`:t.credentials=`same-origin`,t}function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}})();const e=()=>typeof window>`u`?!1:window.navigator.userAgentData?.platform?window.navigator.userAgentData.platform.toLowerCase()===`windows`:window.navigator.userAgent.toLowerCase().includes(`windows`);var t=null;function n(){window.app.exit()}async function r(){return t||(t=new Promise((e,t)=>{(async()=>{try{let{width:t,height:n,arrayBuffer:r}=await window.app.getImage();e({imageData:new ImageData(new Uint8ClampedArray(r),t,n),height:n,width:t})}catch(e){t(e)}})()}),t)}const i=({startX:e,startY:t,moveX:n,moveY:r,maxX:i,maxY:a})=>n>=0&&r>=0?{top:t,left:e,width:Math.min(i,n),height:Math.min(a,r)}:n<0&&r>=0?{top:t,left:e+n,width:Math.min(i,-n),height:Math.min(a,r)}:n>=0&&r<0?{top:t+r,left:e,width:Math.min(i,n),height:Math.min(a,-r)}:{top:t+r,left:e+n,width:Math.min(i,-n),height:Math.min(a,-r)},a=({resizeHandle:e,x:t,y:n,width:r,height:i})=>{switch(e){case`resize-top-left`:return{x:t+r,y:n+i};case`resize-top`:case`resize-top-right`:return{x:t,y:n+i};case`resize-right`:case`resize-bottom-right`:case`resize-bottom`:return{x:t,y:n};case`resize-bottom-left`:case`resize-left`:return{x:t+r,y:n};default:return{x:t,y:n}}},o=({resizeHandle:e,fixedX:t,fixedY:n,originWidth:r,originHeight:a,moveX:o,moveY:s,maxX:c,maxY:l})=>{let u=o,d=s;switch(e){case`resize-top-left`:u=o-r,d=s-a;break;case`resize-top`:u=r,d=s-a;break;case`resize-top-right`:u=o+r,d=s-a;break;case`resize-right`:u=o+r,d=a;break;case`resize-bottom-right`:u=o+r,d=s+a;break;case`resize-bottom`:u=r,d=s+a;break;case`resize-bottom-left`:u=o-r,d=s+a;break;case`resize-left`:u=o-r,d=a;break;default:break}return i({startX:t,startY:n,moveX:u,moveY:d,maxX:c,maxY:l})},s=({x:e,y:t,windows:n})=>n.find(n=>e>=n.x&&e<=n.x+n.width&&t>=n.y&&t<=n.y+n.height),c=({x:t,y:n,width:r,height:i})=>{let a=e()?t/C:t,o=e()?n/C:n,s=e()?r/C:r,c=e()?i/C:i,l=window.innerWidth,u=window.innerHeight,d=Math.min(a+s,l),f=Math.min(o+c,u),p=Math.max(a,0),m=Math.max(o,0);return{x:p,y:m,width:d-p,height:f-m}};function l(){return`${Math.random().toString(36).substring(2,10)}-${Math.random().toString(36).substring(2,10)}-${Math.random().toString(36).substring(2,10)}`}function u(e,t,n,r,i){let a=[],o=n*n,s=Math.max(0,Math.ceil(e-n)),c=Math.min(r,Math.floor(e+n)),l=Math.max(0,Math.ceil(t-n)),u=Math.min(i,Math.floor(t+n));for(let n=l;n<=u;n++){let r=n-t;for(let t=s;t<=c;t++){let i=t-e;i*i+r*r<=o&&a.push({x:t,y:n})}}return a}function d(e,t,n,r,i){let a=[],o=n-e,s=r-t,c=Math.sqrt(o*o+s*s),l=2*i*.7,u=Math.max(2,Math.ceil(c/l));for(let n=0;n<u;n++){let r=n/u,i=e+o*r,c=t+s*r;a.push({x:i,y:c})}return a.push({x:n,y:r}),a}function f(e,{width:t,height:n}){e.width=t*C,e.height=n*C,e.style.width=`${t}px`,e.style.height=`${n}px`;let r=e.getContext(`2d`);r.scale(C,C),r.imageSmoothingEnabled=!0,r.imageSmoothingQuality=`high`}function p({x1:e,y1:t,x2:n,y2:r},{maxX:i,maxY:a}){let o=Math.min(e,n),s=Math.min(Math.max(e,n),i),c=Math.min(t,r),l=Math.min(Math.max(t,r),a),u=s-o,d=l-c;return{centerX:o+u/2,centerY:c+d/2,radiusX:u/2,radiusY:d/2,isCircle:Math.abs(u-d)<2,left:o,top:c,width:u,height:d}}function m({x1:e,y1:t,x2:n,y2:r},{maxX:i,maxY:a}){let o=Math.min(e,n),s=Math.min(Math.max(e,n),i),c=Math.min(t,r),l=Math.min(Math.max(t,r),a);return{x:o,y:c,width:s-o,height:l-c}}function h(e,t){e.strokeStyle=t.pen.color,e.lineWidth=t.pen.lineWidth,e.strokeRect(t.attr.x,t.attr.y,t.attr.width,t.attr.height)}function g(e,t){e.strokeStyle=t.pen.color,e.lineWidth=t.pen.lineWidth;let n=t.attr.centerX,r=t.attr.centerY,i=t.attr.radiusX,a=t.attr.radiusY;e.beginPath(),e.ellipse(n,r,i,a,0,0,Math.PI*2),e.stroke()}function _(e,t){if(console.log(`🚀 ~ drawPath ~ shape.attr.path.length:`,t.attr.path.length),!(t.attr.path.length<2)){e.strokeStyle=t.pen.color,e.lineWidth=t.pen.lineWidth,e.beginPath(),e.moveTo(t.attr.path[0].x,t.attr.path[0].y);for(let n=1;n<t.attr.path.length;n++)e.lineTo(t.attr.path[n].x,t.attr.path[n].y);e.stroke()}}function v(e,t){e.strokeStyle=t.pen.color,e.lineWidth=t.pen.lineWidth;let{fromX:n,fromY:r,toX:i,toY:a}=t.attr;e.beginPath();let o=Math.PI/12,s=Math.atan2(a-r,i-n),c=Math.sqrt((i-n)**2+(a-r)**2);e.moveTo(n,r);let l=Math.min(20,c*.5),u=i-Math.cos(s)*(l-2),d=a-Math.sin(s)*(l-2);e.lineTo(u,d),e.stroke(),e.beginPath(),e.moveTo(i,a);let f=i-l*Math.cos(s-o),p=a-l*Math.sin(s-o),m=i-l*Math.cos(s+o),h=a-l*Math.sin(s+o);e.lineTo(f,p),e.lineTo(m,h),e.closePath(),e.fillStyle=t.pen.color,e.fill()}function y(e,t){switch(t.shape){case`rect`:h(e,t);break;case`circle`:g(e,t);break;case`path`:_(e,t);break;case`arrow`:v(e,t);break}}const b=(e,t)=>{let n=!1,r=!1,i=t=>{(t.target===e||e.contains(t.target))&&(r=!0,n=!1)},a=e=>{r&&!n&&t(e),r=!1,n=!1},o=()=>{r&&(n=!0)},s=()=>{r&&(n=!0)};return document.addEventListener(`mousedown`,i),document.addEventListener(`mousemove`,s),document.addEventListener(`mouseup`,a),document.addEventListener(`mouseleave`,o),()=>{document.removeEventListener(`mousedown`,i),document.removeEventListener(`mousemove`,s),document.removeEventListener(`mouseup`,a),document.removeEventListener(`mouseleave`,o)}},x=(e,t)=>{let n=0;return b(e,e=>{n++,n===2?(t(e),n=0):setTimeout(()=>{n=0},300)})},S=[`resize-top-left`,`resize-top`,`resize-top-right`,`resize-right`,`resize-bottom-right`,`resize-bottom`,`resize-bottom-left`,`resize-left`],C=window.devicePixelRatio;var w=e()?10:10*C,T=class{imageData;drawData;canvas;cache=new Map;width;height;constructor({imgData:e,canvas:t}){this.imageData=e,this.canvas=t,this.width=e.width,this.height=e.height,this.drawData=this.canvas.getContext(`2d`).getImageData(0,0,this.width,this.height)}getMosaicColor({y:e,x:t,cx:n,cy:r,r:i}){let a=Math.floor(t/w),o=Math.floor(e/w),s=`${a},${o}`;if(this.cache.has(s))return this.cache.get(s);let c=a*w,l=o*w,u=Math.min(this.width,c+w),d=Math.min(this.height,l+w),f=i*i,p=this.imageData.data,m=0,h=0,g=0,_=0,v=0;for(let e=l;e<d;e++){let t=e-r,i=t*t;for(let t=c;t<u;t++){let r=t-n;if(r*r+i<=f){let n=(e*this.width+t)*4;m+=p[n],h+=p[n+1],g+=p[n+2],_+=p[n+3],v++}}}let y;return y=v>0?{r:Math.floor(m/v),g:Math.floor(h/v),b:Math.floor(g/v),a:Math.floor(_/v)}:{r:0,g:0,b:0,a:0},this.cache.set(s,y),y}drawMosaicForCircle({cx:e,cy:t,r:n,fresh:r=!1}){u(e*C,t*C,n*C,this.imageData.width,this.imageData.height).forEach(({x:r,y:i})=>{let a=this.getMosaicColor({x:r,y:i,cx:e*C,cy:t*C,r:n*C});a&&(this.drawData.data[i*this.width*4+r*4]=a.r,this.drawData.data[i*this.width*4+r*4+1]=a.g,this.drawData.data[i*this.width*4+r*4+2]=a.b,this.drawData.data[i*this.width*4+r*4+3]=a.a)}),r&&this.canvas.getContext(`2d`).putImageData(this.drawData,0,0)}drawMosaic(e){let{path:t,radius:n}=e.attr;t.forEach(({x:e,y:t})=>{this.drawMosaicForCircle({cx:e,cy:t,r:n})}),this.canvas.getContext(`2d`).putImageData(this.drawData,0,0)}clearMosaic(){this.canvas.getContext(`2d`).clearRect(0,0,this.width,this.height),this.drawData=this.canvas.getContext(`2d`).getImageData(0,0,this.width,this.height)}},E=class{dom;constructor(){this.dom=document.createElement(`div`),this.dom.classList.add(`resize-assist`),this.dom.style.display=`none`,S.forEach(e=>{let t=document.createElement(`div`);t.classList.add(`resize-assist-handle`,e),t.dataset.role=e,this.dom.appendChild(t)}),document.body.appendChild(this.dom)}show(){this.dom.style.display=`block`}hide(){this.dom.style.display=`none`}setPosition({top:e,left:t,width:n,height:r}){this.dom.style.top=`${e}px`,this.dom.style.left=`${t}px`,this.dom.style.width=`${n}px`,this.dom.style.height=`${r}px`}},D=class{lastImg=null;baseCanvas;mosaicCanvas;editCanvas;baseCtx;mosaicCtx;editCtx;mosaic=null;_mode=`normal`;resizeAssist;drawState=null;shapeArr=[];currentDrawPos={x1:0,y1:0,x2:0,y2:0};drawing=!1;get mode(){return this._mode}set mode(e){this._mode!==e&&(this._mode=e)}constructor(){this.baseCanvas=document.createElement(`canvas`),this.mosaicCanvas=document.createElement(`canvas`),this.editCanvas=document.createElement(`canvas`),this.baseCtx=this.baseCanvas.getContext(`2d`),this.mosaicCtx=this.mosaicCanvas.getContext(`2d`),this.editCtx=this.editCanvas.getContext(`2d`),this.baseCanvas.style.position=`absolute`,this.mosaicCanvas.style.position=`absolute`,this.editCanvas.style.position=`absolute`,this.baseCanvas.style.top=`0px`,this.baseCanvas.style.left=`0px`,this.mosaicCanvas.style.top=`0px`,this.mosaicCanvas.style.left=`0px`,this.editCanvas.style.left=`0px`,this.editCanvas.style.left=`0px`,this.resizeAssist=new E,console.log(`editCanvas created`,this.resizeAssist),window.editCanvas=this}getCanvasPos=(e,t)=>this.lastImg?{x:Math.min(Math.max(e-this.lastImg.x,0),this.lastImg.x+this.lastImg.width),y:Math.min(Math.max(t-this.lastImg.y,0),this.lastImg.y+this.lastImg.height)}:{x:0,y:0};initListener=()=>{this.editCanvas.addEventListener(`mousedown`,e=>{if(this.mode===`normal`)return;let{x:t,y:n}=this.getCanvasPos(e.clientX,e.clientY);this.currentDrawPos={x1:t,y1:n,x2:t,y2:n},this.drawing=!0}),document.body.addEventListener(`mousemove`,e=>{if(this.mode!==`normal`&&this.drawing){let{x:t,y:n}=this.getCanvasPos(e.clientX,e.clientY);switch(this.currentDrawPos.x2=t,this.currentDrawPos.y2=n,this.drawState?.shape){case`rect`:let e=m(this.currentDrawPos,{maxX:this.lastImg.width,maxY:this.lastImg.height});this.drawState.attr=e,this.renderAll();break;case`circle`:let r=p(this.currentDrawPos,{maxX:this.lastImg.width,maxY:this.lastImg.height});this.drawState.attr=r,this.renderAll();break;case`path`:this.drawState.attr.path.length||this.drawState.attr.path.push({x:this.currentDrawPos.x1,y:this.currentDrawPos.y1}),this.drawState.attr.path.push({x:t,y:n}),this.renderPreview();break;case`mosaic`:if(console.log(`%c🎄 mosaic`,`background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;`,t,n,this.mosaic),!this.drawState.attr.path.length)this.drawState.attr.path.push({x:this.currentDrawPos.x1,y:this.currentDrawPos.y1}),this.mosaic?.drawMosaicForCircle({cx:this.currentDrawPos.x1,cy:this.currentDrawPos.y1,r:this.drawState.attr.radius,fresh:!0});else{let e=this.drawState.attr.path[this.drawState.attr.path.length-1],r=d(e.x,e.y,t,n,this.drawState.attr.radius);for(let e=1;e<r.length;e++){let t=r[e];this.drawState.attr.path.push({x:t.x,y:t.y}),this.mosaic?.drawMosaicForCircle({cx:t.x,cy:t.y,r:this.drawState.attr.radius,fresh:!0})}}break;case`arrow`:this.drawState.attr={fromX:this.currentDrawPos.x1,fromY:this.currentDrawPos.y1,toX:this.currentDrawPos.x2,toY:this.currentDrawPos.y2},this.renderAll();break;default:break}}}),document.body.addEventListener(`mouseup`,e=>{console.log(`🚀 ~ EditCanvas ~ e:`,e),this.mode!==`normal`&&this.drawing&&this.drawState&&(this.drawing=!1,(this.currentDrawPos.x1!==this.currentDrawPos.x2||this.currentDrawPos.y1!==this.currentDrawPos.y2)&&(e.preventDefault(),e.stopPropagation(),this.shapeArr.push(this.drawState),this.setShape(this.drawState.shape)))})};initCanvasSetting(e,t){f(this.baseCanvas,{width:e,height:t}),f(this.mosaicCanvas,{width:e,height:t}),f(this.editCanvas,{width:e,height:t})}setParentDom(e){e.appendChild(this.baseCanvas),e.appendChild(this.mosaicCanvas),e.appendChild(this.editCanvas)}setMode(e){this.mode=e}getCtx(){return this.editCtx}async generateImageData(){this.baseCtx.drawImage(this.mosaicCanvas,0,0,this.mosaicCanvas.width,this.mosaicCanvas.height,0,0,this.lastImg.width,this.lastImg.height),this.baseCtx.drawImage(this.editCanvas,0,0,this.editCanvas.width,this.editCanvas.height,0,0,this.lastImg.width,this.lastImg.height);let e=this.baseCtx.getImageData(0,0,this.lastImg.width*C,this.lastImg.height*C);return Promise.resolve(e)}writeToClipboard=async()=>{console.log(`writeToClipboard`);let e=await this.generateImageData();await window.app.copyToClipboard(e),window.app.exit()};saveImageToFolder=async()=>{console.log(`saveImageToFolder`);let e=await this.generateImageData();(await window.app.saveImageToFolder(e)).status===201||window.app.exit()};setImg({img:e,x:t=0,y:n=0,width:r,height:i}){if(this.lastImg&&this.lastImg.x===t&&this.lastImg.y===n&&this.lastImg.width===r&&this.lastImg.height===i)return;let a=performance.now(),o=e.getContext(`2d`).getImageData(t*C,n*C,r*C,i*C);this.baseCtx.putImageData(o,0,0);let s=performance.now();console.log(`drawImage cost ${s-a} ms`),this.lastImg={x:t,y:n,width:r,height:i},this.initListener(),this.mosaic=new T({imgData:o,canvas:this.mosaicCanvas})}setShape(e=`rect`){switch(e){case`rect`:this.drawState={id:l(),shape:`rect`,attr:{x:0,y:0,width:0,height:0},pen:{color:`#ff0000`,lineWidth:2}};break;case`circle`:this.drawState={id:l(),shape:`circle`,attr:{centerX:0,centerY:0,radiusX:0,radiusY:0,isCircle:!1,left:0,top:0,width:0,height:0},pen:{color:`#ff0000`,lineWidth:2}};break;case`path`:this.drawState={id:l(),shape:`path`,attr:{path:[]},pen:{color:`#ff0000`,lineWidth:2}};break;case`mosaic`:this.drawState={id:l(),shape:`mosaic`,attr:{path:[],radius:10}};break;case`arrow`:this.drawState={id:l(),shape:`arrow`,attr:{fromX:0,fromY:0,toX:0,toY:0},pen:{color:`#ff0000`,lineWidth:2}};break;default:this.drawState=null;break}}renderAll=()=>{this.editCtx.clearRect(0,0,this.editCanvas.width,this.editCanvas.height),this.shapeArr.forEach(e=>{y(this.editCtx,e)}),this.renderPreview()};renderPreview=()=>{this.currentDrawPos.x1===this.currentDrawPos.x2&&this.currentDrawPos.y1===this.currentDrawPos.y2||this.drawState&&y(this.editCtx,this.drawState)}};const O=[{id:`rect`,className:`box-select rect`,content:`<div class="wrap"><svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.75" y="0.75" width="16.8" height="16.8" rx="1.2" stroke="var(--active-color)" stroke-width="1.5"/></svg></div>`,role:`edit`,shape:`rect`,group:`edit`},{id:`circle`,className:`box-select circle`,content:`<div class="wrap"><svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.75" y="0.75" width="16.8" height="16.8" rx="8.4" stroke="var(--active-color)" stroke-width="1.5"/></svg></div>`,role:`edit`,shape:`circle`,group:`edit`},{id:`arrow`,className:`box-select arrow`,content:`<div class="wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.7998 20.0732L20.0733 4.79974" stroke="var(--active-color)" stroke-width="1.5" stroke-linecap="round"/><path d="M20.4082 12.9833L20.4082 4.5752L12.0001 4.57519" stroke="var(--active-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`,role:`edit`,shape:`arrow`,group:`edit`},{id:`path`,className:`box-select path`,content:`<div class="wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.1815 3.68472C15.8482 3.01806 16.1815 2.68472 16.5957 2.68472C17.0099 2.68472 17.3433 3.01805 18.0099 3.68472L20.3137 5.9885C20.9804 6.65516 21.3137 6.9885 21.3137 7.40271C21.3137 7.81692 20.9804 8.15026 20.3137 8.81692L9.00331 20.1273C8.72319 20.4074 8.58313 20.5475 8.40558 20.6234C8.22803 20.6993 8.03001 20.7037 7.63396 20.7126L3.60427 20.803C3.40788 20.8074 3.30968 20.8096 3.24923 20.7492C3.18879 20.6887 3.19099 20.5905 3.1954 20.3941L3.28582 16.3645C3.29471 15.9684 3.29915 15.7704 3.37504 15.5928C3.45093 15.4153 3.59098 15.2752 3.8711 14.9951L15.1815 3.68472Z" stroke="var(--active-color)" stroke-width="1.5"/><line x1="13.6153" y1="4.63373" x2="19.4763" y2="10.4948" stroke="var(--active-color)" stroke-width="1.5"/></svg></div>`,role:`edit`,shape:`path`,group:`edit`},{id:`mosaic`,className:`box-select mosaic`,content:`<div class="wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.59961" y="3.59961" width="16.8" height="16.8" rx="1" stroke="var(--active-color)" stroke-width="1.5"/><rect x="10.2002" y="10.2002" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="13.7998" y="6.59961" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="6.59961" y="6.59961" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="6.59961" y="13.7998" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="13.7998" y="13.7998" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/></svg></div>`,role:`edit`,shape:`mosaic`,group:`edit`},{id:`undo`,className:`undo`,content:`<div class="wrap"><svg class="normal" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.3245 19.7779H15.3382C18.4533 19.7779 20.9786 17.2526 20.9786 14.1375C20.9786 11.0224 18.4533 8.49707 15.3382 8.49707H3.43066" stroke="#DBDEE5" stroke-width="1.5" stroke-linecap="round"/><path d="M7.85079 3.27421L2.62793 8.49707L7.85079 13.7199" stroke="#DBDEE5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="active" style="display: none;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.3245 19.7779H15.3382C18.4533 19.7779 20.9786 17.2526 20.9786 14.1375C20.9786 11.0224 18.4533 8.49707 15.3382 8.49707H3.43066" stroke="#0D1324" stroke-width="1.5" stroke-linecap="round"/><path d="M7.85079 3.27421L2.62793 8.49707L7.85079 13.7199" stroke="#0D1324" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`,role:`undo`,group:`operation`},{id:`download`,className:`download`,content:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 2.71387C12.75 2.29965 12.4142 1.96387 12 1.96387C11.5858 1.96387 11.25 2.29965 11.25 2.71387L12 2.71387L12.75 2.71387ZM11.4697 17.3372C11.7626 17.6301 12.2374 17.6301 12.5303 17.3372L17.3033 12.5642C17.5962 12.2713 17.5962 11.7964 17.3033 11.5035C17.0104 11.2106 16.5355 11.2106 16.2426 11.5035L12 15.7462L7.75736 11.5035C7.46447 11.2106 6.98959 11.2106 6.6967 11.5035C6.40381 11.7964 6.40381 12.2713 6.6967 12.5642L11.4697 17.3372ZM12 2.71387L11.25 2.71387L11.25 16.8068L12 16.8068L12.75 16.8068L12.75 2.71387L12 2.71387Z" fill="#0D1324"/><line x1="2.5498" y1="20.5361" x2="21.4498" y2="20.5361" stroke="#0D1324" stroke-width="1.5" stroke-linecap="round"/></svg>`,role:`download`,group:`operation`},{id:`cancel`,className:`cancel`,content:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.4821 4.46875L4.41895 19.5319" stroke="#FE4343" stroke-width="1.5" stroke-linecap="round"/><path d="M19.5807 19.5319L4.51758 4.46875" stroke="#FE4343" stroke-width="1.5" stroke-linecap="round"/></svg>`,role:`cancel`,group:`operation`},{id:`finish`,className:`finish`,content:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.7379 4.92676L10.9616 17.6765C10.2749 18.572 9.93156 19.0198 9.44463 19.0692C8.95771 19.1187 8.53133 18.7491 7.67858 18.01L3.2627 14.1824" stroke="#32C872" stroke-width="1.5" stroke-linecap="round"/></svg>`,role:`finish`,group:`operation`}];var k=40,A=class{dom;itemListeners=new Map;_active=``;_undoActive=!1;get active(){return this._active}set active(e){this.dom.querySelector(`.edit-tool-item.active`)?.classList.remove(`active`),e&&this.dom.querySelector(`.edit-tool-item[data-shape="${e}"]`)?.classList.add(`active`),this._active=e}get undoActive(){return this._undoActive}set undoActive(e){this._undoActive!==e&&(this._undoActive=e,e?(this.dom.querySelector(`.edit-tool-item.undo .active`).style.display=`block`,this.dom.querySelector(`.edit-tool-item.undo .normal`).style.display=`none`):(this.dom.querySelector(`.edit-tool-item.undo .normal`).style.display=`block`,this.dom.querySelector(`.edit-tool-item.undo .active`).style.display=`none`))}constructor(e){this.dom=document.createElement(`div`),this.dom.classList.add(`edit-tool`),this.dom.style.visibility=`hidden`,this.dom.style.height=`${k}px`;let t=e||document.body;t&&t.appendChild(this.dom),this.initItems(),this.initListeners()}initItems=()=>{let e={};O.forEach(t=>{let n=t.group||``;e[n]||(e[n]=document.createElement(`div`),e[n].classList.add(`edit-tool-group`),e[n].dataset.group=n,this.dom.appendChild(e[n]));let r=document.createElement(`div`);r.classList.add(`edit-tool-item`,...t.className.split(` `)),r.innerHTML=t.content||``,r.dataset.role=t.role||``,r.dataset.shape=t.shape||``,e[n].appendChild(r)})};initListeners=()=>{this.dom.addEventListener(`click`,e=>{let t=e.target;for(;t&&!t.classList.contains(`edit-tool-item`)&&(t=t.parentElement,t!==this.dom););if(!t)return;let n=t.dataset.role||``,r=t.dataset.shape||void 0,i=this.itemListeners.get(n);i&&i(r)})};addListener=e=>{e.forEach(e=>{this.itemListeners.set(e.role,e.listener)})};render=(e=!0,{x:t,y:n,height:r,width:i})=>{if(!e){this.dom.style.visibility=`hidden`;return}if(this.dom){this.dom.style.visibility=`visible`,this.dom.style.left=`${t+i-this.dom.clientWidth}px`;let e=window.innerHeight;if(n+r+32+8<=e){this.dom.style.top=`${n+r+8}px`;return}if(n-32-8>=0){this.dom.style.top=`${n-32-8}px`;return}this.dom.style.top=`${n+r-32-8}px`}}},j=class{dom;constructor(e){this.dom=document.createElement(`div`),this.dom.classList.add(`size-display`),e.appendChild(this.dom)}render=(e=!0,{x:t,y:n,height:r,width:i})=>{if(!e||!r&&!i){this.dom.style.visibility=`hidden`;return}this.dom.style.visibility=`visible`,this.dom.style.left=`${t}px`,n-20-8<0?this.dom.style.top=`${n+8}px`:this.dom.style.top=`${n-20-8}px`,this.dom.innerText=`${i*C} x ${r*C}`}},M=class{sizeDisplay;editTools;editCanvas;imgDom;canvasContainer=document.createElement(`div`);baseCanvas=document.createElement(`canvas`);maskCanvas=document.createElement(`canvas`);baseCtx;maskCtx;selectRectDom;isSelecting=!1;resizeHandle=``;startX=0;startY=0;fixedX=0;fixedY=0;fixedWidth=0;fixedHeight=0;selectX=0;selectY=0;selectWidth=0;selectHeight=0;broadcastChannel=new BroadcastChannel(`broadcast`);id=Math.random().toString(36).substring(2);matchedWindow=void 0;_mode=`select`;get mode(){return this._mode}set mode(e){let t=this._mode;if(t!==e)switch(this._mode=e,e){case`waitEdit`:this.canvasContainer.style.cursor=``,this.selectRectDom.style.cursor=`move`;break;case`move`:this.canvasContainer.style.cursor=`move`;break;case`edit`:this.canvasContainer.style.cursor=``,this.selectRectDom.style.cursor=`crosshair`,this.canvasContainer.classList.add(`edit-mode`),this.broadcastChannel.postMessage({type:`startEdit`,id:this.id});break;case`forbidden`:this.clearSelectRect();break;case`otherTab`:if(t===`waitEdit`)break;this.clearSelectRect();break}}imgNaturalWidth=0;imgNaturalHeight=0;imgDrawWidth=0;imgDrawHeight=0;boxWidth=0;boxHeight=0;imgOffsetX=0;imgOffsetY=0;windows=[];constructor(e){console.log(`%c🏓 DPR: ${C}`,`background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;`),this.imgDom=null,this.canvasContainer.classList.add(`canvas-container`),this.maskCanvas.classList.add(`mask-canvas`),this.maskCtx=this.maskCanvas.getContext(`2d`),this.baseCtx=this.baseCanvas.getContext(`2d`),this.editCanvas=new D,this.selectRectDom=document.createElement(`div`),this.selectRectDom.classList.add(`select-rect`),e.appendChild(this.canvasContainer),this.canvasContainer.appendChild(this.baseCanvas),this.canvasContainer.appendChild(this.maskCanvas),S.forEach(e=>{let t=document.createElement(`div`);t.classList.add(`resize-handle`,e),t.dataset.role=e,this.selectRectDom.appendChild(t)}),this.initData(),this.drawMask(),this.initListener(),this.sizeDisplay=new j(this.canvasContainer),this.editTools=new A,this.editTools.addListener([{role:`edit`,listener:e=>{this.setEditCanvasBg(),this.editCanvas.setMode(`edit`);let t=e===this.editTools.active?``:e||``;this.editCanvas.setShape(t),this.editTools.active=t}},{role:`download`,listener:()=>{this.setEditCanvasBg(),this.editCanvas.saveImageToFolder()}},{role:`finish`,listener:()=>{this.setEditCanvasBg(),this.editCanvas.writeToClipboard()}},{role:`cancel`,listener:()=>{n()}}]),window.app?.getWindows?.().then(e=>{let t=window.innerWidth,n=window.innerHeight,r=[];e.forEach(t=>{if(console.log(`🚀 ~ DrawScreen ~ constructor ~ windows:`,e),t.name!==`tao window`){let{x:e,y:n,width:i,height:a}=t.bounds;r.push(c({x:e,y:n,width:i,height:a}))}}),r.push({x:0,y:0,width:t,height:n}),this.windows=r}).catch(e=>console.error(e)),this.broadcastChannel.onmessage=e=>{let{type:t,id:n,x:r,y:i,act:a}=e?.data||{};a===`selectStart`&&n!==this.id&&(this.selectHeight||this.selectWidth)&&(console.log(`%c🏓 clearSelectRect`,`background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;`),this.clearSelectRect()),t===`activeWindow`&&n!==this.id?this.mode=`otherTab`:t===`activeWindow`&&n===this.id&&this.mode===`otherTab`?this.mode=`select`:t===`startEdit`&&n&&n!==this.id&&(this.mode=`forbidden`)}}clearSelectRect=()=>{this.selectX=0,this.selectY=0,this.selectWidth=0,this.selectHeight=0,this.drawMask(),this.editTools.render(!1,{x:0,y:0,height:0,width:0}),this.sizeDisplay.render(!1,{x:0,y:0,height:0,width:0})};setImgDom=e=>{this.imgDom=e,this.imgNaturalWidth=this.imgDom.naturalWidth,this.imgNaturalHeight=this.imgDom.naturalHeight;let t=this.imgNaturalWidth/this.boxWidth,n=this.imgNaturalHeight/this.boxHeight,r=Math.max(t,n);this.imgDrawWidth=this.imgNaturalWidth/r,this.imgDrawHeight=this.imgNaturalHeight/r,this.imgOffsetX=(this.boxWidth-this.imgDrawWidth)/2,this.imgOffsetY=(this.boxHeight-this.imgDrawHeight)/2,this.drawBase()};setEditCanvasBg=()=>{this.mode!==`edit`&&(this.mode=`edit`,this.editCanvas.initCanvasSetting(this.selectWidth,this.selectHeight),this.editCanvas.setParentDom(this.selectRectDom),this.editCanvas.setImg({img:this.baseCanvas,x:this.selectX,y:this.selectY,width:this.selectWidth,height:this.selectHeight}))};drawBase=()=>{if(!this.imgDom){console.error(`Image dom is not set`);return}this.baseCtx.drawImage(this.imgDom,0,0,this.imgNaturalWidth,this.imgNaturalHeight,this.imgOffsetX,this.imgOffsetY,this.imgDrawWidth,this.imgDrawHeight)};initData=()=>{this.boxWidth=this.canvasContainer.clientWidth,this.boxHeight=this.canvasContainer.clientHeight,f(this.maskCanvas,{width:this.boxWidth,height:this.boxHeight}),f(this.baseCanvas,{width:this.boxWidth,height:this.boxHeight})};activeWindow=(e,t)=>{if(this.broadcastChannel.postMessage({type:`activeWindow`,act:t,id:this.id,x:e.clientX,y:e.clientY}),this.mode===`otherTab`){this.selectHeight||this.selectWidth?this.mode=`waitEdit`:this.mode=`select`;return}};drawMask=()=>{this.maskCtx.clearRect(0,0,this.boxWidth,this.boxHeight),this.maskCtx.fillStyle=`rgba(0, 0, 0, 0.5)`,this.maskCtx.fillRect(0,0,this.boxWidth,this.boxHeight),this.selectWidth&&this.selectHeight?(this.maskCtx.clearRect(this.selectX,this.selectY,this.selectWidth,this.selectHeight),this.canvasContainer.appendChild(this.selectRectDom),this.selectRectDom.style.left=`${this.selectX-2}px`,this.selectRectDom.style.top=`${this.selectY-2}px`,this.selectRectDom.style.width=`${this.selectWidth}px`,this.selectRectDom.style.height=`${this.selectHeight}px`):this.selectRectDom.remove()};selectStart=e=>{this.mode===`select`&&(this.isSelecting=!0,this.startX=e.clientX,this.startY=e.clientY,console.log(`%c🎄 select start`,`background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;`,this.startX,this.startY))};selectMove=e=>{if(this.mode!==`select`)return;if(!this.isSelecting){let t=s({x:e.clientX,y:e.clientY,windows:this.windows});if(this.matchedWindow=t,!t){this.matchedWindow=void 0;return}this.selectX=t.x,this.selectY=t.y,this.selectWidth=t.width,this.selectHeight=t.height,this.drawMask();return}let{top:t,left:n,width:r,height:a}=i({startX:this.startX,startY:this.startY,moveX:e.clientX-this.startX,moveY:e.clientY-this.startY,maxX:this.boxWidth,maxY:this.boxHeight});this.selectX=n,this.selectY=t,this.selectWidth=r,this.selectHeight=a,this.drawMask()};selectEnd=()=>{this.mode===`select`&&(this.isSelecting=!1,this.mode=`waitEdit`)};resizeStart=e=>{if(this.mode!==`select`)if(e.target?.classList?.contains(`resize-handle`)){this.resizeHandle=e.target.dataset.role||``,this.mode=`resizing`;let t=getComputedStyle(e.target).cursor||``;this.canvasContainer.style.cursor=t,this.selectRectDom.style.cursor=t,this.startX=e.clientX,this.startY=e.clientY;let{x:n,y:r}=a({resizeHandle:this.resizeHandle,x:this.selectX,y:this.selectY,width:this.selectWidth,height:this.selectHeight});this.fixedX=n,this.fixedY=r,this.fixedWidth=this.selectWidth,this.fixedHeight=this.selectHeight}else e.target?.classList?.contains(`select-rect`)&&(this.mode=`move`,this.startX=e.clientX,this.startY=e.clientY,this.fixedX=this.selectX,this.fixedY=this.selectY,this.fixedWidth=this.selectWidth,this.fixedHeight=this.selectHeight)};resizeMove=e=>{if(this.mode!==`select`){if(this.mode===`resizing`&&this.resizeHandle){let{top:t,left:n,width:r,height:i}=o({resizeHandle:this.resizeHandle,fixedX:this.fixedX,fixedY:this.fixedY,originWidth:this.fixedWidth,originHeight:this.fixedHeight,moveX:e.clientX-this.startX,moveY:e.clientY-this.startY,maxX:this.boxWidth,maxY:this.boxHeight});this.selectX=n,this.selectY=t,this.selectWidth=r,this.selectHeight=i,this.drawMask()}else if(this.mode===`move`){let t=e.clientX-this.startX,n=e.clientY-this.startY,r=this.fixedX+t,i=this.fixedY+n;(r<0||r+this.fixedWidth>this.boxWidth)&&(this.fixedX=this.selectX,this.fixedWidth=this.selectWidth,this.startX=e.clientX),(i<0||i+this.fixedHeight>this.boxHeight)&&(this.fixedY=this.selectY,this.fixedHeight=this.selectHeight,this.startY=e.clientY),r<0?r=0:r+this.fixedWidth>this.boxWidth&&(r=this.boxWidth-this.fixedWidth),i<0?i=0:i+this.fixedHeight>this.boxHeight&&(i=this.boxHeight-this.fixedHeight),this.selectX=r,this.selectY=i,this.drawMask()}}};resizeEnd=()=>{this.mode!==`select`&&(this.mode=`waitEdit`,this.resizeHandle=``)};onMouseDown=e=>{if(this.mode===`edit`||this.mode===`forbidden`||(this.activeWindow(e,`selectStart`),this.mode===`otherTab`))return;let t=e.target===this.selectRectDom||this.selectRectDom.contains(e.target);this.editTools.render(this.mode===`waitEdit`&&!t,{x:this.selectX,y:this.selectY,width:this.selectWidth,height:this.selectHeight}),this.mode===`select`?this.selectStart(e):this.resizeStart(e)};onMouseMove=e=>{this.mode===`edit`||this.mode===`forbidden`||(this.activeWindow(e,`move`),this.mode!==`otherTab`&&(this.mode===`select`?(this.selectMove(e),this.sizeDisplay.render(!0,{x:this.selectX,y:this.selectY,width:this.selectWidth,height:this.selectHeight})):(this.resizeMove(e),this.sizeDisplay.render(!0,{x:this.selectX,y:this.selectY,width:this.selectWidth,height:this.selectHeight}))))};onMouseUp=e=>{if(!(this.mode===`edit`||this.mode===`forbidden`)&&(this.activeWindow(e,`selectEnd`),this.mode!==`otherTab`))switch(this.mode){case`select`:e.stopPropagation(),e.preventDefault(),console.log(`mouseup selectEnd`,this.selectWidth,this.selectHeight,this.matchedWindow),this.selectWidth<=10&&this.selectHeight<=10&&this.matchedWindow&&(this.selectX=this.matchedWindow.x,this.selectY=this.matchedWindow.y,this.selectWidth=this.matchedWindow.width,this.selectHeight=this.matchedWindow.height),this.selectWidth&&this.selectHeight?(this.selectEnd(),this.editTools.render(!0,{x:this.selectX,y:this.selectY,width:this.selectWidth,height:this.selectHeight}),this.drawMask()):(this.matchedWindow&&(this.selectX=this.matchedWindow.x,this.selectY=this.matchedWindow.y,this.selectWidth=this.matchedWindow.width,this.selectHeight=this.matchedWindow.height),this.drawMask(),this.isSelecting=!1);break;case`waitEdit`:case`move`:case`resizing`:e.stopPropagation(),e.preventDefault(),this.resizeEnd(),this.editTools.render(!0,{x:this.selectX,y:this.selectY,width:this.selectWidth,height:this.selectHeight});break;default:break}};onMouseLeave=e=>{if(this.mode===`move`){let t=e.clientX,n=e.clientY;t>this.boxWidth?this.selectX=this.boxWidth-this.selectWidth:t<0&&(this.selectX=0),n>this.boxHeight?this.selectY=this.boxHeight-this.selectHeight:n<0&&(this.selectY=0),this.fixedX=this.selectX,this.fixedY=this.selectY,this.fixedWidth=this.selectWidth,this.fixedHeight=this.selectHeight,this.startX=e.clientX,this.startY=e.clientY,this.drawMask()}};onMouseEnter=e=>{this.mode===`edit`||this.mode===`forbidden`||this.activeWindow(e,`enter`)};initListener=()=>{document.body.addEventListener(`mousedown`,this.onMouseDown),document.body.addEventListener(`mousemove`,this.onMouseMove),document.body.addEventListener(`mouseup`,this.onMouseUp),document.body.addEventListener(`mouseleave`,this.onMouseLeave),document.body.addEventListener(`mouseenter`,this.onMouseEnter),x(this.selectRectDom,()=>{console.log(`================double click================`),this.setEditCanvasBg(),this.editCanvas.writeToClipboard()})};putImageData=({imageData:e,width:t,height:n})=>{this.imgNaturalWidth=t,this.imgNaturalHeight=n;let r=this.imgNaturalWidth/this.boxWidth,i=this.imgNaturalHeight/this.boxHeight,a=Math.max(r,i);this.imgDrawWidth=this.imgNaturalWidth/a,this.imgDrawHeight=this.imgNaturalHeight/a,this.imgOffsetX=(this.boxWidth-this.imgDrawWidth)/2,this.imgOffsetY=(this.boxHeight-this.imgDrawHeight)/2,this.baseCtx.putImageData(e,0,0)}},N=document.querySelector(`#app`);function P(){console.log(`Environment mode:`,`production`),console.log(`Is development:`,!1),console.log(`Is production:`,!0);let e=new M(N);console.log(`🚀 ~ init ~ drawScreen:`,e),window.drawScreen=e,r().then(t=>{e.putImageData(t)}).catch(e=>console.error(e)),window.addEventListener(`keydown`,e=>{e.key===`Escape`&&n()})}P();</script>
-  <style rel="stylesheet" crossorigin>:root{color:#ffffffde;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;--resize-handle-size:5px;--select-color:#00c6db;font-family:system-ui,Avenir,Helvetica,Arial,sans-serif;font-weight:400;line-height:1.5}*{box-sizing:border-box;-webkit-user-select:none;user-select:none;margin:0;padding:0}html,body{-webkit-user-select:none;user-select:none;background-color:#0000;width:100%;height:100%;overflow:hidden}#app{-webkit-user-select:none;user-select:none;background-color:#0000;width:100%;height:100%;position:relative}#app img{-o-object-fit:contain;object-fit:contain;max-width:100%;max-height:100%}.canvas-container{z-index:100;-webkit-user-select:none;user-select:none;width:100%;height:100%;position:absolute;top:0;left:0;overflow:hidden}canvas{-webkit-user-select:none;user-select:none;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;image-rendering:pixelated;display:block}.mask-canvas{z-index:200;width:100%;height:100%;position:absolute;top:0;left:0}.select-rect{z-index:300;border:2px solid var(--select-color);box-sizing:content-box;position:absolute;transform:translate(0,0)}.resize-handle{width:var(--resize-handle-size);height:var(--resize-handle-size);background-color:var(--select-color);-webkit-user-select:none;user-select:none;position:absolute}.resize-top-left{top:calc(var(--resize-handle-size)/-2);left:calc(var(--resize-handle-size)/-2);cursor:nwse-resize}.resize-top{top:calc(var(--resize-handle-size)/-2);cursor:ns-resize;left:50%;transform:translate(-50%)}.resize-top-right{top:calc(var(--resize-handle-size)/-2);right:calc(var(--resize-handle-size)/-2);cursor:nesw-resize}.resize-right{right:calc(var(--resize-handle-size)/-2);cursor:ew-resize;top:50%;transform:translateY(-50%)}.resize-bottom-right{right:calc(var(--resize-handle-size)/-2);bottom:calc(var(--resize-handle-size)/-2);cursor:nwse-resize}.resize-bottom{bottom:calc(var(--resize-handle-size)/-2);cursor:ns-resize;left:50%;transform:translate(-50%)}.resize-bottom-left{bottom:calc(var(--resize-handle-size)/-2);left:calc(var(--resize-handle-size)/-2);cursor:nesw-resize}.resize-left{top:50%;left:calc(var(--resize-handle-size)/-2);cursor:ew-resize;transform:translateY(-50%)}.edit-mode .resize-handle{cursor:default}.resize-assist{z-index:400;border:1px dashed #00000080;position:absolute}.resize-assist-handle{width:var(--resize-handle-size);height:var(--resize-handle-size);background-color:#ffffff80;border-radius:50%;position:absolute}.edit-tool{-webkit-user-select:none;user-select:none;z-index:400;visibility:hidden;background-color:#fff;border-radius:4px;justify-content:center;align-items:center;width:fit-content;padding:6px 14px;display:flex;position:absolute;bottom:0;right:0;box-shadow:0 2px 8px #00000026}.edit-tool-group{justify-content:center;align-items:center;gap:12px;display:flex}.edit-tool-group:after{content:"";background-color:#e5e6eb;width:1px;height:20px;margin-right:12px;display:block}.edit-tool-group:last-child:after{display:none}.edit-tool-item{-webkit-user-select:none;user-select:none;cursor:pointer;color:#000;--active-color:#0d1324;border-radius:2.4px;justify-content:center;align-items:center;width:28px;height:28px;display:flex}.edit-tool-item.active{--active-color:#00c6db;background-color:#f5f5f5}.edit-tool-item .wrap{justify-content:center;align-items:center;width:100%;height:100%;display:flex}.edit-tool-item .normal{display:block}.edit-tool-item .active,.edit-tool-item.active .normal{display:none}.edit-tool-item.active .active{display:block}.edit-tool-item svg{-webkit-user-select:none;user-select:none}.edit-tool-item:hover{background-color:#f5f5f5}.size-display{-webkit-user-select:none;user-select:none;z-index:400;color:#fff;visibility:hidden;justify-content:center;align-items:center;gap:2px;width:fit-content;height:20px;padding:0 2px;display:flex;position:absolute;bottom:0;left:0}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>screen</title>
+    <script type="module" crossorigin>(function polyfill() {
+	const relList = document.createElement("link").relList;
+	if (relList && relList.supports && relList.supports("modulepreload")) return;
+	for (const link of document.querySelectorAll("link[rel=\"modulepreload\"]")) processPreload(link);
+	new MutationObserver((mutations) => {
+		for (const mutation of mutations) {
+			if (mutation.type !== "childList") continue;
+			for (const node of mutation.addedNodes) if (node.tagName === "LINK" && node.rel === "modulepreload") processPreload(node);
+		}
+	}).observe(document, {
+		childList: true,
+		subtree: true
+	});
+	function getFetchOpts(link) {
+		const fetchOpts = {};
+		if (link.integrity) fetchOpts.integrity = link.integrity;
+		if (link.referrerPolicy) fetchOpts.referrerPolicy = link.referrerPolicy;
+		if (link.crossOrigin === "use-credentials") fetchOpts.credentials = "include";
+		else if (link.crossOrigin === "anonymous") fetchOpts.credentials = "omit";
+		else fetchOpts.credentials = "same-origin";
+		return fetchOpts;
+	}
+	function processPreload(link) {
+		if (link.ep) return;
+		link.ep = true;
+		const fetchOpts = getFetchOpts(link);
+		fetch(link.href, fetchOpts);
+	}
+})();
+const isWindows = () => {
+	if (typeof window === "undefined") return false;
+	if (window.navigator.userAgentData?.platform) return window.navigator.userAgentData.platform.toLowerCase() === "windows";
+	return window.navigator.userAgent.toLowerCase().includes("windows");
+};
+var promise = null;
+function exitApp() {
+	window.app.exit();
+}
+async function getScreenImageData() {
+	if (promise) return promise;
+	promise = new Promise((resolve, reject) => {
+		(async () => {
+			try {
+				const { width, height, arrayBuffer } = await window.app.getImage();
+				resolve({
+					imageData: new ImageData(new Uint8ClampedArray(arrayBuffer), width, height),
+					height,
+					width
+				});
+			} catch (err) {
+				reject(err);
+			}
+		})();
+	});
+	return promise;
+}
+const calcStartAndMove = ({ startX, startY, moveX, moveY, maxX, maxY }) => {
+	if (moveX >= 0 && moveY >= 0) return {
+		top: startY,
+		left: startX,
+		width: Math.min(maxX, moveX),
+		height: Math.min(maxY, moveY)
+	};
+	if (moveX < 0 && moveY >= 0) return {
+		top: startY,
+		left: startX + moveX,
+		width: Math.min(maxX, -moveX),
+		height: Math.min(maxY, moveY)
+	};
+	if (moveX >= 0 && moveY < 0) return {
+		top: startY + moveY,
+		left: startX,
+		width: Math.min(maxX, moveX),
+		height: Math.min(maxY, -moveY)
+	};
+	return {
+		top: startY + moveY,
+		left: startX + moveX,
+		width: Math.min(maxX, -moveX),
+		height: Math.min(maxY, -moveY)
+	};
+};
+const calcFixedPoint = ({ resizeHandle, x, y, width, height }) => {
+	switch (resizeHandle) {
+		case "resize-top-left": return {
+			x: x + width,
+			y: y + height
+		};
+		case "resize-top":
+		case "resize-top-right": return {
+			x,
+			y: y + height
+		};
+		case "resize-right":
+		case "resize-bottom-right":
+		case "resize-bottom": return {
+			x,
+			y
+		};
+		case "resize-bottom-left":
+		case "resize-left": return {
+			x: x + width,
+			y
+		};
+		default: return {
+			x,
+			y
+		};
+	}
+};
+const calcReactForResizing = ({ resizeHandle, fixedX, fixedY, originWidth, originHeight, moveX, moveY, maxX, maxY }) => {
+	let actualMoveX = moveX;
+	let actualMoveY = moveY;
+	switch (resizeHandle) {
+		case "resize-top-left":
+			actualMoveX = moveX - originWidth;
+			actualMoveY = moveY - originHeight;
+			break;
+		case "resize-top":
+			actualMoveX = originWidth;
+			actualMoveY = moveY - originHeight;
+			break;
+		case "resize-top-right":
+			actualMoveX = moveX + originWidth;
+			actualMoveY = moveY - originHeight;
+			break;
+		case "resize-right":
+			actualMoveX = moveX + originWidth;
+			actualMoveY = originHeight;
+			break;
+		case "resize-bottom-right":
+			actualMoveX = moveX + originWidth;
+			actualMoveY = moveY + originHeight;
+			break;
+		case "resize-bottom":
+			actualMoveX = originWidth;
+			actualMoveY = moveY + originHeight;
+			break;
+		case "resize-bottom-left":
+			actualMoveX = moveX - originWidth;
+			actualMoveY = moveY + originHeight;
+			break;
+		case "resize-left":
+			actualMoveX = moveX - originWidth;
+			actualMoveY = originHeight;
+			break;
+		default: break;
+	}
+	return calcStartAndMove({
+		startX: fixedX,
+		startY: fixedY,
+		moveX: actualMoveX,
+		moveY: actualMoveY,
+		maxX,
+		maxY
+	});
+};
+const matchWindow = ({ x, y, windows }) => {
+	return windows.find((window$1) => {
+		return x >= window$1.x && x <= window$1.x + window$1.width && y >= window$1.y && y <= window$1.y + window$1.height;
+	});
+};
+const getRectForWindow = ({ x, y, width, height }) => {
+	const rx = isWindows() ? x / DPR : x;
+	const ry = isWindows() ? y / DPR : y;
+	const rwidth = isWindows() ? width / DPR : width;
+	const rheight = isWindows() ? height / DPR : height;
+	const maxX = window.innerWidth;
+	const maxY = window.innerHeight;
+	const endX = Math.min(rx + rwidth, maxX);
+	const endY = Math.min(ry + rheight, maxY);
+	const startX = Math.max(rx, 0);
+	const startY = Math.max(ry, 0);
+	return {
+		x: startX,
+		y: startY,
+		width: endX - startX,
+		height: endY - startY
+	};
+};
+function generateUID() {
+	return `${Math.random().toString(36).substring(2, 10)}-${Math.random().toString(36).substring(2, 10)}-${Math.random().toString(36).substring(2, 10)}`;
+}
+function pointsInCircleClipped(cx, cy, r, maxX, maxY) {
+	const pts = [];
+	const r2 = r * r;
+	const x0 = Math.max(0, Math.ceil(cx - r));
+	const x1 = Math.min(maxX, Math.floor(cx + r));
+	const y0 = Math.max(0, Math.ceil(cy - r));
+	const y1 = Math.min(maxY, Math.floor(cy + r));
+	for (let y = y0; y <= y1; y++) {
+		const dy = y - cy;
+		for (let x = x0; x <= x1; x++) {
+			const dx = x - cx;
+			if (dx * dx + dy * dy <= r2) pts.push({
+				x,
+				y
+			});
+		}
+	}
+	return pts;
+}
+function interpolatePoints(x1, y1, x2, y2, radius) {
+	const points = [];
+	const dx = x2 - x1;
+	const dy = y2 - y1;
+	const distance = Math.sqrt(dx * dx + dy * dy);
+	const step = 2 * radius * .7;
+	const numPoints = Math.max(2, Math.ceil(distance / step));
+	for (let i = 0; i < numPoints; i++) {
+		const t = i / numPoints;
+		const x = x1 + dx * t;
+		const y = y1 + dy * t;
+		points.push({
+			x,
+			y
+		});
+	}
+	points.push({
+		x: x2,
+		y: y2
+	});
+	return points;
+}
+function initCanvasSetting(canvas, { width, height }) {
+	canvas.width = width * DPR;
+	canvas.height = height * DPR;
+	canvas.style.width = `${width}px`;
+	canvas.style.height = `${height}px`;
+	const ctx = canvas.getContext("2d");
+	ctx.scale(DPR, DPR);
+	ctx.imageSmoothingEnabled = true;
+	ctx.imageSmoothingQuality = "high";
+}
+function calculateEllipseFromRect({ x1, y1, x2, y2 }, { maxX, maxY }) {
+	const left = Math.min(x1, x2);
+	const right = Math.min(Math.max(x1, x2), maxX);
+	const top = Math.min(y1, y2);
+	const bottom = Math.min(Math.max(y1, y2), maxY);
+	const width = right - left;
+	const height = bottom - top;
+	return {
+		centerX: left + width / 2,
+		centerY: top + height / 2,
+		radiusX: width / 2,
+		radiusY: height / 2,
+		isCircle: Math.abs(width - height) < 2,
+		left,
+		top,
+		width,
+		height
+	};
+}
+function calculateRectFromPoints({ x1, y1, x2, y2 }, { maxX, maxY }) {
+	const left = Math.min(x1, x2);
+	const right = Math.min(Math.max(x1, x2), maxX);
+	const top = Math.min(y1, y2);
+	const bottom = Math.min(Math.max(y1, y2), maxY);
+	return {
+		x: left,
+		y: top,
+		width: right - left,
+		height: bottom - top
+	};
+}
+function drawRect(ctx, shape) {
+	ctx.strokeStyle = shape.pen.color;
+	ctx.lineWidth = shape.pen.lineWidth;
+	ctx.strokeRect(shape.attr.x, shape.attr.y, shape.attr.width, shape.attr.height);
+}
+function drawCircle(ctx, shape) {
+	ctx.strokeStyle = shape.pen.color;
+	ctx.lineWidth = shape.pen.lineWidth;
+	const centerX = shape.attr.centerX;
+	const centerY = shape.attr.centerY;
+	const radiusX = shape.attr.radiusX;
+	const radiusY = shape.attr.radiusY;
+	ctx.beginPath();
+	ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+	ctx.stroke();
+}
+function drawPath(ctx, shape) {
+	console.log("🚀 ~ drawPath ~ shape.attr.path.length:", shape.attr.path.length);
+	if (shape.attr.path.length < 2) return;
+	ctx.strokeStyle = shape.pen.color;
+	ctx.lineWidth = shape.pen.lineWidth;
+	ctx.beginPath();
+	ctx.moveTo(shape.attr.path[0].x, shape.attr.path[0].y);
+	for (let i = 1; i < shape.attr.path.length; i++) ctx.lineTo(shape.attr.path[i].x, shape.attr.path[i].y);
+	ctx.stroke();
+}
+function drawArrow(ctx, shape) {
+	ctx.strokeStyle = shape.pen.color;
+	ctx.lineWidth = shape.pen.lineWidth;
+	const { fromX, fromY, toX, toY } = shape.attr;
+	ctx.beginPath();
+	const headLength = 20;
+	const headAngle = Math.PI / 12;
+	const angle = Math.atan2(toY - fromY, toX - fromX);
+	const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+	ctx.moveTo(fromX, fromY);
+	const effectiveHeadLength = Math.min(headLength, length * .5);
+	const mainLineEndX = toX - Math.cos(angle) * (effectiveHeadLength - 2);
+	const mainLineEndY = toY - Math.sin(angle) * (effectiveHeadLength - 2);
+	ctx.lineTo(mainLineEndX, mainLineEndY);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.moveTo(toX, toY);
+	const arrowX1 = toX - effectiveHeadLength * Math.cos(angle - headAngle);
+	const arrowY1 = toY - effectiveHeadLength * Math.sin(angle - headAngle);
+	const arrowX2 = toX - effectiveHeadLength * Math.cos(angle + headAngle);
+	const arrowY2 = toY - effectiveHeadLength * Math.sin(angle + headAngle);
+	ctx.lineTo(arrowX1, arrowY1);
+	ctx.lineTo(arrowX2, arrowY2);
+	ctx.closePath();
+	ctx.fillStyle = shape.pen.color;
+	ctx.fill();
+}
+function drawShape(ctx, shape) {
+	switch (shape.shape) {
+		case "rect":
+			drawRect(ctx, shape);
+			break;
+		case "circle":
+			drawCircle(ctx, shape);
+			break;
+		case "path":
+			drawPath(ctx, shape);
+			break;
+		case "arrow":
+			drawArrow(ctx, shape);
+			break;
+	}
+}
+const bindClick = (target, cb) => {
+	let moved = false;
+	let start = false;
+	const onMouseDown = (e) => {
+		if (e.target === target || target.contains(e.target)) {
+			start = true;
+			moved = false;
+		}
+	};
+	const onMouseUp = (e) => {
+		if (start && !moved) cb(e);
+		start = false;
+		moved = false;
+	};
+	const onMouseLeave = () => {
+		if (start) moved = true;
+	};
+	const onMouseMove = () => {
+		if (start) moved = true;
+	};
+	document.addEventListener("mousedown", onMouseDown);
+	document.addEventListener("mousemove", onMouseMove);
+	document.addEventListener("mouseup", onMouseUp);
+	document.addEventListener("mouseleave", onMouseLeave);
+	return () => {
+		document.removeEventListener("mousedown", onMouseDown);
+		document.removeEventListener("mousemove", onMouseMove);
+		document.removeEventListener("mouseup", onMouseUp);
+		document.removeEventListener("mouseleave", onMouseLeave);
+	};
+};
+const bindDoubleClick = (target, cb) => {
+	let clickCount = 0;
+	const doubleClickInterval = 300;
+	const onClick = (e) => {
+		clickCount++;
+		if (clickCount === 2) {
+			cb(e);
+			clickCount = 0;
+		} else setTimeout(() => {
+			clickCount = 0;
+		}, doubleClickInterval);
+	};
+	return bindClick(target, onClick);
+};
+const resizeHandles = [
+	"resize-top-left",
+	"resize-top",
+	"resize-top-right",
+	"resize-right",
+	"resize-bottom-right",
+	"resize-bottom",
+	"resize-bottom-left",
+	"resize-left"
+];
+const DPR = window.devicePixelRatio;
+var MOSAIC_SIZE = isWindows() ? 10 : 10 * DPR;
+var Mosaic = class {
+	imageData;
+	drawData;
+	canvas;
+	cache = /* @__PURE__ */ new Map();
+	width;
+	height;
+	constructor({ imgData, canvas }) {
+		this.imageData = imgData;
+		this.canvas = canvas;
+		this.width = imgData.width;
+		this.height = imgData.height;
+		this.drawData = this.canvas.getContext("2d").getImageData(0, 0, this.width, this.height);
+	}
+	getMosaicColor({ y, x, cx, cy, r }) {
+		const blockX = Math.floor(x / MOSAIC_SIZE);
+		const blockY = Math.floor(y / MOSAIC_SIZE);
+		const key = `${blockX},${blockY}`;
+		if (this.cache.has(key)) return this.cache.get(key);
+		const blockStartX = blockX * MOSAIC_SIZE;
+		const blockStartY = blockY * MOSAIC_SIZE;
+		const blockEndX = Math.min(this.width, blockStartX + MOSAIC_SIZE);
+		const blockEndY = Math.min(this.height, blockStartY + MOSAIC_SIZE);
+		const radiusSquared = r * r;
+		const data = this.imageData.data;
+		let totalR = 0, totalG = 0, totalB = 0, totalA = 0;
+		let pixelCount = 0;
+		for (let y$1 = blockStartY; y$1 < blockEndY; y$1++) {
+			const dy = y$1 - cy;
+			const dySquared = dy * dy;
+			for (let x$1 = blockStartX; x$1 < blockEndX; x$1++) {
+				const dx = x$1 - cx;
+				if (dx * dx + dySquared <= radiusSquared) {
+					const index = (y$1 * this.width + x$1) * 4;
+					totalR += data[index];
+					totalG += data[index + 1];
+					totalB += data[index + 2];
+					totalA += data[index + 3];
+					pixelCount++;
+				}
+			}
+		}
+		let avgColor;
+		if (pixelCount > 0) avgColor = {
+			r: Math.floor(totalR / pixelCount),
+			g: Math.floor(totalG / pixelCount),
+			b: Math.floor(totalB / pixelCount),
+			a: Math.floor(totalA / pixelCount)
+		};
+		else avgColor = {
+			r: 0,
+			g: 0,
+			b: 0,
+			a: 0
+		};
+		this.cache.set(key, avgColor);
+		return avgColor;
+	}
+	drawMosaicForCircle({ cx, cy, r, fresh = false }) {
+		pointsInCircleClipped(cx * DPR, cy * DPR, r * DPR, this.imageData.width, this.imageData.height).forEach(({ x, y }) => {
+			const color = this.getMosaicColor({
+				x,
+				y,
+				cx: cx * DPR,
+				cy: cy * DPR,
+				r: r * DPR
+			});
+			if (color) {
+				this.drawData.data[y * this.width * 4 + x * 4] = color.r;
+				this.drawData.data[y * this.width * 4 + x * 4 + 1] = color.g;
+				this.drawData.data[y * this.width * 4 + x * 4 + 2] = color.b;
+				this.drawData.data[y * this.width * 4 + x * 4 + 3] = color.a;
+			}
+		});
+		if (fresh) this.canvas.getContext("2d").putImageData(this.drawData, 0, 0);
+	}
+	drawMosaic(shape) {
+		const { path, radius } = shape.attr;
+		path.forEach(({ x, y }) => {
+			this.drawMosaicForCircle({
+				cx: x,
+				cy: y,
+				r: radius
+			});
+		});
+		this.canvas.getContext("2d").putImageData(this.drawData, 0, 0);
+	}
+	clearMosaic() {
+		this.canvas.getContext("2d").clearRect(0, 0, this.width, this.height);
+		this.drawData = this.canvas.getContext("2d").getImageData(0, 0, this.width, this.height);
+	}
+};
+var ResizeAssist = class {
+	dom;
+	constructor() {
+		this.dom = document.createElement("div");
+		this.dom.classList.add("resize-assist");
+		this.dom.style.display = "none";
+		resizeHandles.forEach((handleName) => {
+			const handleDom = document.createElement("div");
+			handleDom.classList.add("resize-assist-handle", handleName);
+			handleDom.dataset.role = handleName;
+			this.dom.appendChild(handleDom);
+		});
+		document.body.appendChild(this.dom);
+	}
+	show() {
+		this.dom.style.display = "block";
+	}
+	hide() {
+		this.dom.style.display = "none";
+	}
+	setPosition({ top, left, width, height }) {
+		this.dom.style.top = `${top}px`;
+		this.dom.style.left = `${left}px`;
+		this.dom.style.width = `${width}px`;
+		this.dom.style.height = `${height}px`;
+	}
+};
+var EditCanvas = class {
+	lastImg = null;
+	baseCanvas;
+	mosaicCanvas;
+	editCanvas;
+	baseCtx;
+	mosaicCtx;
+	editCtx;
+	mosaic = null;
+	_mode = "normal";
+	resizeAssist;
+	drawState = null;
+	shapeArr = [];
+	currentDrawPos = {
+		x1: 0,
+		y1: 0,
+		x2: 0,
+		y2: 0
+	};
+	drawing = false;
+	listener = [];
+	get mode() {
+		return this._mode;
+	}
+	set mode(mode) {
+		if (this._mode === mode) return;
+		this._mode = mode;
+	}
+	constructor() {
+		this.baseCanvas = document.createElement("canvas");
+		this.mosaicCanvas = document.createElement("canvas");
+		this.editCanvas = document.createElement("canvas");
+		this.baseCtx = this.baseCanvas.getContext("2d");
+		this.mosaicCtx = this.mosaicCanvas.getContext("2d");
+		this.editCtx = this.editCanvas.getContext("2d");
+		this.baseCanvas.style.position = "absolute";
+		this.mosaicCanvas.style.position = "absolute";
+		this.editCanvas.style.position = "absolute";
+		this.baseCanvas.style.top = "0px";
+		this.baseCanvas.style.left = "0px";
+		this.mosaicCanvas.style.top = "0px";
+		this.mosaicCanvas.style.left = "0px";
+		this.editCanvas.style.left = "0px";
+		this.editCanvas.style.left = "0px";
+		this.resizeAssist = new ResizeAssist();
+		console.log("editCanvas created", this.resizeAssist);
+		window.editCanvas = this;
+	}
+	getCanvasPos = (clientX, clientY) => {
+		if (!this.lastImg) return {
+			x: 0,
+			y: 0
+		};
+		return {
+			x: Math.min(Math.max(clientX - this.lastImg.x, 0), this.lastImg.x + this.lastImg.width),
+			y: Math.min(Math.max(clientY - this.lastImg.y, 0), this.lastImg.y + this.lastImg.height)
+		};
+	};
+	initListener = () => {
+		this.editCanvas.addEventListener("mousedown", (e) => {
+			if (this.mode === "normal") return;
+			const { x, y } = this.getCanvasPos(e.clientX, e.clientY);
+			this.currentDrawPos = {
+				x1: x,
+				y1: y,
+				x2: x,
+				y2: y
+			};
+			this.drawing = true;
+		});
+		document.body.addEventListener("mousemove", (e) => {
+			if (this.mode === "normal") return;
+			if (this.drawing) {
+				const { x, y } = this.getCanvasPos(e.clientX, e.clientY);
+				this.currentDrawPos.x2 = x;
+				this.currentDrawPos.y2 = y;
+				switch (this.drawState?.shape) {
+					case "rect":
+						const rect = calculateRectFromPoints(this.currentDrawPos, {
+							maxX: this.lastImg.width,
+							maxY: this.lastImg.height
+						});
+						this.drawState.attr = rect;
+						this.renderAll();
+						break;
+					case "circle":
+						const ellipse = calculateEllipseFromRect(this.currentDrawPos, {
+							maxX: this.lastImg.width,
+							maxY: this.lastImg.height
+						});
+						this.drawState.attr = ellipse;
+						this.renderAll();
+						break;
+					case "path":
+						if (!this.drawState.attr.path.length) this.drawState.attr.path.push({
+							x: this.currentDrawPos.x1,
+							y: this.currentDrawPos.y1
+						});
+						this.drawState.attr.path.push({
+							x,
+							y
+						});
+						this.renderPreview();
+						break;
+					case "mosaic":
+						console.log(`%c🎄 mosaic`, "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;", x, y, this.mosaic);
+						if (!this.drawState.attr.path.length) {
+							this.drawState.attr.path.push({
+								x: this.currentDrawPos.x1,
+								y: this.currentDrawPos.y1
+							});
+							this.mosaic?.drawMosaicForCircle({
+								cx: this.currentDrawPos.x1,
+								cy: this.currentDrawPos.y1,
+								r: this.drawState.attr.radius,
+								fresh: true
+							});
+						} else {
+							const lastPoint = this.drawState.attr.path[this.drawState.attr.path.length - 1];
+							const interpolatedPoints = interpolatePoints(lastPoint.x, lastPoint.y, x, y, this.drawState.attr.radius);
+							for (let i = 1; i < interpolatedPoints.length; i++) {
+								const interpolatedPoint = interpolatedPoints[i];
+								this.drawState.attr.path.push({
+									x: interpolatedPoint.x,
+									y: interpolatedPoint.y
+								});
+								this.mosaic?.drawMosaicForCircle({
+									cx: interpolatedPoint.x,
+									cy: interpolatedPoint.y,
+									r: this.drawState.attr.radius,
+									fresh: true
+								});
+							}
+						}
+						break;
+					case "arrow":
+						this.drawState.attr = {
+							fromX: this.currentDrawPos.x1,
+							fromY: this.currentDrawPos.y1,
+							toX: this.currentDrawPos.x2,
+							toY: this.currentDrawPos.y2
+						};
+						this.renderAll();
+						break;
+					default: break;
+				}
+			}
+		});
+		document.body.addEventListener("mouseup", (e) => {
+			console.log("🚀 ~ EditCanvas ~ e:", e);
+			if (this.mode === "normal") return;
+			if (this.drawing && this.drawState) {
+				this.drawing = false;
+				if (this.currentDrawPos.x1 !== this.currentDrawPos.x2 || this.currentDrawPos.y1 !== this.currentDrawPos.y2) {
+					e.preventDefault();
+					e.stopPropagation();
+					this.shapeArr.push(this.drawState);
+					this.setShape(this.drawState.shape);
+					this.emitEditingStack(this.shapeArr.length);
+				}
+			}
+		});
+	};
+	initCanvasSetting(width, height) {
+		initCanvasSetting(this.baseCanvas, {
+			width,
+			height
+		});
+		initCanvasSetting(this.mosaicCanvas, {
+			width,
+			height
+		});
+		initCanvasSetting(this.editCanvas, {
+			width,
+			height
+		});
+	}
+	setParentDom(parentDom) {
+		parentDom.appendChild(this.baseCanvas);
+		parentDom.appendChild(this.mosaicCanvas);
+		parentDom.appendChild(this.editCanvas);
+	}
+	setMode(mode) {
+		this.mode = mode;
+	}
+	getCtx() {
+		return this.editCtx;
+	}
+	async generateImageData() {
+		this.baseCtx.drawImage(this.mosaicCanvas, 0, 0, this.mosaicCanvas.width, this.mosaicCanvas.height, 0, 0, this.lastImg.width, this.lastImg.height);
+		this.baseCtx.drawImage(this.editCanvas, 0, 0, this.editCanvas.width, this.editCanvas.height, 0, 0, this.lastImg.width, this.lastImg.height);
+		const imgData = this.baseCtx.getImageData(0, 0, this.lastImg.width * DPR, this.lastImg.height * DPR);
+		return Promise.resolve(imgData);
+	}
+	writeToClipboard = async () => {
+		console.log("writeToClipboard");
+		const imgData = await this.generateImageData();
+		await window.app.copyToClipboard(imgData);
+		window.app.exit();
+	};
+	saveImageToFolder = async () => {
+		console.log("saveImageToFolder");
+		const imageData = await this.generateImageData();
+		if ((await window.app.saveImageToFolder(imageData)).status === 201) {} else window.app.exit();
+	};
+	setImg({ img, x = 0, y = 0, width, height }) {
+		if (this.lastImg && this.lastImg.x === x && this.lastImg.y === y && this.lastImg.width === width && this.lastImg.height === height) return;
+		const t0 = performance.now();
+		const imgData = img.getContext("2d").getImageData(x * DPR, y * DPR, width * DPR, height * DPR);
+		this.baseCtx.putImageData(imgData, 0, 0);
+		const t1 = performance.now();
+		console.log(`drawImage cost ${t1 - t0} ms`);
+		this.lastImg = {
+			x,
+			y,
+			width,
+			height
+		};
+		this.initListener();
+		this.mosaic = new Mosaic({
+			imgData,
+			canvas: this.mosaicCanvas
+		});
+	}
+	setShape(shape = "rect") {
+		switch (shape) {
+			case "rect":
+				this.drawState = {
+					id: generateUID(),
+					shape: "rect",
+					attr: {
+						x: 0,
+						y: 0,
+						width: 0,
+						height: 0
+					},
+					pen: {
+						color: "#ff0000",
+						lineWidth: 2
+					}
+				};
+				break;
+			case "circle":
+				this.drawState = {
+					id: generateUID(),
+					shape: "circle",
+					attr: {
+						centerX: 0,
+						centerY: 0,
+						radiusX: 0,
+						radiusY: 0,
+						isCircle: false,
+						left: 0,
+						top: 0,
+						width: 0,
+						height: 0
+					},
+					pen: {
+						color: "#ff0000",
+						lineWidth: 2
+					}
+				};
+				break;
+			case "path":
+				this.drawState = {
+					id: generateUID(),
+					shape: "path",
+					attr: { path: [] },
+					pen: {
+						color: "#ff0000",
+						lineWidth: 2
+					}
+				};
+				break;
+			case "mosaic":
+				this.drawState = {
+					id: generateUID(),
+					shape: "mosaic",
+					attr: {
+						path: [],
+						radius: 10
+					}
+				};
+				break;
+			case "arrow":
+				this.drawState = {
+					id: generateUID(),
+					shape: "arrow",
+					attr: {
+						fromX: 0,
+						fromY: 0,
+						toX: 0,
+						toY: 0
+					},
+					pen: {
+						color: "#ff0000",
+						lineWidth: 2
+					}
+				};
+				break;
+			default:
+				this.drawState = null;
+				break;
+		}
+	}
+	renderAll = () => {
+		this.editCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+		this.shapeArr.forEach((shape) => {
+			drawShape(this.editCtx, shape);
+		});
+		this.renderPreview();
+	};
+	renderPreview = () => {
+		if (this.currentDrawPos.x1 === this.currentDrawPos.x2 && this.currentDrawPos.y1 === this.currentDrawPos.y2) return;
+		if (!this.drawState) return;
+		drawShape(this.editCtx, this.drawState);
+	};
+	execUndo = () => {
+		if (this.shapeArr.length === 0) return;
+		const lastShape = this.shapeArr.pop();
+		this.editCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+		if (lastShape.shape === "mosaic") this.mosaic?.clearMosaic();
+		this.shapeArr.forEach((shape) => {
+			if (shape.shape === "mosaic") this.mosaic?.drawMosaic(shape);
+			else drawShape(this.editCtx, shape);
+		});
+		this.emitEditingStack(this.shapeArr.length);
+	};
+	emitEditingStack = (stack) => {
+		this.listener.forEach((cb) => cb(stack));
+	};
+	onEditingStack = (cb) => {
+		this.listener.push(cb);
+	};
+};
+const items = [
+	{
+		id: "rect",
+		className: "box-select rect",
+		content: `<div class="wrap"><svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.75" y="0.75" width="16.8" height="16.8" rx="1.2" stroke="var(--active-color)" stroke-width="1.5"/></svg></div>`,
+		role: "edit",
+		shape: "rect",
+		group: "edit"
+	},
+	{
+		id: "circle",
+		className: "box-select circle",
+		content: `<div class="wrap"><svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0.75" y="0.75" width="16.8" height="16.8" rx="8.4" stroke="var(--active-color)" stroke-width="1.5"/></svg></div>`,
+		role: "edit",
+		shape: "circle",
+		group: "edit"
+	},
+	{
+		id: "arrow",
+		className: "box-select arrow",
+		content: `<div class="wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.7998 20.0732L20.0733 4.79974" stroke="var(--active-color)" stroke-width="1.5" stroke-linecap="round"/><path d="M20.4082 12.9833L20.4082 4.5752L12.0001 4.57519" stroke="var(--active-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`,
+		role: "edit",
+		shape: "arrow",
+		group: "edit"
+	},
+	{
+		id: "path",
+		className: "box-select path",
+		content: `<div class="wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.1815 3.68472C15.8482 3.01806 16.1815 2.68472 16.5957 2.68472C17.0099 2.68472 17.3433 3.01805 18.0099 3.68472L20.3137 5.9885C20.9804 6.65516 21.3137 6.9885 21.3137 7.40271C21.3137 7.81692 20.9804 8.15026 20.3137 8.81692L9.00331 20.1273C8.72319 20.4074 8.58313 20.5475 8.40558 20.6234C8.22803 20.6993 8.03001 20.7037 7.63396 20.7126L3.60427 20.803C3.40788 20.8074 3.30968 20.8096 3.24923 20.7492C3.18879 20.6887 3.19099 20.5905 3.1954 20.3941L3.28582 16.3645C3.29471 15.9684 3.29915 15.7704 3.37504 15.5928C3.45093 15.4153 3.59098 15.2752 3.8711 14.9951L15.1815 3.68472Z" stroke="var(--active-color)" stroke-width="1.5"/><line x1="13.6153" y1="4.63373" x2="19.4763" y2="10.4948" stroke="var(--active-color)" stroke-width="1.5"/></svg></div>`,
+		role: "edit",
+		shape: "path",
+		group: "edit"
+	},
+	{
+		id: "mosaic",
+		className: "box-select mosaic",
+		content: `<div class="wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.59961" y="3.59961" width="16.8" height="16.8" rx="1" stroke="var(--active-color)" stroke-width="1.5"/><rect x="10.2002" y="10.2002" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="13.7998" y="6.59961" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="6.59961" y="6.59961" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="6.59961" y="13.7998" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/><rect x="13.7998" y="13.7998" width="3.6" height="3.6" rx="0.2" fill="var(--active-color)"/></svg></div>`,
+		role: "edit",
+		shape: "mosaic",
+		group: "edit"
+	},
+	{
+		id: "undo",
+		className: "undo",
+		content: `<div class="wrap"><svg class="normal" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.3245 19.7779H15.3382C18.4533 19.7779 20.9786 17.2526 20.9786 14.1375C20.9786 11.0224 18.4533 8.49707 15.3382 8.49707H3.43066" stroke="#DBDEE5" stroke-width="1.5" stroke-linecap="round"/><path d="M7.85079 3.27421L2.62793 8.49707L7.85079 13.7199" stroke="#DBDEE5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="active" style="display: none;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.3245 19.7779H15.3382C18.4533 19.7779 20.9786 17.2526 20.9786 14.1375C20.9786 11.0224 18.4533 8.49707 15.3382 8.49707H3.43066" stroke="#0D1324" stroke-width="1.5" stroke-linecap="round"/><path d="M7.85079 3.27421L2.62793 8.49707L7.85079 13.7199" stroke="#0D1324" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`,
+		role: "undo",
+		group: "operation"
+	},
+	{
+		id: "download",
+		className: "download",
+		content: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 2.71387C12.75 2.29965 12.4142 1.96387 12 1.96387C11.5858 1.96387 11.25 2.29965 11.25 2.71387L12 2.71387L12.75 2.71387ZM11.4697 17.3372C11.7626 17.6301 12.2374 17.6301 12.5303 17.3372L17.3033 12.5642C17.5962 12.2713 17.5962 11.7964 17.3033 11.5035C17.0104 11.2106 16.5355 11.2106 16.2426 11.5035L12 15.7462L7.75736 11.5035C7.46447 11.2106 6.98959 11.2106 6.6967 11.5035C6.40381 11.7964 6.40381 12.2713 6.6967 12.5642L11.4697 17.3372ZM12 2.71387L11.25 2.71387L11.25 16.8068L12 16.8068L12.75 16.8068L12.75 2.71387L12 2.71387Z" fill="#0D1324"/><line x1="2.5498" y1="20.5361" x2="21.4498" y2="20.5361" stroke="#0D1324" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+		role: "download",
+		group: "operation"
+	},
+	{
+		id: "cancel",
+		className: "cancel",
+		content: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.4821 4.46875L4.41895 19.5319" stroke="#FE4343" stroke-width="1.5" stroke-linecap="round"/><path d="M19.5807 19.5319L4.51758 4.46875" stroke="#FE4343" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+		role: "cancel",
+		group: "operation"
+	},
+	{
+		id: "finish",
+		className: "finish",
+		content: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.7379 4.92676L10.9616 17.6765C10.2749 18.572 9.93156 19.0198 9.44463 19.0692C8.95771 19.1187 8.53133 18.7491 7.67858 18.01L3.2627 14.1824" stroke="#32C872" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+		role: "finish",
+		group: "operation"
+	}
+];
+var HEIGHT = 40;
+var EditTools = class {
+	dom;
+	itemListeners = /* @__PURE__ */ new Map();
+	_active = "";
+	_undoActive = false;
+	get active() {
+		return this._active;
+	}
+	set active(shape) {
+		this.dom.querySelector(".edit-tool-item.active")?.classList.remove("active");
+		if (shape) this.dom.querySelector(`.edit-tool-item[data-shape="${shape}"]`)?.classList.add("active");
+		this._active = shape;
+	}
+	get undoActive() {
+		return this._undoActive;
+	}
+	set undoActive(active) {
+		if (this._undoActive === active) return;
+		this._undoActive = active;
+		if (active) {
+			this.dom.querySelector(".edit-tool-item.undo .active").style.display = "block";
+			this.dom.querySelector(".edit-tool-item.undo .normal").style.display = "none";
+		} else {
+			this.dom.querySelector(".edit-tool-item.undo .normal").style.display = "block";
+			this.dom.querySelector(".edit-tool-item.undo .active").style.display = "none";
+		}
+	}
+	constructor(parent) {
+		this.dom = document.createElement("div");
+		this.dom.classList.add("edit-tool");
+		this.dom.style.visibility = "hidden";
+		this.dom.style.height = `${HEIGHT}px`;
+		const p = parent || document.body;
+		if (p) p.appendChild(this.dom);
+		this.initItems();
+		this.initListeners();
+	}
+	initItems = () => {
+		const groupDomMap = {};
+		items.forEach((item) => {
+			const group = item.group || "";
+			if (!groupDomMap[group]) {
+				groupDomMap[group] = document.createElement("div");
+				groupDomMap[group].classList.add("edit-tool-group");
+				groupDomMap[group].dataset.group = group;
+				this.dom.appendChild(groupDomMap[group]);
+			}
+			const itemDom = document.createElement("div");
+			itemDom.classList.add("edit-tool-item", ...item.className.split(" "));
+			itemDom.innerHTML = item.content || "";
+			itemDom.dataset.role = item.role || "";
+			itemDom.dataset.shape = item.shape || "";
+			groupDomMap[group].appendChild(itemDom);
+		});
+	};
+	initListeners = () => {
+		this.dom.addEventListener("click", (e) => {
+			let target = e.target;
+			while (target && !target.classList.contains("edit-tool-item")) {
+				target = target.parentElement;
+				if (target === this.dom) break;
+			}
+			if (!target) return;
+			const role = target.dataset.role || "";
+			const shape = target.dataset.shape || void 0;
+			const listener = this.itemListeners.get(role);
+			if (listener) listener(shape);
+		});
+	};
+	addListener = (items$1) => {
+		items$1.forEach((item) => {
+			this.itemListeners.set(item.role, item.listener);
+		});
+	};
+	render = (show = true, { x, y, height, width }) => {
+		if (!show) {
+			this.dom.style.visibility = "hidden";
+			return;
+		}
+		if (this.dom) {
+			this.dom.style.visibility = "visible";
+			this.dom.style.left = `${x + width - this.dom.clientWidth}px`;
+			const maxY = window.innerHeight;
+			if (y + height + 32 + 8 <= maxY) {
+				this.dom.style.top = `${y + height + 8}px`;
+				return;
+			}
+			if (y - 32 - 8 >= 0) {
+				this.dom.style.top = `${y - 32 - 8}px`;
+				return;
+			}
+			this.dom.style.top = `${y + height - 32 - 8}px`;
+		}
+	};
+};
+var SizeDisplay = class {
+	dom;
+	constructor(parentDom) {
+		this.dom = document.createElement("div");
+		this.dom.classList.add("size-display");
+		parentDom.appendChild(this.dom);
+	}
+	render = (show = true, { x, y, height, width }) => {
+		if (!show || !height && !width) {
+			this.dom.style.visibility = "hidden";
+			return;
+		}
+		this.dom.style.visibility = "visible";
+		this.dom.style.left = `${x}px`;
+		if (y - 20 - 8 < 0) this.dom.style.top = `${y + 8}px`;
+		else this.dom.style.top = `${y - 20 - 8}px`;
+		this.dom.innerText = `${width * DPR} x ${height * DPR}`;
+	};
+};
+var DrawScreen = class {
+	sizeDisplay;
+	editTools;
+	editCanvas;
+	imgDom;
+	canvasContainer = document.createElement("div");
+	baseCanvas = document.createElement("canvas");
+	maskCanvas = document.createElement("canvas");
+	baseCtx;
+	maskCtx;
+	selectRectDom;
+	isSelecting = false;
+	resizeHandle = "";
+	startX = 0;
+	startY = 0;
+	fixedX = 0;
+	fixedY = 0;
+	fixedWidth = 0;
+	fixedHeight = 0;
+	selectX = 0;
+	selectY = 0;
+	selectWidth = 0;
+	selectHeight = 0;
+	broadcastChannel = new BroadcastChannel("broadcast");
+	id = Math.random().toString(36).substring(2);
+	matchedWindow = void 0;
+	_mode = "select";
+	get mode() {
+		return this._mode;
+	}
+	set mode(value) {
+		const oldMode = this._mode;
+		if (oldMode !== value) {
+			this._mode = value;
+			switch (value) {
+				case "waitEdit":
+					this.canvasContainer.style.cursor = "";
+					this.selectRectDom.style.cursor = "move";
+					break;
+				case "move":
+					this.canvasContainer.style.cursor = "move";
+					break;
+				case "edit":
+					this.canvasContainer.style.cursor = "";
+					this.selectRectDom.style.cursor = "crosshair";
+					this.canvasContainer.classList.add("edit-mode");
+					this.broadcastChannel.postMessage({
+						type: "startEdit",
+						id: this.id
+					});
+					break;
+				case "forbidden":
+					this.clearSelectRect();
+					break;
+				case "otherTab":
+					if (oldMode === "waitEdit") break;
+					this.clearSelectRect();
+					break;
+			}
+		}
+	}
+	imgNaturalWidth = 0;
+	imgNaturalHeight = 0;
+	imgDrawWidth = 0;
+	imgDrawHeight = 0;
+	boxWidth = 0;
+	boxHeight = 0;
+	imgOffsetX = 0;
+	imgOffsetY = 0;
+	windows = [];
+	constructor(appDom$1) {
+		console.log(`%c🏓 DPR: ${DPR}`, "background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;");
+		this.imgDom = null;
+		this.canvasContainer.classList.add("canvas-container");
+		this.maskCanvas.classList.add("mask-canvas");
+		this.maskCtx = this.maskCanvas.getContext("2d");
+		this.baseCtx = this.baseCanvas.getContext("2d");
+		this.editCanvas = new EditCanvas();
+		this.selectRectDom = document.createElement("div");
+		this.selectRectDom.classList.add("select-rect");
+		appDom$1.appendChild(this.canvasContainer);
+		this.canvasContainer.appendChild(this.baseCanvas);
+		this.canvasContainer.appendChild(this.maskCanvas);
+		resizeHandles.forEach((handleName) => {
+			const handleDom = document.createElement("div");
+			handleDom.classList.add("resize-handle", handleName);
+			handleDom.dataset.role = handleName;
+			this.selectRectDom.appendChild(handleDom);
+		});
+		this.initData();
+		this.drawMask();
+		this.sizeDisplay = new SizeDisplay(this.canvasContainer);
+		this.editTools = new EditTools();
+		this.initListener();
+		window.app?.getWindows?.().then((windows) => {
+			const maxX = window.innerWidth;
+			const maxY = window.innerHeight;
+			const arr = [];
+			windows.forEach((win) => {
+				console.log("🚀 ~ DrawScreen ~ constructor ~ windows:", windows);
+				if (win.name !== "tao window") {
+					const { x, y, width, height } = win.bounds;
+					arr.push(getRectForWindow({
+						x,
+						y,
+						width,
+						height
+					}));
+				}
+			});
+			arr.push({
+				x: 0,
+				y: 0,
+				width: maxX,
+				height: maxY
+			});
+			this.windows = arr;
+		}).catch((err) => console.error(err));
+		this.broadcastChannel.onmessage = (event) => {
+			const { type, id, x, y, act } = event?.data || {};
+			if (act === "selectStart" && id !== this.id && (this.selectHeight || this.selectWidth)) {
+				console.log(`%c🏓 clearSelectRect`, "background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;");
+				this.clearSelectRect();
+			}
+			if (type === "activeWindow" && id !== this.id) this.mode = "otherTab";
+			else if (type === "activeWindow" && id === this.id && this.mode === "otherTab") this.mode = "select";
+			else if (type === "startEdit" && id && id !== this.id) this.mode = "forbidden";
+		};
+	}
+	clearSelectRect = () => {
+		this.selectX = 0;
+		this.selectY = 0;
+		this.selectWidth = 0;
+		this.selectHeight = 0;
+		this.drawMask();
+		this.editTools.render(false, {
+			x: 0,
+			y: 0,
+			height: 0,
+			width: 0
+		});
+		this.sizeDisplay.render(false, {
+			x: 0,
+			y: 0,
+			height: 0,
+			width: 0
+		});
+	};
+	setImgDom = (imgDom) => {
+		this.imgDom = imgDom;
+		this.imgNaturalWidth = this.imgDom.naturalWidth;
+		this.imgNaturalHeight = this.imgDom.naturalHeight;
+		const rateX = this.imgNaturalWidth / this.boxWidth;
+		const rateY = this.imgNaturalHeight / this.boxHeight;
+		const rate = Math.max(rateX, rateY);
+		this.imgDrawWidth = this.imgNaturalWidth / rate;
+		this.imgDrawHeight = this.imgNaturalHeight / rate;
+		this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
+		this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
+		this.drawBase();
+	};
+	setEditCanvasBg = () => {
+		if (this.mode === "edit") return;
+		this.mode = "edit";
+		this.editCanvas.initCanvasSetting(this.selectWidth, this.selectHeight);
+		this.editCanvas.setParentDom(this.selectRectDom);
+		this.editCanvas.setImg({
+			img: this.baseCanvas,
+			x: this.selectX,
+			y: this.selectY,
+			width: this.selectWidth,
+			height: this.selectHeight
+		});
+	};
+	drawBase = () => {
+		if (!this.imgDom) {
+			console.error("Image dom is not set");
+			return;
+		}
+		this.baseCtx.drawImage(this.imgDom, 0, 0, this.imgNaturalWidth, this.imgNaturalHeight, this.imgOffsetX, this.imgOffsetY, this.imgDrawWidth, this.imgDrawHeight);
+	};
+	initData = () => {
+		this.boxWidth = this.canvasContainer.clientWidth;
+		this.boxHeight = this.canvasContainer.clientHeight;
+		initCanvasSetting(this.maskCanvas, {
+			width: this.boxWidth,
+			height: this.boxHeight
+		});
+		initCanvasSetting(this.baseCanvas, {
+			width: this.boxWidth,
+			height: this.boxHeight
+		});
+	};
+	activeWindow = (e, act) => {
+		this.broadcastChannel.postMessage({
+			type: "activeWindow",
+			act,
+			id: this.id,
+			x: e.clientX,
+			y: e.clientY
+		});
+		if (this.mode === "otherTab") {
+			if (this.selectHeight || this.selectWidth) this.mode = "waitEdit";
+			else this.mode = "select";
+			return;
+		}
+	};
+	drawMask = () => {
+		this.maskCtx.clearRect(0, 0, this.boxWidth, this.boxHeight);
+		this.maskCtx.fillStyle = "rgba(0, 0, 0, 0.5)";
+		this.maskCtx.fillRect(0, 0, this.boxWidth, this.boxHeight);
+		if (this.selectWidth && this.selectHeight) {
+			this.maskCtx.clearRect(this.selectX, this.selectY, this.selectWidth, this.selectHeight);
+			this.canvasContainer.appendChild(this.selectRectDom);
+			this.selectRectDom.style.left = `${this.selectX - 2}px`;
+			this.selectRectDom.style.top = `${this.selectY - 2}px`;
+			this.selectRectDom.style.width = `${this.selectWidth}px`;
+			this.selectRectDom.style.height = `${this.selectHeight}px`;
+		} else this.selectRectDom.remove();
+	};
+	selectStart = (e) => {
+		if (this.mode !== "select") return;
+		this.isSelecting = true;
+		this.startX = e.clientX;
+		this.startY = e.clientY;
+		console.log(`%c🎄 select start`, "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;", this.startX, this.startY);
+	};
+	selectMove = (e) => {
+		if (this.mode !== "select") return;
+		if (!this.isSelecting) {
+			const window$1 = matchWindow({
+				x: e.clientX,
+				y: e.clientY,
+				windows: this.windows
+			});
+			this.matchedWindow = window$1;
+			if (!window$1) {
+				this.matchedWindow = void 0;
+				return;
+			}
+			this.selectX = window$1.x;
+			this.selectY = window$1.y;
+			this.selectWidth = window$1.width;
+			this.selectHeight = window$1.height;
+			this.drawMask();
+			return;
+		}
+		const { top, left, width, height } = calcStartAndMove({
+			startX: this.startX,
+			startY: this.startY,
+			moveX: e.clientX - this.startX,
+			moveY: e.clientY - this.startY,
+			maxX: this.boxWidth,
+			maxY: this.boxHeight
+		});
+		this.selectX = left;
+		this.selectY = top;
+		this.selectWidth = width;
+		this.selectHeight = height;
+		this.drawMask();
+	};
+	selectEnd = () => {
+		if (this.mode !== "select") return;
+		this.isSelecting = false;
+		this.mode = "waitEdit";
+	};
+	resizeStart = (e) => {
+		if (this.mode === "select") return;
+		if (e.target?.classList?.contains("resize-handle")) {
+			this.resizeHandle = e.target.dataset.role || "";
+			this.mode = "resizing";
+			const cursor = getComputedStyle(e.target).cursor || "";
+			this.canvasContainer.style.cursor = cursor;
+			this.selectRectDom.style.cursor = cursor;
+			this.startX = e.clientX;
+			this.startY = e.clientY;
+			const { x, y } = calcFixedPoint({
+				resizeHandle: this.resizeHandle,
+				x: this.selectX,
+				y: this.selectY,
+				width: this.selectWidth,
+				height: this.selectHeight
+			});
+			this.fixedX = x;
+			this.fixedY = y;
+			this.fixedWidth = this.selectWidth;
+			this.fixedHeight = this.selectHeight;
+		} else if (e.target?.classList?.contains("select-rect")) {
+			this.mode = "move";
+			this.startX = e.clientX;
+			this.startY = e.clientY;
+			this.fixedX = this.selectX;
+			this.fixedY = this.selectY;
+			this.fixedWidth = this.selectWidth;
+			this.fixedHeight = this.selectHeight;
+		}
+	};
+	resizeMove = (e) => {
+		if (this.mode === "select") return;
+		if (this.mode === "resizing" && this.resizeHandle) {
+			const { top, left, width, height } = calcReactForResizing({
+				resizeHandle: this.resizeHandle,
+				fixedX: this.fixedX,
+				fixedY: this.fixedY,
+				originWidth: this.fixedWidth,
+				originHeight: this.fixedHeight,
+				moveX: e.clientX - this.startX,
+				moveY: e.clientY - this.startY,
+				maxX: this.boxWidth,
+				maxY: this.boxHeight
+			});
+			this.selectX = left;
+			this.selectY = top;
+			this.selectWidth = width;
+			this.selectHeight = height;
+			this.drawMask();
+		} else if (this.mode === "move") {
+			const moveX = e.clientX - this.startX;
+			const moveY = e.clientY - this.startY;
+			let left = this.fixedX + moveX;
+			let top = this.fixedY + moveY;
+			if (left < 0 || left + this.fixedWidth > this.boxWidth) {
+				this.fixedX = this.selectX;
+				this.fixedWidth = this.selectWidth;
+				this.startX = e.clientX;
+			}
+			if (top < 0 || top + this.fixedHeight > this.boxHeight) {
+				this.fixedY = this.selectY;
+				this.fixedHeight = this.selectHeight;
+				this.startY = e.clientY;
+			}
+			if (left < 0) left = 0;
+			else if (left + this.fixedWidth > this.boxWidth) left = this.boxWidth - this.fixedWidth;
+			if (top < 0) top = 0;
+			else if (top + this.fixedHeight > this.boxHeight) top = this.boxHeight - this.fixedHeight;
+			this.selectX = left;
+			this.selectY = top;
+			this.drawMask();
+		}
+	};
+	resizeEnd = () => {
+		if (this.mode === "select") return;
+		this.mode = "waitEdit";
+		this.resizeHandle = "";
+	};
+	onMouseDown = (e) => {
+		console.log(`%c🎄 mouse down`, "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;", this.mode, e.clientX, e.clientY, e);
+		if (e.button !== 0) return;
+		if (this.mode === "edit" || this.mode === "forbidden") return;
+		this.activeWindow(e, "selectStart");
+		if (this.mode === "otherTab") return;
+		const isSelectRect = e.target === this.selectRectDom || this.selectRectDom.contains(e.target);
+		this.editTools.render(this.mode === "waitEdit" && !isSelectRect, {
+			x: this.selectX,
+			y: this.selectY,
+			width: this.selectWidth,
+			height: this.selectHeight
+		});
+		if (this.mode === "select") this.selectStart(e);
+		else this.resizeStart(e);
+	};
+	onMouseMove = (e) => {
+		if (this.mode === "edit" || this.mode === "forbidden") return;
+		this.activeWindow(e, "move");
+		if (this.mode === "otherTab") return;
+		if (this.mode === "select") {
+			this.selectMove(e);
+			this.sizeDisplay.render(true, {
+				x: this.selectX,
+				y: this.selectY,
+				width: this.selectWidth,
+				height: this.selectHeight
+			});
+		} else {
+			this.resizeMove(e);
+			this.sizeDisplay.render(true, {
+				x: this.selectX,
+				y: this.selectY,
+				width: this.selectWidth,
+				height: this.selectHeight
+			});
+		}
+	};
+	onMouseUp = (e) => {
+		if (this.mode === "edit" || this.mode === "forbidden") return;
+		this.activeWindow(e, "selectEnd");
+		if (this.mode === "otherTab") return;
+		switch (this.mode) {
+			case "select":
+				e.stopPropagation();
+				e.preventDefault();
+				console.log("mouseup selectEnd", this.selectWidth, this.selectHeight, this.matchedWindow);
+				if (this.selectWidth <= 10 && this.selectHeight <= 10 && this.matchedWindow) {
+					this.selectX = this.matchedWindow.x;
+					this.selectY = this.matchedWindow.y;
+					this.selectWidth = this.matchedWindow.width;
+					this.selectHeight = this.matchedWindow.height;
+				}
+				if (this.selectWidth && this.selectHeight) {
+					this.selectEnd();
+					this.editTools.render(true, {
+						x: this.selectX,
+						y: this.selectY,
+						width: this.selectWidth,
+						height: this.selectHeight
+					});
+					this.drawMask();
+				} else {
+					if (this.matchedWindow) {
+						this.selectX = this.matchedWindow.x;
+						this.selectY = this.matchedWindow.y;
+						this.selectWidth = this.matchedWindow.width;
+						this.selectHeight = this.matchedWindow.height;
+					}
+					this.drawMask();
+					this.isSelecting = false;
+				}
+				break;
+			case "waitEdit":
+			case "move":
+			case "resizing":
+				e.stopPropagation();
+				e.preventDefault();
+				this.resizeEnd();
+				this.editTools.render(true, {
+					x: this.selectX,
+					y: this.selectY,
+					width: this.selectWidth,
+					height: this.selectHeight
+				});
+				break;
+			default: break;
+		}
+	};
+	onMouseLeave = (e) => {
+		if (this.mode === "move") {
+			const x = e.clientX;
+			const y = e.clientY;
+			if (x > this.boxWidth) this.selectX = this.boxWidth - this.selectWidth;
+			else if (x < 0) this.selectX = 0;
+			if (y > this.boxHeight) this.selectY = this.boxHeight - this.selectHeight;
+			else if (y < 0) this.selectY = 0;
+			this.fixedX = this.selectX;
+			this.fixedY = this.selectY;
+			this.fixedWidth = this.selectWidth;
+			this.fixedHeight = this.selectHeight;
+			this.startX = e.clientX;
+			this.startY = e.clientY;
+			this.drawMask();
+		}
+	};
+	onMouseEnter = (e) => {
+		if (this.mode === "edit" || this.mode === "forbidden") return;
+		this.activeWindow(e, "enter");
+	};
+	initListener = () => {
+		document.body.addEventListener("mousedown", this.onMouseDown);
+		document.body.addEventListener("mousemove", this.onMouseMove);
+		document.body.addEventListener("mouseup", this.onMouseUp);
+		document.body.addEventListener("mouseleave", this.onMouseLeave);
+		document.body.addEventListener("mouseenter", this.onMouseEnter);
+		bindDoubleClick(this.selectRectDom, () => {
+			console.log("================double click================");
+			this.setEditCanvasBg();
+			this.editCanvas.writeToClipboard();
+		});
+		this.editTools.addListener([
+			{
+				role: "undo",
+				listener: () => {
+					this.editCanvas.execUndo();
+				}
+			},
+			{
+				role: "edit",
+				listener: (shape) => {
+					this.setEditCanvasBg();
+					this.editCanvas.setMode("edit");
+					const newShape = shape === this.editTools.active ? "" : shape || "";
+					this.editCanvas.setShape(newShape);
+					this.editTools.active = newShape;
+				}
+			},
+			{
+				role: "download",
+				listener: () => {
+					this.setEditCanvasBg();
+					this.editCanvas.saveImageToFolder();
+				}
+			},
+			{
+				role: "finish",
+				listener: () => {
+					this.setEditCanvasBg();
+					this.editCanvas.writeToClipboard();
+				}
+			},
+			{
+				role: "cancel",
+				listener: () => {
+					exitApp();
+				}
+			}
+		]);
+		this.editCanvas.onEditingStack((len) => {
+			this.editTools.undoActive = len > 0;
+		});
+	};
+	putImageData = ({ imageData, width, height }) => {
+		this.imgNaturalWidth = width;
+		this.imgNaturalHeight = height;
+		const rateX = this.imgNaturalWidth / this.boxWidth;
+		const rateY = this.imgNaturalHeight / this.boxHeight;
+		const rate = Math.max(rateX, rateY);
+		this.imgDrawWidth = this.imgNaturalWidth / rate;
+		this.imgDrawHeight = this.imgNaturalHeight / rate;
+		this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
+		this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
+		this.baseCtx.putImageData(imageData, 0, 0);
+	};
+};
+var appDom = document.querySelector("#app");
+function init() {
+	console.log("Environment mode:", "development");
+	console.log("Is development:", false);
+	console.log("Is production:", true);
+	const drawScreen = new DrawScreen(appDom);
+	console.log("🚀 ~ init ~ drawScreen:", drawScreen);
+	window.drawScreen = drawScreen;
+	window.oncontextmenu = (e) => {
+		console.log("🚀 ~ init ~ e:", e, window.app?.isDebug);
+		if (!window.app?.isDebug) e.preventDefault();
+	};
+	getScreenImageData().then((imgData) => {
+		drawScreen.putImageData(imgData);
+	}).catch((err) => console.error(err));
+	window.addEventListener("keydown", (e) => {
+		if (e.key === "Escape") exitApp();
+	});
+}
+init();</script>
+    <style rel="stylesheet" crossorigin>:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: rgba(255, 255, 255, 0.87);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --resize-handle-size: 5px;
+  --select-color: #00C6DB;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: transparent;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+#app {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: transparent;
+  /* display: flex;
+  justify-content: center;
+  align-items: center; */
+}
+#app img {
+  max-width: 100%;
+  max-height: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+/* .mask {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate3d(0, 0, 0);
+} */
+.canvas-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 100;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  overflow: hidden;
+}
+canvas {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+.mask-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 200;
+}
+.select-rect {
+  position: absolute;
+  transform: translate3d(0, 0, 0);
+  z-index: 300;
+  border: 2px solid var(--select-color);
+  box-sizing: content-box;
+}
+
+/* resize-handle */
+.resize-handle {
+  position: absolute;
+  width: var(--resize-handle-size);
+  height: var(--resize-handle-size);
+  background-color: var(--select-color);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.resize-top-left {
+  /* top: -2.5px;
+  left: -2.5px; */
+  top: calc(var(--resize-handle-size) / -2);
+  left: calc(var(--resize-handle-size) / -2);
+  cursor: nwse-resize;
+}
+.resize-top {
+  /* top: -2.5px; */
+  top: calc(var(--resize-handle-size) / -2);
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.resize-top-right {
+  /* top: -2.5px;
+  right: -2.5px; */
+  top: calc(var(--resize-handle-size) / -2);
+  right: calc(var(--resize-handle-size) / -2);
+  cursor: nesw-resize;
+}
+.resize-right {
+  /* right: -2.5px; */
+  right: calc(var(--resize-handle-size) / -2);
+  top: 50%;
+  transform: translate(0, -50%);
+  cursor: ew-resize;
+}
+.resize-bottom-right {
+  /* right: -2.5px;
+  bottom: -2.5px; */
+  right: calc(var(--resize-handle-size) / -2);
+  bottom: calc(var(--resize-handle-size) / -2);
+  cursor: nwse-resize;
+}
+.resize-bottom {
+  /* bottom: -2.5px; */
+  bottom: calc(var(--resize-handle-size) / -2);
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.resize-bottom-left {
+  /* bottom: -2.5px;
+  left: -2.5px; */
+  bottom: calc(var(--resize-handle-size) / -2);
+  left: calc(var(--resize-handle-size) / -2);
+  cursor: nesw-resize;
+}
+.resize-left {
+  top: 50%;
+  /* left: -2.5px; */
+  left: calc(var(--resize-handle-size) / -2);
+  transform: translate(0, -50%);
+  cursor: ew-resize;
+}
+
+.edit-mode .resize-handle {
+  cursor: default;
+}
+
+/* resize-assist */
+.resize-assist {
+  position: absolute;
+  z-index: 400;
+  border: 1px dashed rgba(0, 0, 0, 0.5);
+}
+.resize-assist-handle {
+  position: absolute;
+  width: var(--resize-handle-size);
+  height: var(--resize-handle-size);
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+/* edit-tool */
+.edit-tool {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  position: absolute;
+  z-index: 400;
+  bottom: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-radius: 4px;
+  padding: 6px 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* gap: 12px; */
+  visibility: hidden;
+  width: -moz-fit-content;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.edit-tool-group {
+  /* border-left: ; */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+
+}
+.edit-tool-group:after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 20px;
+  background-color: #E5E6EB;
+  margin-right: 12px;
+}
+.edit-tool-group:last-child:after {
+  display: none;
+}
+.edit-tool-item {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  border-radius: 2.4px;
+  height: 28px;
+  width: 28px;
+  cursor: pointer;
+  color: #000000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  --active-color: #0D1324;
+}
+.edit-tool-item.active {
+  background-color: #f5f5f5;
+  --active-color: #00C6DB;
+}
+.edit-tool-item .wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.edit-tool-item .normal {
+  display: block;
+}
+.edit-tool-item .active {
+  display: none;
+}
+.edit-tool-item.active .normal {
+  display: none;
+}
+.edit-tool-item.active .active {
+  display: block;
+}
+.edit-tool-item svg {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.edit-tool-item:hover {
+  background-color: #f5f5f5;
+}
+.download svg {
+  /* height: 18px;
+  width: 18px; */
+}
+.finish svg {
+  /* height: 16px;
+  width: 16px; */
+}
+.cancel svg {
+  /* height: 16px;
+  width: 16px; */
+}
+
+/* size-display */
+.size-display {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  position: absolute;
+  z-index: 400;
+  bottom: 0;
+  left: 0;
+  color: #ffffff;
+  height: 20px;
+  padding: 0 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  visibility: hidden;
+  width: -moz-fit-content;
+  width: fit-content;
+}
 /*$vite$:1*/</style>
-</head><body><div id="app"></div></body></html>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit || true && vite build",
-    "preview": "vite preview"
+    "build": "pnpm exec vite build",
+    "build:dev": "vite build --mode development"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
