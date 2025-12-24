@@ -1,7 +1,7 @@
 use crate::app::config::AppConfig;
 use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
-use crate::capscreen::enumerate::enumerate_windows;
+use crate::capscreen::enumerate::{WindowInfo, enumerate_windows};
 use arboard::ImageData;
 use png::{BitDepth, ColorType, Encoder, Filter};
 use std::{
@@ -47,6 +47,7 @@ pub struct AppWindow {
 
 struct CaptureState {
     frame: Option<crate::capscreen::Frame>,
+    windows: Option<Vec<WindowInfo>>,
     error: Option<String>,
     done: bool,
 }
@@ -116,24 +117,33 @@ impl AppWindow {
         if !config.is_debug() {
             win_builder = win_builder.with_always_on_top(true);
         }
-        let window = Arc::new(win_builder.build(event_loop).unwrap());
-
-        if !config.is_debug() {
-            crate::capscreen::configure_overlay_window(&window);
-        }
 
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
             Mutex::new(CaptureState {
                 frame: None,
+                windows: None,
                 error: None,
                 done: false,
             }),
             Condvar::new(),
         ));
-
         let capture_state_for_thread = Arc::clone(&capture_state);
         let monitor_for_capture = monitor.clone();
         std::thread::spawn(move || {
+            // 在截屏前一刻执行窗口枚举，确保layer层级正确
+            let start_enumerate_time = Instant::now();
+            let windows = enumerate_windows(&monitor_for_capture);
+            log::error!(
+                "enumerate windows time: {:?}",
+                start_enumerate_time.elapsed()
+            );
+            log::error!(
+                "monitor: {}, windows count: {}",
+                monitor_for_capture.native_id(),
+                windows.len()
+            );
+
+            // 执行截屏
             let start_capscreen_time = Instant::now();
             let result = capscreen(&monitor_for_capture);
             log::error!("capscreen time: {:?}", start_capscreen_time.elapsed());
@@ -143,6 +153,7 @@ impl AppWindow {
             match result {
                 Ok(frame) => {
                     state.frame = Some(frame);
+                    state.windows = Some(windows);
                 }
                 Err(e) => {
                     log::error!("capscreen failed: {:?}", e);
@@ -153,9 +164,15 @@ impl AppWindow {
             cvar.notify_all();
         });
 
+        let window = Arc::new(win_builder.build(event_loop).unwrap());
+
+        if !config.is_debug() {
+            crate::capscreen::configure_overlay_window(&window);
+        }
+
         let window_for_dialog = Arc::clone(&window);
         let capture_state_for_bg = Arc::clone(&capture_state);
-        let monitor_for_enum = monitor.clone();
+        let capture_state_for_windows = Arc::clone(&capture_state);
 
         let webview = WebViewBuilder::new()
             .with_devtools(true)
@@ -286,12 +303,10 @@ impl AppWindow {
                         let (lock, cvar) = &*capture_state_for_bg;
                         let mut state = lock.lock().unwrap();
 
-                        // 如果截图尚未完成，则等待
                         while !state.done {
                             state = cvar.wait(state).unwrap();
                         }
 
-                        // 检查是否有错误
                         if let Some(error) = &state.error {
                             log::error!("Capture error: {}", error);
                             return Response::builder()
@@ -302,7 +317,7 @@ impl AppWindow {
                                 .unwrap()
                                 .map(Into::into);
                         }
-                        // 获取截图数据
+
                         if let Some(frame) = &state.frame {
                             let data = frame.data.clone();
                             Response::builder()
@@ -331,12 +346,31 @@ impl AppWindow {
                         }
                     }
                     "/windows" => {
-                        let windows = enumerate_windows(&monitor_for_enum);
-                        log::error!(
-                            "monitor: {}, windows: {:?}",
-                            monitor_for_enum.native_id(),
-                            windows
-                        );
+                        let (lock, cvar) = &*capture_state_for_windows;
+                        let mut state = lock.lock().unwrap();
+
+                        // 如果截图尚未完成，则等待
+                        while !state.done {
+                            state = cvar.wait(state).unwrap();
+                        }
+
+                        // 检查是否有错误
+                        if let Some(error) = &state.error {
+                            log::error!("Capture error, cannot get windows: {}", error);
+                            return Response::builder()
+                                .status(500)
+                                .header(header::CONTENT_TYPE, "application/json")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .header("Access-Control-Allow-Methods", "GET, OPTIONS")
+                                .header("Access-Control-Allow-Headers", "*")
+                                .body(format!(r#"{{"error": "{}"}}"#, error).into_bytes())
+                                .unwrap()
+                                .map(Into::into);
+                        }
+
+                        // 返回缓存的窗口枚举结果，与截图数据保持一致
+                        let windows = state.windows.clone().unwrap_or_default();
+                        log::error!("return cached windows, count: {}", windows.len());
                         let json =
                             serde_json::to_string(&windows).unwrap_or_else(|_| "[]".to_string());
                         Response::builder()

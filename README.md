@@ -2,6 +2,14 @@
 
 [中文](./README.zh.md)
 
+## Features
+
+- Multi-monitor support
+- Cross-platform support (macOS, Windows)
+- Fast response (around 300ms to complete display on macOS with dual 4K monitors) (around 300ms to complete display on Windows with dual 2K monitors, even with old CPUs)
+- Window awareness
+- Clipboard, brush, and other common features
+
 ## Technical Implementation
 
 Windows uses GDI for screen capture. The reason is that whether it's DXGI or GraphicCapture, GDI is faster for single-frame capture and doesn't require manual multi-monitor stitching. These two new APIs primarily serve remote and video scenarios, which are slower than GDI and more complex for most CPU-processing scenarios in the current architecture.
@@ -15,14 +23,6 @@ Early commits used wgpu for background rendering, but it doesn't support externa
 Early commits also attempted DXGI and Graphic.Capture.
 
 Screenshot capture and a series of system calls are handled by Rust. The main latency comes from webview cold start. Subsequent optimizations could consider a service-style hidden window. It can complete 4K screen capture window opening in around 100ms.
-
-## Features
-
-- Multi-monitor support
-- Cross-platform support (macOS, Windows)
-- Fast response (around 300ms to complete display on macOS with dual 4K monitors) (around 300ms to complete display on Windows with dual 2K monitors, even with old CPUs)
-- Window awareness
-- Clipboard, brush, and other common features
 
 ## Execution Parameters
 
