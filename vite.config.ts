@@ -64,6 +64,7 @@ export default defineConfig(({ command, mode }) => {
       cssCodeSplit: false,
       minify: isProduction ? 'oxc' : false,
       cssMinify: isProduction,
+      emptyOutDir: false,
       rollupOptions: {
         output: {
           manualChunks: undefined,
