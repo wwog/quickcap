@@ -16,7 +16,6 @@ use std::time::Instant;
 pub struct App {
     windows: HashMap<WindowId, AppWindow>,
     event_loop: EventLoop<UserEvent>,
-    config: AppConfig,
 }
 
 impl App {
@@ -98,7 +97,6 @@ impl App {
         Self {
             windows,
             event_loop,
-            config,
         }
     }
 
