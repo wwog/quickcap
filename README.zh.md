@@ -55,8 +55,9 @@ unix/linux stdio. stderr is log, stdout is data.
 
 进程结束前会发起两个消息
 
-save_image_to_folder 代表保存成功
-copy_to_clipboard    代表拷贝成功
+1.save_image_to_folder 代表保存成功,附带路径
+
+2.copy_to_clipboard    代表拷贝成功,附带长宽
 
 
 ## CI/CD 工作流

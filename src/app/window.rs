@@ -134,7 +134,7 @@ impl AppWindow {
         let monitor_for_capture = monitor.clone();
         // 使用Arc共享，避免clone整个窗口列表
         let all_windows_for_thread = Arc::clone(&all_windows);
-        
+
         std::thread::spawn(move || {
             // macOS: 对已枚举的窗口列表进行显示器筛选
             // Windows: 直接使用全部窗口
@@ -150,14 +150,10 @@ impl AppWindow {
                     "filter windows by display time: {:?}",
                     start_filter_time.elapsed()
                 );
-                log::error!(
-                    "monitor: {}, windows count: {}",
-                    display_id,
-                    filtered.len()
-                );
+                log::error!("monitor: {}, windows count: {}", display_id, filtered.len());
                 filtered
             };
-            
+
             #[cfg(not(target_os = "macos"))]
             let windows = {
                 // Windows直接使用全部窗口，坐标已经是基于虚拟桌面的
@@ -267,7 +263,9 @@ impl AppWindow {
                                 .unwrap()
                                 .map(Into::into);
                         }
-                        let file = File::create(file_path.unwrap()).unwrap();
+                        let file_path = file_path.unwrap();
+                        let file_path_str = file_path.to_string_lossy().to_string();
+                        let file = File::create(file_path).unwrap();
                         let writer = BufWriter::new(file);
 
                         let mut encoder = Encoder::new(writer, width, height);
@@ -279,8 +277,12 @@ impl AppWindow {
                         let start = Instant::now();
                         let mut png_writer = encoder.write_header().unwrap();
                         png_writer.write_image_data(&body).unwrap();
-                        crate::StdRpcClient::global()
-                            .send_notification("save_image_to_folder", None);
+                        crate::StdRpcClient::global().send_notification(
+                            "save_image_to_folder",
+                            Some(serde_json::json!({
+                                "path": file_path_str,
+                            })),
+                        );
                         log::error!("save image time: {:?}", start.elapsed());
                         Response::builder()
                             .status(200)
@@ -314,7 +316,13 @@ impl AppWindow {
                         log::error!("create image time: {:?}", start.elapsed());
                         arboard::Clipboard::new().unwrap().set_image(image).unwrap();
                         log::error!("set image time: {:?}", start.elapsed());
-                        crate::StdRpcClient::global().send_notification("copy_to_clipboard", None);
+                        crate::StdRpcClient::global().send_notification(
+                            "copy_to_clipboard",
+                            Some(serde_json::json!({
+                                "width": width,
+                                "height": height,
+                            })),
+                        );
                         Response::builder()
                             .status(200)
                             .body(b"success".to_vec())
