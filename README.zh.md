@@ -1,10 +1,14 @@
 # 截图程序 
 
+[English](./README.md)
+
 ## 技术实现
 
 Windows使用GDI进行截屏，原因无论是DXGI还是GraphicCapture，GDI在单帧截取速度更快，并且不需要自己拼接多显示器，因为这两个新的api主要服务远程和视频，对于目前架构的大部分cpu处理的场景慢于GDI且复杂度高。
 
-Macos使用ScreenCaptureKit的最初实现完成，包括窗口枚举也是这套api，以确保窗口获取和截取保持平衡，由于Macos桌面空间与显示器呈现绑定状态，所以会有两个显示器尺寸的窗口作为蒙层，windows没有这个限制。另外，fork了screencapture-rs这个库，追加了CGDisplayCreateImage的实现和一些其他功能。本项目也实现了enumerate_windows_cg用于需要兼容性的实现。CGWindowListCopyWindowInfo和CGDisplayCreateImage可以支持大部分macos。
+Macos使用ScreenCaptureKit的最初实现完成，包括窗口枚举也是这套api，以确保窗口获取和截取保持平衡，由于Macos桌面空间与显示器呈现绑定状态，所以会有两个显示器尺寸的窗口作为蒙层，windows没有这个限制。另外，我fork了screencapture-rs这个库，追加了CGDisplayCreateImage的实现和一些其他功能。[ForkVersion](https://github.com/wwog/screencapturekit-rs),在此库实现中支持了交叉编译，原有实现强依赖系统。会导致你需要macos intel，也需要macos arm,且几个关节节点的系统版本都需要。
+
+本项目也实现了enumerate_windows_cg用于需要兼容性的实现。CGWindowListCopyWindowInfo和CGDisplayCreateImage可以支持大部分macos。
 
 早期提交采用了wgpu进行绘制背景，但并不支持外部纹理，可能最佳方案是平台特定实现或者skia。但考虑复杂度和平台差异选用webview。
 
@@ -44,3 +48,27 @@ windows大部分支持 (需要支持多显示器，所以使用了较为简单�
 ## 通信
 
 unix/linux stdio. stderr is log, stdout is data.
+
+进程结束前会发起两个消息
+
+save_image_to_folder 代表保存成功
+copy_to_clipboard    代表拷贝成功
+
+
+## CI/CD 工作流
+
+项目使用 GitHub Actions 进行自动化构建和发布，配置文件位于 `.github/workflows/release.yml`。
+
+### 触发条件
+
+创建版本标签并发布：
+
+```bash
+# 创建版本标签
+git tag v0.1.0
+
+# 推送标签（将自动触发构建和发布）
+git push origin v0.1.0
+```
+
+推送标签后，GitHub Actions 会自动开始构建，完成后会在 Releases 页面创建新的发布版本。

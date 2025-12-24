@@ -1,0 +1,318 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 匹配版本标签，如 v0.1.0, v1.2.3
+
+env:
+  CARGO_TERM_COLOR: always
+  MACOSX_DEPLOYMENT_TARGET: "12.3"
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact_name: Windows-x64
+            package_name: quickcap-windows-x64.tar.gz
+          - target: x86_64-apple-darwin
+            os: macos-latest  # GitHub Actions macOS runner 是 ARM，但支持 Rosetta 2
+            artifact_name: macOS-Intel
+            package_name: quickcap-macos-intel.tar.gz
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact_name: macOS-ARM
+            package_name: quickcap-macos-arm.tar.gz
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+
+      - name: Set up macOS x86_64 cross-compilation
+        if: matrix.target == 'x86_64-apple-darwin' && runner.os == 'macOS'
+        shell: bash
+        run: |
+          echo "设置 x86_64 macOS 交叉编译环境..."
+          echo "当前架构: $(uname -m)"
+          
+          # 完全清理 x86_64 目标的构建缓存，确保重新编译
+          echo "清理 x86_64 构建缓存..."
+          if [ -d "target/x86_64-apple-darwin" ]; then
+            rm -rf target/x86_64-apple-darwin
+            echo "已删除 target/x86_64-apple-darwin 目录"
+          fi
+          
+          # 清理可能存在的 capscreen_macos 构建产物
+          if [ -d "target/release/build" ]; then
+            find target/release/build -name "capscreen_macos-*" -type d -exec rm -rf {} + 2>/dev/null || true
+          fi
+          
+          # 设置环境变量（确保在构建步骤中可用）
+          echo "ARCHS=x86_64" >> $GITHUB_ENV
+          echo "ARCH=x86_64" >> $GITHUB_ENV
+          echo "TARGET_ARCH=x86_64" >> $GITHUB_ENV
+          echo "SWIFT_TARGET_TRIPLE=x86_64-apple-macosx12.3" >> $GITHUB_ENV
+          echo "CC_x86_64_apple_darwin=clang -arch x86_64 -mmacosx-version-min=12.3" >> $GITHUB_ENV
+          echo "CXX_x86_64_apple_darwin=clang++ -arch x86_64 -mmacosx-version-min=12.3" >> $GITHUB_ENV
+          
+          # Swift 编译器参数（多个可能的变量名，确保被识别）
+          SDK_PATH=$(xcrun --show-sdk-path)
+          echo "SWIFTFLAGS=-target x86_64-apple-macosx12.3 -sdk $SDK_PATH -arch x86_64" >> $GITHUB_ENV
+          echo "SWIFT_ARCHS=x86_64" >> $GITHUB_ENV
+          echo "SWIFT_BUILD_ARCH=x86_64" >> $GITHUB_ENV
+          echo "SWIFT_PLATFORM_PREFERRED_ARCH=x86_64" >> $GITHUB_ENV
+          
+          # 设置构建工具链环境变量
+          echo "TOOLCHAINS=com.apple.dt.toolchain.XcodeDefault" >> $GITHUB_ENV
+          
+          # 验证环境变量设置
+          echo "环境变量已设置:"
+          echo "  ARCHS=x86_64"
+          echo "  SWIFT_TARGET_TRIPLE=x86_64-apple-macosx12.3"
+          echo "  CC_x86_64_apple_darwin=clang -arch x86_64 -mmacosx-version-min=12.3"
+          echo "  SWIFTFLAGS=$SWIFTFLAGS"
+
+      - name: Build
+        shell: bash
+        run: |
+          echo "构建目标: ${{ matrix.target }}"
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            echo "当前架构: $(uname -m)"
+            if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+              echo "交叉编译 x86_64 macOS (在 ARM runner 上)"
+              echo "使用编译器: $CC_x86_64_apple_darwin"
+              echo "Swift 目标: $SWIFT_TARGET_TRIPLE"
+              echo "Swift 标志: $SWIFTFLAGS"
+              
+              # 验证 Swift 编译器可用
+              if command -v swiftc &> /dev/null; then
+                echo "Swift 编译器版本:"
+                swiftc -version
+              fi
+            fi
+          fi
+          
+          # 强制重新构建依赖（特别是 capscreen_macos）
+          # 清理整个构建目录以确保重新编译
+          if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+            echo "强制清理 capscreen_macos 构建缓存..."
+            cargo clean -p capscreen_macos 2>/dev/null || true
+            # 清理可能存在的 Swift 构建产物
+            find ~/.cargo -name "*capscreen_macos*" -type d -exec rm -rf {} + 2>/dev/null || true
+          fi
+          
+          # 构建项目（使用详细输出以便调试）
+          echo "开始构建..."
+          set +e  # 允许命令失败，以便我们可以检查退出码
+          cargo build --release --target ${{ matrix.target }} --verbose
+          BUILD_EXIT_CODE=$?
+          set -e  # 恢复错误时退出
+          
+          # 如果构建失败，显示错误信息并检查 Swift 对象文件架构
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "构建失败，退出码: $BUILD_EXIT_CODE"
+            if [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+              echo "检查 Swift 对象文件架构..."
+              find target -name "*.swift.o" -exec file {} \; 2>/dev/null | head -20 || true
+            fi
+            exit $BUILD_EXIT_CODE
+          fi
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "12.3"
+
+      - name: Get build info
+        id: build_info
+        shell: bash
+        run: |
+          BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          BUILD_COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u +"%Y-%m-%d")
+          echo "time=$BUILD_TIME" >> $GITHUB_OUTPUT
+          echo "commit=$BUILD_COMMIT" >> $GITHUB_OUTPUT
+          echo "date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "target=${{ matrix.target }}" >> $GITHUB_OUTPUT
+          echo "artifact=${{ matrix.artifact_name }}" >> $GITHUB_OUTPUT
+
+      - name: Prepare artifact
+        shell: bash
+        run: |
+          mkdir -p dist
+
+          echo "打包构建产物为 tar.gz 并移动到 dist/ 目录..."
+
+          if [ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]; then
+            # Windows 可执行文件打包
+            if [ ! -f "target/${{ matrix.target }}/release/quickcap.exe" ]; then
+              echo "未找到 Windows 可执行文件: target/${{ matrix.target }}/release/quickcap.exe"
+              exit 1
+            fi
+            # 1) 打包为 tar.gz
+            tar -czf "dist/quickcap-windows-x64.tar.gz" -C "target/${{ matrix.target }}/release" "quickcap.exe"
+            # 2) 同时拷贝裸 exe，方便在 Release 中直接下载，不会丢失执行权限
+            cp "target/${{ matrix.target }}/release/quickcap.exe" "dist/quickcap-windows-x64.exe"
+            echo "已生成 dist/quickcap-windows-x64.tar.gz"
+          elif [ "${{ matrix.target }}" == "x86_64-apple-darwin" ]; then
+            # macOS Intel 可执行文件打包
+            if [ ! -f "target/${{ matrix.target }}/release/quickcap" ]; then
+              echo "未找到 macOS Intel 可执行文件: target/${{ matrix.target }}/release/quickcap"
+              exit 1
+            fi
+            chmod +x "target/${{ matrix.target }}/release/quickcap"
+            tar -czf "dist/quickcap-macos-intel.tar.gz" -C "target/${{ matrix.target }}/release" "quickcap"
+            echo "已生成 dist/quickcap-macos-intel.tar.gz"
+          elif [ "${{ matrix.target }}" == "aarch64-apple-darwin" ]; then
+            # macOS ARM 可执行文件打包
+            if [ ! -f "target/${{ matrix.target }}/release/quickcap" ]; then
+              echo "未找到 macOS ARM 可执行文件: target/${{ matrix.target }}/release/quickcap"
+              exit 1
+            fi
+            chmod +x "target/${{ matrix.target }}/release/quickcap"
+            tar -czf "dist/quickcap-macos-arm.tar.gz" -C "target/${{ matrix.target }}/release" "quickcap"
+            echo "已生成 dist/quickcap-macos-arm.tar.gz"
+          else
+            echo "未知构建目标: ${{ matrix.target }}"
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          # 直接上传整个 dist 目录：
+          # - Windows: 包含 tar.gz + exe
+          # - macOS: 目前只包含 tar.gz
+          path: dist/
+          retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version tag
+        id: tag
+        run: |
+          VERSION_TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${VERSION_TAG#v}
+          echo "tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Get build information
+        id: build_info
+        run: |
+          BUILD_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          BUILD_DATE=$(date -u +"%Y-%m-%d")
+          BUILD_COMMIT=$(git rev-parse --short HEAD)
+          echo "time=$BUILD_TIME" >> $GITHUB_OUTPUT
+          echo "date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "commit=$BUILD_COMMIT" >> $GITHUB_OUTPUT
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          
+          # Windows: 直接使用构建阶段生成的 tar.gz
+          if [ -d "artifacts/Windows-x64" ] && [ -f "artifacts/Windows-x64/quickcap-windows-x64.tar.gz" ]; then
+            cp artifacts/Windows-x64/quickcap-windows-x64.tar.gz release-assets/quickcap-windows-x64.tar.gz
+          fi
+          # Windows: 同时提供裸 exe
+          if [ -d "artifacts/Windows-x64" ] && [ -f "artifacts/Windows-x64/quickcap-windows-x64.exe" ]; then
+            cp artifacts/Windows-x64/quickcap-windows-x64.exe release-assets/quickcap-windows-x64.exe
+          fi
+          
+          # macOS Intel: 直接使用构建阶段生成的 tar.gz
+          if [ -d "artifacts/macOS-Intel" ] && [ -f "artifacts/macOS-Intel/quickcap-macos-intel.tar.gz" ]; then
+            cp artifacts/macOS-Intel/quickcap-macos-intel.tar.gz release-assets/quickcap-macos-intel.tar.gz
+          fi
+          
+          # macOS ARM: 直接使用构建阶段生成的 tar.gz
+          if [ -d "artifacts/macOS-ARM" ] && [ -f "artifacts/macOS-ARM/quickcap-macos-arm.tar.gz" ]; then
+            cp artifacts/macOS-ARM/quickcap-macos-arm.tar.gz release-assets/quickcap-macos-arm.tar.gz
+          fi
+          
+          echo "Release assets prepared:"
+          ls -lh release-assets/
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > release-notes.md << EOF
+          # Release ${{ steps.tag.outputs.version }}
+          
+          ## 构建信息
+          - **版本**: ${{ steps.tag.outputs.version }}
+          - **构建时间**: ${{ steps.build_info.outputs.time }}
+          - **构建日期**: ${{ steps.build_info.outputs.date }}
+          - **提交**: ${{ steps.build_info.outputs.commit }}
+          
+          ## 平台支持
+          - ✅ Windows x64 (MSVC)
+          - ✅ macOS Intel (x86_64)
+          - ✅ macOS ARM (Apple Silicon)
+          
+          ## 安装说明
+          1. 下载对应平台的 \`.tar.gz\` 压缩包：
+             - Windows: \`quickcap-windows-x64.tar.gz\`
+             - macOS Intel: \`quickcap-macos-intel.tar.gz\`
+             - macOS ARM: \`quickcap-macos-arm.tar.gz\`
+          2. 解压压缩包并运行可执行文件：
+             \`\`\`bash
+             # 示例（macOS）
+             tar -xzf quickcap-macos-intel.tar.gz   # 或 quickcap-macos-arm.tar.gz
+             ./quickcap
+             \`\`\`
+          
+          ---
+          *此版本由 GitHub Actions 自动构建*
+          EOF
+          cat release-notes.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.version }}
+          body_path: release-notes.md
+          files: release-assets/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

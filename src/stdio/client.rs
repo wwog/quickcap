@@ -60,12 +60,10 @@ pub struct StdRpcClient {
 }
 
 impl StdRpcClient {
-    /// 获取全局单例
     pub fn global() -> &'static Self {
         INSTANCE.get().expect("StdRpcClient not initialized! Call init() first.")
     }
 
-    /// 发送通知 (Electron <- Rust)
     pub fn send_notification(&self, method: &str, params: Option<Value>) {
         // 构建原始 JSON 对象发送，避免定义冗余的 OutgoingNotification 结构
         let msg = serde_json::json!({

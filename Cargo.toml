@@ -1,6 +1,6 @@
 [package]
 name = "quickcap"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
@@ -11,7 +11,7 @@ env_logger = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rfd = "0.16.0"
-dirs = "5.0"
+dirs = "6.0.0"
 rayon = "1.11.0"
 chrono = "0.4.42"
 arboard = "3.6.1"
@@ -29,7 +29,7 @@ windows = { version = "0.62.2", features = [
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # macOS 捕获库
-capscreen_macos = { version = "0.1.2" }
+capscreen_macos = { version = "0.1.3" }
 objc2 = "0.6.3"
 objc2-app-kit = "0.3.2"
 objc2-core-foundation = "0.3.2"

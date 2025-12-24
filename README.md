@@ -1,10 +1,14 @@
 # Screenshot Tool
 
+[中文](./README.zh.md)
+
 ## Technical Implementation
 
 Windows uses GDI for screen capture. The reason is that whether it's DXGI or GraphicCapture, GDI is faster for single-frame capture and doesn't require manual multi-monitor stitching. These two new APIs primarily serve remote and video scenarios, which are slower than GDI and more complex for most CPU-processing scenarios in the current architecture.
 
-macOS uses the initial implementation of ScreenCaptureKit, including window enumeration, which is also part of this API to ensure balance between window acquisition and capture. Since macOS desktop space is bound to display presentation, there will be two display-sized windows as overlays, which Windows doesn't have this limitation. Additionally, the screencapture-rs library was forked, adding CGDisplayCreateImage implementation and some other features. This project also implements enumerate_windows_cg for compatibility needs. CGWindowListCopyWindowInfo and CGDisplayCreateImage can support most macOS versions.
+macOS uses the initial implementation of ScreenCaptureKit, including window enumeration, which is also part of this API to ensure balance between window acquisition and capture. Since macOS desktop space is bound to display presentation, there will be two display-sized windows as overlays, which Windows doesn't have this limitation. Additionally, I forked the screencapture-rs library, adding CGDisplayCreateImage implementation and some other features. [ForkVersion](https://github.com/wwog/screencapturekit-rs). This library implementation supports cross-compilation, while the original implementation strongly depends on the system. This would require you to have both macOS Intel and macOS ARM, and several key system versions are needed.
+
+This project also implements enumerate_windows_cg for compatibility needs. CGWindowListCopyWindowInfo and CGDisplayCreateImage can support most macOS versions.
 
 Early commits used wgpu for background rendering, but it doesn't support external textures. The best solution might be platform-specific implementations or Skia. However, considering complexity and platform differences, webview was chosen.
 
@@ -42,3 +46,26 @@ Most Windows versions supported (needs multi-monitor support, so uses simpler GD
 ## Communication
 
 Unix/Linux stdio. stderr is log, stdout is data.
+
+Before the process exits, two messages are emitted:
+
+- `save_image_to_folder` — indicates the image was saved successfully
+- `copy_to_clipboard` — indicates the image was copied successfully
+
+## CI/CD Workflow
+
+The project uses GitHub Actions for automated builds and releases. The workflow configuration is located at `.github/workflows/release.yml`.
+
+### Trigger Conditions
+
+Create a version tag and publish:
+
+```bash
+# Create version tag
+git tag v0.1.0
+
+# Push tag (will automatically trigger build and release)
+git push origin v0.1.0
+```
+
+After pushing the tag, GitHub Actions will automatically start the build process. Once completed, a new release will be created on the Releases page.

@@ -230,6 +230,7 @@ impl AppWindow {
                         let start = Instant::now();
                         let mut png_writer = encoder.write_header().unwrap();
                         png_writer.write_image_data(&body).unwrap();
+                        crate::StdRpcClient::global().send_notification("save_image_to_folder", None);
                         log::error!("save image time: {:?}", start.elapsed());
                         Response::builder()
                             .status(200)
@@ -263,7 +264,7 @@ impl AppWindow {
                         log::error!("create image time: {:?}", start.elapsed());
                         arboard::Clipboard::new().unwrap().set_image(image).unwrap();
                         log::error!("set image time: {:?}", start.elapsed());
-
+                        crate::StdRpcClient::global().send_notification("copy_to_clipboard", None);
                         Response::builder()
                             .status(200)
                             .body(b"success".to_vec())
@@ -361,7 +362,10 @@ impl AppWindow {
             webview
                 .with_bounds(wry::Rect {
                     position: tao::dpi::Position::Logical(tao::dpi::LogicalPosition::new(0.0, 0.0)),
-                    size: tao::dpi::Size::Logical(tao::dpi::LogicalSize::new(size.width, size.height)),
+                    size: tao::dpi::Size::Logical(tao::dpi::LogicalSize::new(
+                        size.width,
+                        size.height,
+                    )),
                 })
                 .build_as_child(&window)
                 .unwrap()
