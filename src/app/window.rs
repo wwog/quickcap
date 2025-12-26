@@ -117,10 +117,7 @@ impl AppWindow {
             use tao::platform::windows::WindowBuilderExtWindows;
             win_builder = win_builder.with_undecorated_shadow(false);
         }
-        if !config.is_debug() {
-            win_builder = win_builder.with_always_on_top(true);
-        }
-
+        
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
             Mutex::new(CaptureState {
                 frame: None,

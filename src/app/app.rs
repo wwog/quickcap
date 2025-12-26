@@ -24,7 +24,7 @@ impl App {
     pub fn new(config: Option<AppConfig>) -> Self {
         let config = config.unwrap_or_default();
         let mut logger_builder = env_logger::builder();
-        println!("config: {:?}", config);
+        log::error!("config: {:?}", config);
         logger_builder.format(|buf, record| {
             let style_gray = Style::new().fg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
             let style_cyan = Style::new()
