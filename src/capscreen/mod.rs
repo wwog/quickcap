@@ -33,5 +33,8 @@ pub fn configure_overlay_window(window: &Window) {
     {
         macos::configure_overlay_window(window);
     }
-    window.set_always_on_top(true);
+    #[cfg(not(target_os = "macos"))]
+    {
+        window.set_always_on_top(true);
+    }
 }
