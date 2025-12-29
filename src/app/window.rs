@@ -38,7 +38,7 @@ use wry::{
 };
 
 // static FILEDATA: &[u8] = include_bytes!("demo.html");
-static FILEDATA: &[u8] = include_bytes!("./index.html");
+static FILEDATA: &[u8] = include_bytes!("./web/index.html");
 
 #[allow(dead_code)]
 pub struct AppWindow {
