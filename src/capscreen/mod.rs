@@ -28,6 +28,7 @@ pub fn capscreen(handle: &MonitorHandle) -> Result<Frame, CaptureError> {
 
 #[allow(unused)]
 pub fn configure_overlay_window(window: &Window) {
+    log::error!("configure_overlay_window");
     #[cfg(target_os = "macos")]
     {
         macos::configure_overlay_window(window);
