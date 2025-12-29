@@ -24,7 +24,7 @@ impl App {
     pub fn new(config: Option<AppConfig>) -> Self {
         let config = config.unwrap_or_default();
         let mut logger_builder = env_logger::builder();
-        println!("config: {:?}", config);
+   
         logger_builder.format(|buf, record| {
             let style_gray = Style::new().fg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
             let style_cyan = Style::new()
@@ -53,7 +53,7 @@ impl App {
             )
         });
         logger_builder.init();
-        log::error!("App::new");
+        log::error!("App::new {:?}", config);
         let start_time = Instant::now();
         let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
         let proxy = event_loop.create_proxy();

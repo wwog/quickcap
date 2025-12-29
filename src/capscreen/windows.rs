@@ -7,10 +7,12 @@ use windows::Win32::{
         SelectObject,
     },
     UI::WindowsAndMessaging::{
-        GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
-        SM_YVIRTUALSCREEN,
+        GetSystemMetrics, SetWindowPos, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
+        SM_YVIRTUALSCREEN, SWP_NOZORDER,
     },
 };
+use tao::window::Window;
+use tao::platform::windows::WindowExtWindows;
 
 use crate::capscreen::{CaptureError, Frame};
 
@@ -90,5 +92,39 @@ pub fn capscreen() -> Result<Frame, CaptureError> {
             width: width as u32,
             height: height as u32,
         })
+    }
+}
+
+pub fn set_window_pos(window: &Window) {
+    unsafe {
+        // 获取虚拟屏幕的位置和大小
+        let x_virtual_screen = GetSystemMetrics(SM_XVIRTUALSCREEN);
+        let y_virtual_screen = GetSystemMetrics(SM_YVIRTUALSCREEN);
+        let cx_virtual_screen = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+        let cy_virtual_screen = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+        // 获取窗口句柄
+        let hwnd_raw = window.hwnd();
+        let hwnd = HWND(hwnd_raw as *mut std::ffi::c_void);
+
+        if let Err(e) = SetWindowPos(
+            hwnd,
+            None,
+            x_virtual_screen,
+            y_virtual_screen,
+            cx_virtual_screen,
+            cy_virtual_screen,
+            SWP_NOZORDER,
+        ) {
+            log::error!("SetWindowPos failed: {:?}", e);
+        } else {
+            log::info!(
+                "Window position set successfully: x={}, y={}, width={}, height={}",
+                x_virtual_screen,
+                y_virtual_screen,
+                cx_virtual_screen,
+                cy_virtual_screen
+            );
+        }
     }
 }

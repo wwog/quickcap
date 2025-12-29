@@ -1,9 +1,9 @@
-use crate::app::config::AppConfig;
 use crate::app::user_event::UserEvent;
 use crate::capscreen::capscreen;
 use crate::capscreen::enumerate::WindowInfo;
 #[cfg(target_os = "macos")]
 use crate::capscreen::enumerate::filter_windows_by_display;
+use crate::{app::config::AppConfig, stdio};
 use arboard::ImageData;
 use png::{BitDepth, ColorType, Encoder, Filter};
 use std::{
@@ -38,12 +38,12 @@ use wry::{
 };
 
 // static FILEDATA: &[u8] = include_bytes!("demo.html");
-static FILEDATA: &[u8] = include_bytes!("./web/index.html");
+static FILEDATA: &[u8] = include_bytes!("./index.html");
 
 #[allow(dead_code)]
 pub struct AppWindow {
     pub window: Arc<Window>,
-    pub webview: WebView,
+    pub webview: Option<WebView>,
     pub monitor: MonitorHandle,
 }
 
@@ -105,7 +105,6 @@ impl AppWindow {
             .with_min_inner_size(size)
             .with_minimizable(false)
             .with_maximizable(false);
-        // .with_always_on_top(true);
 
         #[cfg(target_os = "macos")]
         {
@@ -116,9 +115,6 @@ impl AppWindow {
         {
             use tao::platform::windows::WindowBuilderExtWindows;
             win_builder = win_builder.with_undecorated_shadow(false);
-        }
-        if !config.is_debug() {
-            win_builder = win_builder.with_always_on_top(true);
         }
 
         let capture_state: Arc<(Mutex<CaptureState>, Condvar)> = Arc::new((
@@ -183,15 +179,32 @@ impl AppWindow {
 
         let window = Arc::new(win_builder.build(event_loop).unwrap());
 
-        if !config.is_debug() {
-            crate::capscreen::configure_overlay_window(&window);
+        #[cfg(target_os = "windows")]
+        {
+            crate::capscreen::windows::set_window_pos(&window);
         }
 
         let window_for_dialog = Arc::clone(&window);
         let capture_state_for_bg = Arc::clone(&capture_state);
         let capture_state_for_windows = Arc::clone(&capture_state);
-
-        let webview = WebViewBuilder::new()
+        #[cfg(target_os = "macos")]
+        let webview = WebViewBuilder::new();
+        #[cfg(target_os = "windows")]
+        let webview = {
+            use wry::{WebContext, WebViewAttributes};
+            let data_dir = dirs::data_dir();
+            let quickcap_dir = data_dir.unwrap().join("quickcap");
+            log::error!("quickcap_user_data_dir: {:?}", quickcap_dir);
+            let context = Box::new(WebContext::new(Some(quickcap_dir)));
+            // 使用 Box::leak 来获取 'static 生命周期，满足 WebViewAttributes 的要求
+            let context_ref = Box::leak(context);
+            WebViewBuilder::new_with_attributes(WebViewAttributes {
+                context: Some(context_ref),
+                ..Default::default()
+            })
+            // 注意：Box::leak 会导致内存泄漏，但这是必要的，因为 WebView 需要 context 在整个生命周期内存在
+        };
+        let webview = webview
             .with_devtools(true)
             .with_transparent(true)
             .with_initialization_script(include_str!("preload.js"))
@@ -442,7 +455,6 @@ impl AppWindow {
                     )),
                 })
                 .build_as_child(&window)
-                .unwrap()
         };
         #[cfg(target_os = "windows")]
         let webview = {
@@ -455,11 +467,26 @@ impl AppWindow {
                     )),
                 })
                 .build_as_child(&window)
-                .unwrap()
         };
+        let webview = match webview {
+            Ok(webview) => webview,
+            Err(error) => {
+                stdio::StdRpcClient::global().send_notification(
+                    "webview_error",
+                    Some(serde_json::json!({
+                        "error": error.to_string(),
+                    })),
+                );
+                panic!("webview error: {:?}", error);
+            }
+        };
+        if !config.is_debug() {
+            crate::capscreen::configure_overlay_window(&window);
+        }
+        webview.focus().unwrap();
         Self {
             window,
-            webview,
+            webview: Some(webview),
             monitor,
         }
     }
