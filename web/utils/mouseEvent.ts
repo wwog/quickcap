@@ -38,12 +38,14 @@ export const bindClick = (
   let moved = false;
   let start = false;
   const onMouseDown = (e: MouseEvent) => {
+    console.log(`%c✈️ onMouseDown -> start:${start}, moved:${moved}`,'background-color: #23aaf2; color: #fff;padding: 2px 4px;border-radius: 2px;');
     if (e.target === target || target.contains(e.target as Node)) {
       start = true;
       moved = false;
     }
   };
   const onMouseUp = (e: MouseEvent) => {
+    console.log(`%c✈️ onMouseUp  ->  start:${start}, moved:${moved}`,'background-color: #23aaf2; color: #fff;padding: 2px 4px;border-radius: 2px;');
     if (start && !moved) {
       cb(e);
     }
@@ -81,6 +83,7 @@ export const bindDoubleClick = (
 
   const onClick = (e: MouseEvent) => {
     clickCount++;
+    console.log("🚀 ~ bindDoubleClick ~ clickCount:", clickCount);
     if (clickCount === 2) {
       cb(e);
       clickCount = 0;

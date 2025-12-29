@@ -1,5 +1,5 @@
 import { DPR } from "../const";
-import { generateUID, interpolatePoints } from "../utils";
+import { generateUID, interpolatePoints, isWindows } from "../utils";
 import {
   calculateEllipseFromRect,
   calculateRectFromPoints,
@@ -82,12 +82,12 @@ export class EditCanvas {
     this.baseCanvas.style.position = "absolute";
     this.mosaicCanvas.style.position = "absolute";
     this.editCanvas.style.position = "absolute";
-    this.baseCanvas.style.top = "0px";
-    this.baseCanvas.style.left = "0px";
-    this.mosaicCanvas.style.top = "0px";
-    this.mosaicCanvas.style.left = "0px";
-    this.editCanvas.style.left = "0px";
-    this.editCanvas.style.left = "0px";
+    this.baseCanvas.style.top = "-2px";
+    this.baseCanvas.style.left = "-2px";
+    this.mosaicCanvas.style.top = "-2px";
+    this.mosaicCanvas.style.left = "-2px";
+    this.editCanvas.style.top = "-2px";
+    this.editCanvas.style.left = "-2px";
 
     this.resizeAssist = new ResizeAssist();
 
@@ -117,7 +117,7 @@ export class EditCanvas {
 
   private initListener = () => {
     this.editCanvas.addEventListener("mousedown", (e) => {
-      if (this.mode === "normal") {
+      if (this.mode === "normal" || e.button !== 0) {
         return;
       }
 
@@ -235,7 +235,6 @@ export class EditCanvas {
       }
     });
     document.body.addEventListener("mouseup", (e) => {
-      console.log("🚀 ~ EditCanvas ~ e:", e);
       if (this.mode === "normal") {
         return;
       }
@@ -245,8 +244,6 @@ export class EditCanvas {
           this.currentDrawPos.x1 !== this.currentDrawPos.x2 ||
           this.currentDrawPos.y1 !== this.currentDrawPos.y2
         ) {
-          e.preventDefault();
-          e.stopPropagation();
           this.shapeArr.push(this.drawState);
           this.setShape(this.drawState.shape);
           this.emitEditingStack(this.shapeArr.length);
@@ -274,6 +271,8 @@ export class EditCanvas {
     parentDom.appendChild(this.baseCanvas);
     parentDom.appendChild(this.mosaicCanvas);
     parentDom.appendChild(this.editCanvas);
+
+    parentDom.style.overflow = "hidden";
   }
 
   setMode(mode: EditCanvasMode) {

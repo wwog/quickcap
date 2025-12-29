@@ -1,4 +1,4 @@
-import { DPR, resizeHandles } from "../const";
+import {DPR, resizeHandles} from '../const'
 import {
   bindDoubleClick,
   // calcEditToolTop,
@@ -7,139 +7,137 @@ import {
   calcStartAndMove,
   exitApp,
   getRectForWindow,
+  isWindows,
   matchWindow,
-} from "../utils";
-import { initCanvasSetting } from "../utils/canvas";
-import { EditCanvas } from "./editCanvas";
-import { EditTools } from "./editTools";
+} from '../utils'
+import {initCanvasSetting} from '../utils/canvas'
+import {EditCanvas} from './editCanvas'
+import {EditTools} from './editTools'
 // import { onClickFinish } from "./func";
-import { SizeDisplay } from "./sizeDisplay";
+import {SizeDisplay} from './sizeDisplay'
 
-type TMode =
-  | "otherTab"
-  | "select"
-  | "waitEdit"
-  | "resizing"
-  | "edit"
-  | "move"
-  | "forbidden";
+type TMode = 'otherTab' | 'select' | 'waitEdit' | 'resizing' | 'edit' | 'move' | 'forbidden'
 
 /**
  * Manages interface drawing and interaction, including selection, editing, moving, etc.
  * Do not put exported methods here, put them in func.ts.
  */
 export class DrawScreen {
-  private sizeDisplay: SizeDisplay;
-  private editTools: EditTools;
+  private sizeDisplay: SizeDisplay
+  private editTools: EditTools
 
-  private editCanvas: EditCanvas;
+  private editCanvas: EditCanvas
 
-  private imgDom: HTMLImageElement | null;
-  private canvasContainer = document.createElement("div");
-  private baseCanvas = document.createElement("canvas");
-  private maskCanvas = document.createElement("canvas");
-  private baseCtx: CanvasRenderingContext2D;
-  private maskCtx: CanvasRenderingContext2D;
+  private appDom: HTMLDivElement
 
-  private selectRectDom: HTMLDivElement;
+  private imgDom: HTMLImageElement | null
+  private canvasContainer = document.createElement('div')
+  private baseCanvas = document.createElement('canvas')
+  private maskCanvas = document.createElement('canvas')
+  private baseCtx: CanvasRenderingContext2D
+  private maskCtx: CanvasRenderingContext2D
 
-  private isSelecting = false;
-  private resizeHandle: string = "";
+  private selectRectDom: HTMLDivElement
+
+  private isSelecting = false
+  private resizeHandle: string = ''
 
   // start point when mousedown
-  private startX = 0;
-  private startY = 0;
+  private startX = 0
+  private startY = 0
 
   // fixed point when resizing
-  private fixedX = 0;
-  private fixedY = 0;
-  private fixedWidth = 0;
-  private fixedHeight = 0;
+  private fixedX = 0
+  private fixedY = 0
+  private fixedWidth = 0
+  private fixedHeight = 0
 
   // Select area position and size
-  private selectX = 0;
-  private selectY = 0;
-  private selectWidth = 0;
-  private selectHeight = 0;
+  private selectX = 0
+  private selectY = 0
+  private selectWidth = 0
+  private selectHeight = 0
 
-  broadcastChannel = new BroadcastChannel("broadcast");
+  private _isWindows = isWindows()
 
-  private id = Math.random().toString(36).substring(2);
+  broadcastChannel = new BroadcastChannel('broadcast')
+
+  private id = Math.random().toString(36).substring(2)
 
   private matchedWindow:
     | {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
+        x: number
+        y: number
+        width: number
+        height: number
       }
-    | undefined = undefined;
+    | undefined = undefined
 
-  private _mode: TMode = "select";
+  private _mode: TMode = 'select'
 
   /**
    * 获取当前模式
    */
   public get mode(): TMode {
-    return this._mode;
+    return this._mode
   }
 
   /**
    * 设置模式
    */
   public set mode(value: TMode) {
-    const oldMode = this._mode;
+    const oldMode = this._mode
     if (oldMode !== value) {
-      this._mode = value;
+      this._mode = value
       switch (value) {
-        case "waitEdit": {
-          this.canvasContainer.style.cursor = "";
-          this.selectRectDom.style.cursor = "move";
-          break;
+        case 'waitEdit': {
+          this.canvasContainer.style.cursor = ''
+          this.selectRectDom.style.cursor = 'move'
+          break
         }
-        case "move": {
-          this.canvasContainer.style.cursor = "move";
-          break;
+        case 'move': {
+          this.canvasContainer.style.cursor = 'move'
+          break
         }
-        case "edit": {
-          this.canvasContainer.style.cursor = "";
-          this.selectRectDom.style.cursor = "crosshair";
-          this.canvasContainer.classList.add("edit-mode");
+        case 'edit': {
+          this.canvasContainer.style.cursor = ''
+          this.selectRectDom.style.cursor = 'crosshair'
+          this.canvasContainer.classList.add('edit-mode')
           this.broadcastChannel.postMessage({
-            type: "startEdit",
+            type: 'startEdit',
             id: this.id,
-          });
-          break;
+          })
+          break
         }
-        case "forbidden": {
-          this.clearSelectRect();
-          break;
+        case 'forbidden': {
+          this.clearSelectRect()
+          break
         }
-        case "otherTab": {
-          if (oldMode === "waitEdit") {
-            break;
+        case 'otherTab': {
+          if (oldMode === 'waitEdit') {
+            break
           }
-          this.clearSelectRect();
-          break;
+          this.clearSelectRect()
+          break
         }
       }
     }
   }
 
-  private imgNaturalWidth = 0;
-  private imgNaturalHeight = 0;
-  private imgDrawWidth = 0;
-  private imgDrawHeight = 0;
-  private boxWidth = 0;
-  private boxHeight = 0;
-  private imgOffsetX = 0;
-  private imgOffsetY = 0;
+  private imgNaturalWidth = 0
+  private imgNaturalHeight = 0
+  private imgDrawWidth = 0
+  private imgDrawHeight = 0
+  private boxWidth = 0
+  private boxHeight = 0
+  private imgOffsetX = 0
+  private imgOffsetY = 0
 
   private windows: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    x: number
+    y: number
+    width: number
+    height: number
   }[] = [
     /* {
       x: 20,
@@ -153,174 +151,181 @@ export class DrawScreen {
       width: 799,
       height: 521,
     }, */
-  ];
+  ]
 
   constructor(appDom: HTMLDivElement) {
     console.log(
       `%c🏓 DPR: ${DPR}`,
-      "background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;"
-    );
+      'background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;',
+    )
+    this.appDom = appDom
     // this.imgDom = imgDom;
-    this.imgDom = null;
-    this.canvasContainer.classList.add("canvas-container");
-    this.maskCanvas.classList.add("mask-canvas");
-    this.maskCtx = this.maskCanvas.getContext("2d") as CanvasRenderingContext2D;
-    this.baseCtx = this.baseCanvas.getContext("2d") as CanvasRenderingContext2D;
-    this.editCanvas = new EditCanvas();
+    this.imgDom = null
+    this.canvasContainer.classList.add('canvas-container')
+    this.maskCanvas.classList.add('mask-canvas')
+    this.maskCtx = this.maskCanvas.getContext('2d') as CanvasRenderingContext2D
+    this.baseCtx = this.baseCanvas.getContext('2d') as CanvasRenderingContext2D
+    this.editCanvas = new EditCanvas()
 
-    this.selectRectDom = document.createElement("div");
-    this.selectRectDom.classList.add("select-rect");
+    this.selectRectDom = document.createElement('div')
+    this.selectRectDom.classList.add('select-rect')
     // this.selectRectDom.appendChild(this.editCanvas);
-    appDom.appendChild(this.canvasContainer);
-    this.canvasContainer.appendChild(this.baseCanvas);
-    this.canvasContainer.appendChild(this.maskCanvas);
+    appDom.appendChild(this.canvasContainer)
+    this.canvasContainer.appendChild(this.baseCanvas)
+    this.canvasContainer.appendChild(this.maskCanvas)
 
     // Initialize resize handles
     resizeHandles.forEach((handleName) => {
-      const handleDom = document.createElement("div");
-      handleDom.classList.add("resize-handle", handleName);
-      handleDom.dataset.role = handleName;
-      this.selectRectDom.appendChild(handleDom);
-    });
+      const handleDom = document.createElement('div')
+      handleDom.classList.add('resize-handle', handleName)
+      handleDom.dataset.role = handleName
+      this.selectRectDom.appendChild(handleDom)
+    })
 
-    this.initData();
+    this.initData()
 
-    this.drawMask();
-   
-    this.sizeDisplay = new SizeDisplay(this.canvasContainer);
-    this.editTools = new EditTools();
+    this.drawMask()
 
-     this.initListener();
+    this.sizeDisplay = new SizeDisplay(this.canvasContainer)
+    this.editTools = new EditTools()
+
+    this.initListener()
 
     window.app
       ?.getWindows?.()
       .then(
         (
           windows: {
-            name: string;
+            name: string
             bounds: {
-              x: number;
-              y: number;
-              width: number;
-              height: number;
-            };
-          }[]
-        ) => {
-          const maxX = window.innerWidth;
-          const maxY = window.innerHeight;
-          const arr: {
-            x: number;
-            y: number;
-            width: number;
-            height: number;
-          }[] = [];
-          windows.forEach((win) => {
-            console.log("🚀 ~ DrawScreen ~ constructor ~ windows:", windows);
-            if (win.name !== "tao window") {
-              const { x, y, width, height } = win.bounds;
-
-              arr.push(getRectForWindow({ x, y, width, height }));
+              x: number
+              y: number
+              width: number
+              height: number
             }
-          });
+          }[],
+        ) => {
+          console.log('🚀 ~ DrawScreen ~ constructor ~ windows:', windows)
+          const maxX = window.innerWidth
+          const maxY = window.innerHeight
+          const arr: {
+            x: number
+            y: number
+            width: number
+            height: number
+          }[] = []
+          const monitors: {
+            x: number
+            y: number
+            width: number
+            height: number
+          }[] = []
+          windows.forEach((win) => {
+            console.log('🚀 ~ DrawScreen ~ constructor ~ windows:', windows)
+            if (win.name !== 'tao window') {
+              const {x, y, width, height} = win.bounds
+
+              const rect = getRectForWindow({x, y, width, height})
+
+              if (win.name.toLowerCase().includes('monitor')) {
+                monitors.push(rect)
+              }
+              arr.push(rect)
+            }
+          })
           // Add the main window area
           arr.push({
             x: 0,
             y: 0,
             width: maxX,
             height: maxY,
-          });
-          this.windows = arr;
-        }
+          })
+          this.windows = arr
+          this.editTools.setMonitors(monitors)
+        },
       )
-      .catch((err: any) => console.error(err));
+      .catch((err: any) => console.error(err))
 
     this.broadcastChannel.onmessage = (event) => {
       // console.log("🚀 ~ DrawScreen ~ constructor ~ event:", event.data, this.mode);
-      const { type, id, x, y, act } = event?.data || {};
+      const {type, id, x, y, act} = event?.data || {}
 
-      if (
-        act === "selectStart" &&
-        id !== this.id &&
-        (this.selectHeight || this.selectWidth)
-      ) {
+      if (act === 'selectStart' && id !== this.id && (this.selectHeight || this.selectWidth)) {
         console.log(
           `%c🏓 clearSelectRect`,
-          "background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;"
-        );
-        this.clearSelectRect();
+          'background-color: #fc5531; color: #fff;padding: 2px 4px;border-radius: 2px;',
+        )
+        this.clearSelectRect()
       }
 
-      if (type === "activeWindow" && id !== this.id) {
-        this.mode = "otherTab";
-      } else if (
-        type === "activeWindow" &&
-        id === this.id &&
-        this.mode === "otherTab"
-      ) {
-        this.mode = "select";
-      } else if (type === "startEdit" && id && id !== this.id) {
-        this.mode = "forbidden";
+      if (type === 'activeWindow' && id !== this.id) {
+        this.mode = 'otherTab'
+      } else if (type === 'activeWindow' && id === this.id && this.mode === 'otherTab') {
+        this.mode = 'select'
+      } else if (type === 'startEdit' && id && id !== this.id) {
+        this.mode = 'forbidden'
       }
-    };
+    }
   }
 
   private clearSelectRect = () => {
-    this.selectX = 0;
-    this.selectY = 0;
-    this.selectWidth = 0;
-    this.selectHeight = 0;
-    this.drawMask();
+    this.selectX = 0
+    this.selectY = 0
+    this.selectWidth = 0
+    this.selectHeight = 0
+    this.drawMask()
     this.editTools.render(false, {
       x: 0,
       y: 0,
       height: 0,
       width: 0,
-    });
+    })
     this.sizeDisplay.render(false, {
       x: 0,
       y: 0,
       height: 0,
       width: 0,
-    });
-  };
+    })
+  }
 
   setImgDom = (imgDom: HTMLImageElement) => {
-    this.imgDom = imgDom;
-    this.imgNaturalWidth = this.imgDom.naturalWidth;
-    this.imgNaturalHeight = this.imgDom.naturalHeight;
-    const rateX = this.imgNaturalWidth / this.boxWidth;
-    const rateY = this.imgNaturalHeight / this.boxHeight;
+    this.imgDom = imgDom
+    this.imgNaturalWidth = this.imgDom.naturalWidth
+    this.imgNaturalHeight = this.imgDom.naturalHeight
+    const rateX = this.imgNaturalWidth / this.boxWidth
+    const rateY = this.imgNaturalHeight / this.boxHeight
 
-    const rate = Math.max(rateX, rateY);
-    this.imgDrawWidth = this.imgNaturalWidth / rate;
-    this.imgDrawHeight = this.imgNaturalHeight / rate;
+    const rate = Math.max(rateX, rateY)
+    this.imgDrawWidth = this.imgNaturalWidth / rate
+    this.imgDrawHeight = this.imgNaturalHeight / rate
 
-    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
-    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
+    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2
+    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2
 
-    this.drawBase();
-  };
+    this.drawBase()
+  }
 
   private setEditCanvasBg = () => {
-    if (this.mode === "edit") {
-      return;
+    if (this.mode === 'edit') {
+      return
     }
-    this.mode = "edit";
-    this.editCanvas.initCanvasSetting(this.selectWidth, this.selectHeight);
-    this.editCanvas.setParentDom(this.selectRectDom);
+    this.mode = 'edit'
+    this.editCanvas.initCanvasSetting(this.selectWidth, this.selectHeight)
+    this.editCanvas.setParentDom(this.selectRectDom)
     this.editCanvas.setImg({
       img: this.baseCanvas,
       x: this.selectX,
       y: this.selectY,
       width: this.selectWidth,
       height: this.selectHeight,
-    });
-  };
+    })
+    this.editCanvas.setMode('edit')
+  }
 
   private drawBase = () => {
     if (!this.imgDom) {
-      console.error("Image dom is not set");
-      return;
+      console.error('Image dom is not set')
+      return
     }
     // Draw image
     this.baseCtx.drawImage(
@@ -332,87 +337,79 @@ export class DrawScreen {
       this.imgOffsetX,
       this.imgOffsetY,
       this.imgDrawWidth,
-      this.imgDrawHeight
-    );
-  };
+      this.imgDrawHeight,
+    )
+  }
 
   private initData = () => {
-    this.boxWidth = this.canvasContainer.clientWidth;
-    this.boxHeight = this.canvasContainer.clientHeight;
+    this.boxWidth = this.canvasContainer.clientWidth
+    this.boxHeight = this.canvasContainer.clientHeight
 
     initCanvasSetting(this.maskCanvas, {
       width: this.boxWidth,
       height: this.boxHeight,
-    });
+    })
     initCanvasSetting(this.baseCanvas, {
       width: this.boxWidth,
       height: this.boxHeight,
-    });
-  };
+    })
+  }
 
-  private activeWindow = (
-    e: MouseEvent,
-    act: "selectStart" | "move" | "selectEnd" | "enter"
-  ) => {
+  private activeWindow = (e: MouseEvent, act: 'selectStart' | 'move' | 'selectEnd' | 'enter') => {
     this.broadcastChannel.postMessage({
-      type: "activeWindow",
+      type: 'activeWindow',
       act,
       id: this.id,
       x: e.clientX,
       y: e.clientY,
-    });
-    if (this.mode === "otherTab") {
+    })
+    if (this.mode === 'otherTab') {
       if (this.selectHeight || this.selectWidth) {
-        this.mode = "waitEdit";
+        this.mode = 'waitEdit'
       } else {
-        this.mode = "select";
+        this.mode = 'select'
       }
-      return;
+      return
     }
-  };
+  }
 
   private drawMask = () => {
-    this.maskCtx.clearRect(0, 0, this.boxWidth, this.boxHeight);
+    this.maskCtx.clearRect(0, 0, this.boxWidth, this.boxHeight)
     // Draw semi-transparent mask layer
-    this.maskCtx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    this.maskCtx.fillRect(0, 0, this.boxWidth, this.boxHeight);
+    this.maskCtx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    this.maskCtx.fillRect(0, 0, this.boxWidth, this.boxHeight)
 
     // Show selection area
     if (this.selectWidth && this.selectHeight) {
-      this.maskCtx.clearRect(
-        this.selectX,
-        this.selectY,
-        this.selectWidth,
-        this.selectHeight
-      );
-      this.canvasContainer.appendChild(this.selectRectDom);
-      this.selectRectDom.style.left = `${this.selectX - 2}px`;
-      this.selectRectDom.style.top = `${this.selectY - 2}px`;
-      this.selectRectDom.style.width = `${this.selectWidth}px`;
-      this.selectRectDom.style.height = `${this.selectHeight}px`;
+      this.maskCtx.clearRect(this.selectX, this.selectY, this.selectWidth, this.selectHeight)
+      this.canvasContainer.appendChild(this.selectRectDom)
+      this.selectRectDom.style.left = `${this.selectX}px`
+      this.selectRectDom.style.top = `${this.selectY}px`
+      this.selectRectDom.style.width = `${this.selectWidth}px`
+      this.selectRectDom.style.height = `${this.selectHeight}px`
     } else {
-      this.selectRectDom.remove();
+      this.selectRectDom.remove()
     }
-  };
+  }
 
   private selectStart = (e: MouseEvent) => {
-    if (this.mode !== "select") {
-      return;
+    if (this.mode !== 'select') {
+      return
     }
-    this.isSelecting = true;
-    this.startX = e.clientX;
-    this.startY = e.clientY;
+    this.isSelecting = true
+    this.startX = e.clientX
+    this.startY = e.clientY
     console.log(
       `%c🎄 select start`,
-      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+      'background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;',
       this.startX,
-      this.startY
-    );
-  };
+      this.startY,
+    )
+  }
 
   private selectMove = (e: MouseEvent) => {
-    if (this.mode !== "select") {
-      return;
+    if (this.mode !== 'select') {
+      return
     }
 
     if (!this.isSelecting) {
@@ -420,89 +417,87 @@ export class DrawScreen {
         x: e.clientX,
         y: e.clientY,
         windows: this.windows,
-      });
-      this.matchedWindow = window;
+      })
+      this.matchedWindow = window
       if (!window) {
-        this.matchedWindow = undefined;
-        return;
+        this.matchedWindow = undefined
+        return
       }
 
-      this.selectX = window.x;
-      this.selectY = window.y;
-      this.selectWidth = window.width;
-      this.selectHeight = window.height;
+      this.selectX = window.x
+      this.selectY = window.y
+      this.selectWidth = window.width
+      this.selectHeight = window.height
 
-      this.drawMask();
+      this.drawMask()
 
-      return;
+      return
     }
-    const { top, left, width, height } = calcStartAndMove({
+    const {top, left, width, height} = calcStartAndMove({
       startX: this.startX,
       startY: this.startY,
       moveX: e.clientX - this.startX,
       moveY: e.clientY - this.startY,
       maxX: this.boxWidth,
       maxY: this.boxHeight,
-    });
+    })
 
-    this.selectX = left;
-    this.selectY = top;
-    this.selectWidth = width;
-    this.selectHeight = height;
+    this.selectX = left
+    this.selectY = top
+    this.selectWidth = width
+    this.selectHeight = height
 
-    this.drawMask();
-  };
+    this.drawMask()
+  }
 
   private selectEnd = () => {
-    if (this.mode !== "select") {
-      return;
+    if (this.mode !== 'select') {
+      return
     }
-    this.isSelecting = false;
-    this.mode = "waitEdit";
-  };
+    this.isSelecting = false
+    this.mode = 'waitEdit'
+  }
 
   private resizeStart = (e: MouseEvent) => {
-    if (this.mode === "select") {
-      return;
+    if (this.mode === 'select') {
+      return
     }
-    if ((e.target as HTMLDivElement)?.classList?.contains("resize-handle")) {
-      this.resizeHandle = (e.target as HTMLDivElement).dataset.role || "";
-      this.mode = "resizing";
-      const cursor = getComputedStyle(e.target as HTMLDivElement).cursor || "";
-      this.canvasContainer.style.cursor = cursor;
-      this.selectRectDom.style.cursor = cursor;
-      this.startX = e.clientX;
-      this.startY = e.clientY;
-      const { x, y } = calcFixedPoint({
+    if ((e.target as HTMLDivElement)?.classList?.contains('resize-handle')) {
+      this.resizeHandle = (e.target as HTMLDivElement).dataset.role || ''
+      this.mode = 'resizing'
+      const cursor = getComputedStyle(e.target as HTMLDivElement).cursor || ''
+      this.canvasContainer.style.cursor = cursor
+      this.selectRectDom.style.cursor = cursor
+      this.startX = e.clientX
+      this.startY = e.clientY
+      const {x, y} = calcFixedPoint({
         resizeHandle: this.resizeHandle,
         x: this.selectX,
         y: this.selectY,
         width: this.selectWidth,
         height: this.selectHeight,
-      });
-      this.fixedX = x;
-      this.fixedY = y;
-      this.fixedWidth = this.selectWidth;
-      this.fixedHeight = this.selectHeight;
-    } else if (
-      (e.target as HTMLDivElement)?.classList?.contains("select-rect")
-    ) {
-      this.mode = "move";
-      this.startX = e.clientX;
-      this.startY = e.clientY;
-      this.fixedX = this.selectX;
-      this.fixedY = this.selectY;
-      this.fixedWidth = this.selectWidth;
-      this.fixedHeight = this.selectHeight;
+      })
+      this.fixedX = x
+      this.fixedY = y
+      this.fixedWidth = this.selectWidth
+      this.fixedHeight = this.selectHeight
+    } else if ((e.target as HTMLDivElement)?.classList?.contains('select-rect')) {
+      this.mode = 'move'
+      this.startX = e.clientX
+      this.startY = e.clientY
+      this.fixedX = this.selectX
+      this.fixedY = this.selectY
+      this.fixedWidth = this.selectWidth
+      this.fixedHeight = this.selectHeight
     }
-  };
+  }
   private resizeMove = (e: MouseEvent) => {
-    if (this.mode === "select") {
-      return;
+    if (this.mode === 'select') {
+      return
     }
 
-    if (this.mode === "resizing" && this.resizeHandle) {
-      const { top, left, width, height } = calcReactForResizing({
+    if (this.mode === 'resizing' && this.resizeHandle) {
+      const {top, left, width, height} = calcReactForResizing({
         resizeHandle: this.resizeHandle,
         fixedX: this.fixedX,
         fixedY: this.fixedY,
@@ -512,81 +507,80 @@ export class DrawScreen {
         moveY: e.clientY - this.startY,
         maxX: this.boxWidth,
         maxY: this.boxHeight,
-      });
-      this.selectX = left;
-      this.selectY = top;
-      this.selectWidth = width;
-      this.selectHeight = height;
-      this.drawMask();
-    } else if (this.mode === "move") {
-      const moveX = e.clientX - this.startX;
-      const moveY = e.clientY - this.startY;
-      let left = this.fixedX + moveX;
-      let top = this.fixedY + moveY;
+      })
+      this.selectX = left
+      this.selectY = top
+      this.selectWidth = width
+      this.selectHeight = height
+      this.drawMask()
+    } else if (this.mode === 'move') {
+      const moveX = e.clientX - this.startX
+      const moveY = e.clientY - this.startY
+      let left = this.fixedX + moveX
+      let top = this.fixedY + moveY
       if (left < 0 || left + this.fixedWidth > this.boxWidth) {
-        this.fixedX = this.selectX;
-        this.fixedWidth = this.selectWidth;
-        this.startX = e.clientX;
+        this.fixedX = this.selectX
+        this.fixedWidth = this.selectWidth
+        this.startX = e.clientX
       }
       if (top < 0 || top + this.fixedHeight > this.boxHeight) {
-        this.fixedY = this.selectY;
-        this.fixedHeight = this.selectHeight;
-        this.startY = e.clientY;
+        this.fixedY = this.selectY
+        this.fixedHeight = this.selectHeight
+        this.startY = e.clientY
       }
       if (left < 0) {
-        left = 0;
+        left = 0
       } else if (left + this.fixedWidth > this.boxWidth) {
-        left = this.boxWidth - this.fixedWidth;
+        left = this.boxWidth - this.fixedWidth
       }
       if (top < 0) {
-        top = 0;
+        top = 0
       } else if (top + this.fixedHeight > this.boxHeight) {
-        top = this.boxHeight - this.fixedHeight;
+        top = this.boxHeight - this.fixedHeight
       }
-      this.selectX = left;
-      this.selectY = top;
-      this.drawMask();
+      this.selectX = left
+      this.selectY = top
+      this.drawMask()
     }
-  };
+  }
   private resizeEnd = () => {
-    if (this.mode === "select") {
-      return;
+    if (this.mode === 'select') {
+      return
     }
-    this.mode = "waitEdit";
-    this.resizeHandle = "";
-  };
+    this.mode = 'waitEdit'
+    this.resizeHandle = ''
+  }
 
   private onMouseDown = (e: MouseEvent) => {
     console.log(
       `%c🎄 mouse down`,
-      "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
+      'background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;',
       this.mode,
       e.clientX,
       e.clientY,
-      e
-    );
+      e,
+    )
     if (e.button !== 0) {
-      return;
+      return
     }
-    if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e, "selectStart");
-    if (this.mode === "otherTab") return;
+    if (this.mode === 'edit' || this.mode === 'forbidden') return
+    this.activeWindow(e, 'selectStart')
+    if (this.mode === 'otherTab') return
     const isSelectRect =
-      e.target === this.selectRectDom ||
-      this.selectRectDom.contains(e.target as HTMLElement);
-    this.editTools.render(this.mode === "waitEdit" && !isSelectRect, {
+      e.target === this.selectRectDom || this.selectRectDom.contains(e.target as HTMLElement)
+    this.editTools.render(this.mode === 'waitEdit' && !isSelectRect, {
       x: this.selectX,
       y: this.selectY,
       width: this.selectWidth,
       height: this.selectHeight,
-    });
+    })
 
-    if (this.mode === "select") {
-      this.selectStart(e);
+    if (this.mode === 'select') {
+      this.selectStart(e)
     } else {
-      this.resizeStart(e);
+      this.resizeStart(e)
     }
-  };
+  }
 
   private onMouseMove = (e: MouseEvent) => {
     /* console.log(
@@ -596,27 +590,27 @@ export class DrawScreen {
       e.clientX,
       e.clientY
     ); */
-    if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e, "move");
-    if (this.mode === "otherTab") return;
-    if (this.mode === "select") {
-      this.selectMove(e);
+    if (this.mode === 'edit' || this.mode === 'forbidden') return
+    this.activeWindow(e, 'move')
+    if (this.mode === 'otherTab') return
+    if (this.mode === 'select') {
+      this.selectMove(e)
       this.sizeDisplay.render(true, {
         x: this.selectX,
         y: this.selectY,
         width: this.selectWidth,
         height: this.selectHeight,
-      });
+      })
     } else {
-      this.resizeMove(e);
+      this.resizeMove(e)
       this.sizeDisplay.render(true, {
         x: this.selectX,
         y: this.selectY,
         width: this.selectWidth,
         height: this.selectHeight,
-      });
+      })
     }
-  };
+  }
 
   private onMouseUp = (e: MouseEvent) => {
     /* console.log(
@@ -630,66 +624,53 @@ export class DrawScreen {
       this.selectWidth,
       this.selectHeight
     ); */
-    if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e, "selectEnd");
-    if (this.mode === "otherTab") return;
+    if (this.mode === 'edit' || this.mode === 'forbidden') return
+    this.activeWindow(e, 'selectEnd')
+    if (this.mode === 'otherTab') return
     switch (this.mode) {
-      case "select":
-        e.stopPropagation();
-        e.preventDefault();
-        console.log(
-          "mouseup selectEnd",
-          this.selectWidth,
-          this.selectHeight,
-          this.matchedWindow
-        );
-        if (
-          this.selectWidth <= 10 &&
-          this.selectHeight <= 10 &&
-          this.matchedWindow
-        ) {
-          this.selectX = this.matchedWindow.x;
-          this.selectY = this.matchedWindow.y;
-          this.selectWidth = this.matchedWindow.width;
-          this.selectHeight = this.matchedWindow.height;
+      case 'select':
+        console.log('mouseup selectEnd', this.selectWidth, this.selectHeight, this.matchedWindow)
+        if (this.selectWidth <= 10 && this.selectHeight <= 10 && this.matchedWindow) {
+          this.selectX = this.matchedWindow.x
+          this.selectY = this.matchedWindow.y
+          this.selectWidth = this.matchedWindow.width
+          this.selectHeight = this.matchedWindow.height
         }
         if (this.selectWidth && this.selectHeight) {
-          this.selectEnd();
+          this.selectEnd()
           this.editTools.render(true, {
             x: this.selectX,
             y: this.selectY,
             width: this.selectWidth,
             height: this.selectHeight,
-          });
-          this.drawMask();
+          })
+          this.drawMask()
         } else {
           if (this.matchedWindow) {
-            this.selectX = this.matchedWindow.x;
-            this.selectY = this.matchedWindow.y;
-            this.selectWidth = this.matchedWindow.width;
-            this.selectHeight = this.matchedWindow.height;
+            this.selectX = this.matchedWindow.x
+            this.selectY = this.matchedWindow.y
+            this.selectWidth = this.matchedWindow.width
+            this.selectHeight = this.matchedWindow.height
           }
-          this.drawMask();
-          this.isSelecting = false;
+          this.drawMask()
+          this.isSelecting = false
         }
-        break;
-      case "waitEdit":
-      case "move":
-      case "resizing":
-        e.stopPropagation();
-        e.preventDefault();
-        this.resizeEnd();
+        break
+      case 'waitEdit':
+      case 'move':
+      case 'resizing':
+        this.resizeEnd()
         this.editTools.render(true, {
           x: this.selectX,
           y: this.selectY,
           width: this.selectWidth,
           height: this.selectHeight,
-        });
-        break;
+        })
+        break
       default:
-        break;
+        break
     }
-  };
+  }
 
   private onMouseLeave = (e: MouseEvent) => {
     /* console.log(
@@ -697,117 +678,149 @@ export class DrawScreen {
       "background-color: #00b548; color: #fff;padding: 2px 4px;border-radius: 2px;",
       e
     ); */
-    if (this.mode === "move") {
-      const x = e.clientX;
-      const y = e.clientY;
+    if (this.mode === 'move') {
+      const x = e.clientX
+      const y = e.clientY
 
       if (x > this.boxWidth) {
-        this.selectX = this.boxWidth - this.selectWidth;
+        this.selectX = this.boxWidth - this.selectWidth
       } else if (x < 0) {
-        this.selectX = 0;
+        this.selectX = 0
       }
       if (y > this.boxHeight) {
-        this.selectY = this.boxHeight - this.selectHeight;
+        this.selectY = this.boxHeight - this.selectHeight
       } else if (y < 0) {
-        this.selectY = 0;
+        this.selectY = 0
       }
 
-      this.fixedX = this.selectX;
-      this.fixedY = this.selectY;
-      this.fixedWidth = this.selectWidth;
-      this.fixedHeight = this.selectHeight;
-      this.startX = e.clientX;
-      this.startY = e.clientY;
-      this.drawMask();
+      this.fixedX = this.selectX
+      this.fixedY = this.selectY
+      this.fixedWidth = this.selectWidth
+      this.fixedHeight = this.selectHeight
+      this.startX = e.clientX
+      this.startY = e.clientY
+      this.drawMask()
     }
-  };
+  }
 
   private onMouseEnter = (e: MouseEvent) => {
-    if (this.mode === "edit" || this.mode === "forbidden") return;
-    this.activeWindow(e, "enter");
-  };
+    if (this.mode === 'edit' || this.mode === 'forbidden') return
+    this.activeWindow(e, 'enter')
+  }
 
   private initListener = () => {
     // Selection logic
-    document.body.addEventListener("mousedown", this.onMouseDown);
-    document.body.addEventListener("mousemove", this.onMouseMove);
-    document.body.addEventListener("mouseup", this.onMouseUp);
-    document.body.addEventListener("mouseleave", this.onMouseLeave);
-    document.body.addEventListener("mouseenter", this.onMouseEnter);
+    document.body.addEventListener('mousedown', this.onMouseDown)
+    document.body.addEventListener('mousemove', this.onMouseMove)
+    document.body.addEventListener('mouseup', this.onMouseUp)
+    document.body.addEventListener('mouseleave', this.onMouseLeave)
+    document.body.addEventListener('mouseenter', this.onMouseEnter)
 
-    bindDoubleClick(this.selectRectDom, () => {
-      console.log("================double click================");
-      this.setEditCanvasBg();
-      this.editCanvas.writeToClipboard();
-    });
+    window.addEventListener('keydown', (e) => {
+      const isCmdOrCtrl = isWindows() ? e.ctrlKey : e.metaKey
+      // ctr/cmd + z 执行撤回
+      if (isCmdOrCtrl && e.key === 'z') {
+        e.preventDefault()
+        e.stopPropagation()
+        this.editCanvas.execUndo()
+      } else if (isCmdOrCtrl && e.key === 's' && this.selectWidth && this.selectHeight) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (this.editCanvas.mode === 'normal') {
+          this.setEditCanvasBg()
+          this.editCanvas.setMode('edit')
+          this.editTools.render(true, {
+            x: this.selectX,
+            y: this.selectY,
+            width: this.selectWidth,
+            height: this.selectHeight,
+          })
+        }
+        this.editCanvas.saveImageToFolder()
+      }
+    })
+
+    bindDoubleClick(this.appDom, () => {
+      console.log('================double click================')
+      if (this.selectWidth && this.selectHeight) {
+        this.setEditCanvasBg()
+        this.editTools.render(true, {
+          x: this.selectX,
+          y: this.selectY,
+          width: this.selectWidth,
+          height: this.selectHeight,
+        })
+        this.editCanvas.writeToClipboard()
+      }
+    })
 
     this.editTools.addListener([
       {
-        role: "undo",
+        role: 'undo',
         listener: () => {
-          this.editCanvas.execUndo();
+          this.editCanvas.execUndo()
         },
       },
       {
-        role: "edit",
+        role: 'edit',
         listener: (shape?: string) => {
-          this.setEditCanvasBg();
-          this.editCanvas.setMode("edit");
-          const newShape = shape === this.editTools.active ? "" : shape || "";
-          this.editCanvas.setShape(newShape);
-          this.editTools.active = newShape;
+          this.setEditCanvasBg()
+          
+          const newShape = shape === this.editTools.active ? '' : shape || ''
+          this.editCanvas.setShape(newShape)
+          this.editTools.active = newShape
         },
       },
       {
-        role: "download",
+        role: 'download',
         listener: () => {
-          this.setEditCanvasBg();
-          this.editCanvas.saveImageToFolder();
+          this.setEditCanvasBg()
+          this.editCanvas.saveImageToFolder()
         },
       },
       {
-        role: "finish",
+        role: 'finish',
         listener: () => {
-          this.setEditCanvasBg();
-          this.editCanvas.writeToClipboard();
+          this.setEditCanvasBg()
+          this.editCanvas.writeToClipboard()
         },
       },
       {
-        role: "cancel",
+        role: 'cancel',
         listener: () => {
-          exitApp();
+          exitApp()
         },
       },
-    ]);
+    ])
 
     this.editCanvas.onEditingStack((len) => {
-      this.editTools.undoActive = len > 0;
-    });
-  };
+      this.editTools.undoActive = len > 0
+    })
+  }
 
   putImageData = ({
     imageData,
     width,
     height,
   }: {
-    width: number;
-    height: number;
-    imageData: ImageData;
+    width: number
+    height: number
+    imageData: ImageData
   }) => {
-    this.imgNaturalWidth = width;
-    this.imgNaturalHeight = height;
-    const rateX = this.imgNaturalWidth / this.boxWidth;
-    const rateY = this.imgNaturalHeight / this.boxHeight;
+    this.imgNaturalWidth = width
+    this.imgNaturalHeight = height
+    const rateX = this.imgNaturalWidth / this.boxWidth
+    const rateY = this.imgNaturalHeight / this.boxHeight
 
-    const rate = Math.max(rateX, rateY);
-    this.imgDrawWidth = this.imgNaturalWidth / rate;
-    this.imgDrawHeight = this.imgNaturalHeight / rate;
+    const rate = Math.max(rateX, rateY)
+    this.imgDrawWidth = this.imgNaturalWidth / rate
+    this.imgDrawHeight = this.imgNaturalHeight / rate
 
-    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2;
-    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2;
+    this.imgOffsetX = (this.boxWidth - this.imgDrawWidth) / 2
+    this.imgOffsetY = (this.boxHeight - this.imgDrawHeight) / 2
 
-    this.baseCtx.putImageData(imageData, 0, 0);
-  };
+    this.baseCtx.putImageData(imageData, 0, 0)
+  }
 
   // getSelectedImg = () => {
   //   this.baseCanvas

@@ -14,7 +14,7 @@ export const resizeHandles = [
 // export const DPR = isWindows() ? 1 : window.devicePixelRatio;
 export const DPR = window.devicePixelRatio;
 
-export const editToolHeight = 32;
+export const editToolHeight = 40;
 
 export const editToolGap = 8;
 

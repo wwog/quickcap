@@ -81,7 +81,8 @@ canvas {
   transform: translate3d(0, 0, 0);
   z-index: 300;
   border: 2px solid var(--select-color);
-  box-sizing: content-box;
+  /* box-sizing: content-box; */
+  box-sizing: border-box;
 }
 
 /* resize-handle */
@@ -172,8 +173,8 @@ canvas {
   user-select: none;
   position: absolute;
   z-index: 400;
-  bottom: 0;
-  right: 0;
+  /* bottom: 0; */
+  /* right: 0; */
   background-color: #ffffff;
   border-radius: 4px;
   padding: 6px 14px;
