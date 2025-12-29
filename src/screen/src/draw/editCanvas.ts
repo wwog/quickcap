@@ -31,9 +31,12 @@ export class EditCanvas {
   private mosaicCanvas: HTMLCanvasElement;
   private editCanvas: HTMLCanvasElement;
 
+  private mosaicCanvas2: HTMLCanvasElement;
+
   private baseCtx: CanvasRenderingContext2D;
   private mosaicCtx: CanvasRenderingContext2D;
   private editCtx: CanvasRenderingContext2D;
+
 
   private mosaic: Mosaic | null = null;
 
@@ -70,6 +73,7 @@ export class EditCanvas {
   }
 
   constructor() {
+    this.mosaicCanvas2 = document.createElement("canvas");
     this.baseCanvas = document.createElement("canvas");
     this.mosaicCanvas = document.createElement("canvas");
     this.editCanvas = document.createElement("canvas");
@@ -79,9 +83,12 @@ export class EditCanvas {
     ) as CanvasRenderingContext2D;
     this.editCtx = this.editCanvas.getContext("2d") as CanvasRenderingContext2D;
 
+    this.mosaicCanvas2.style.position = "absolute";
     this.baseCanvas.style.position = "absolute";
     this.mosaicCanvas.style.position = "absolute";
     this.editCanvas.style.position = "absolute";
+    this.mosaicCanvas2.style.top = "0px";
+    this.mosaicCanvas2.style.left = "0px";
     this.baseCanvas.style.top = "0px";
     this.baseCanvas.style.left = "0px";
     this.mosaicCanvas.style.top = "0px";
@@ -201,15 +208,21 @@ export class EditCanvas {
               );
 
               const t0 = performance.now();
+              const ctx = this.baseCanvas.getContext("2d") as CanvasRenderingContext2D;
               // 跳过第一个点（已经处理过）
+              ctx.globalCompositeOperation = 'destination-out';
               for (let i = 1; i < interpolatedPoints.length; i++) {
                 const interpolatedPoint = interpolatedPoints[i];
                 this.drawState.attr.path.push({
-                  x: interpolatedPoint.x,
-                  y: interpolatedPoint.y,
-                });
+                    x: interpolatedPoint.x,
+                    y: interpolatedPoint.y,
+                  });
+                ctx.beginPath();
+                 ctx.arc(interpolatedPoint.x, interpolatedPoint.y, 10, 0, 2 * Math.PI);
+                 ctx.fill();
               }
-              this.mosaic?.drawMosaic(this.drawState);
+               ctx.globalCompositeOperation = 'source-over'; // 恢复默认模式
+              // this.mosaic?.drawMosaic(this.drawState);
               const t1 = performance.now();
               console.log(`drawMosaic ${interpolatedPoints.length} cost ${t1 - t0} ms`);
             }
@@ -250,6 +263,10 @@ export class EditCanvas {
   };
 
   initCanvasSetting(width: number, height: number) {
+    initCanvasSetting(this.mosaicCanvas2, {
+      width,
+      height,
+    });
     initCanvasSetting(this.baseCanvas, {
       width,
       height,
@@ -265,6 +282,7 @@ export class EditCanvas {
   }
 
   setParentDom(parentDom: HTMLElement) {
+    parentDom.appendChild(this.mosaicCanvas2);
     parentDom.appendChild(this.baseCanvas);
     parentDom.appendChild(this.mosaicCanvas);
     parentDom.appendChild(this.editCanvas);
@@ -279,7 +297,49 @@ export class EditCanvas {
   }
 
   private async generateImageData() {
-    this.baseCtx.drawImage(
+
+    const tempCanvas = document.createElement("canvas");
+    initCanvasSetting(tempCanvas, {
+      width: this.lastImg!.width,
+      height: this.lastImg!.height,
+    });
+
+    const ctx = tempCanvas.getContext("2d") as CanvasRenderingContext2D;
+
+    ctx.drawImage(
+      this.mosaicCanvas2,
+      0,
+      0,
+      this.mosaicCanvas2.width,
+      this.mosaicCanvas2.height,
+      0,
+      0,
+      this.lastImg!.width,
+      this.lastImg!.height
+    );
+    ctx.drawImage(
+      this.baseCanvas,
+      0,
+      0,
+      this.baseCanvas.width,
+      this.baseCanvas.height,
+      0,
+      0,
+      this.lastImg!.width,
+      this.lastImg!.height
+    );
+    ctx.drawImage(
+      this.editCanvas,
+      0,
+      0,
+      this.editCanvas.width,
+      this.editCanvas.height,
+      0,
+      0,
+      this.lastImg!.width,
+      this.lastImg!.height
+    );
+    /* this.baseCtx.drawImage(
       this.mosaicCanvas,
       0,
       0,
@@ -302,6 +362,12 @@ export class EditCanvas {
       this.lastImg!.height
     );
     const imgData = this.baseCtx.getImageData(
+      0,
+      0,
+      this.lastImg!.width * DPR,
+      this.lastImg!.height * DPR
+    ); */
+    const imgData = ctx.getImageData(
       0,
       0,
       this.lastImg!.width * DPR,
@@ -383,6 +449,71 @@ export class EditCanvas {
       imgData,
       canvas: this.mosaicCanvas,
     });
+
+    const mosaicSize = 10 * DPR;
+
+    const t00 = performance.now();
+    const masaicImgData = this.mosaicCanvas2.getContext("2d")!.getImageData(0, 0, width * DPR, height * DPR);
+
+    const xLen = Math.floor(imgData.width / mosaicSize);
+    const yLen = Math.floor(imgData.height / mosaicSize);
+
+    for (let x = 0 ;x<xLen;x++) {
+      for (let y = 0;y<yLen;y++) {
+        // acgColor
+        const startX = x * mosaicSize;
+        const startY = y * mosaicSize;
+        const endX = Math.min(imgData.width, startX + mosaicSize);
+        const endY = Math.min(imgData.height, startY + mosaicSize);
+
+        // const xx = Math.floor((endX + startX) / 4);
+        // const yy = Math.floor((endY + startY) / 4);
+
+        let count = 0;
+        const color = {
+          r: 0,
+          g: 0,
+          b: 0,
+          a: 0,
+        }
+        for(let i=startX;i<endX;i++) {
+          for (let j=startY;j<endY;j++) {
+            const index = i * 4 + j * imgData.width * 4;
+            const r = imgData.data[index];
+            const g = imgData.data[index + 1];
+            const b = imgData.data[index + 2];
+            const a = imgData.data[index + 3];
+            count++;
+            color.r += r;
+            color.g += g;
+            color.b += b;
+            color.a += a;
+          }
+        }
+
+        if (count > 0) {
+          color.r = Math.floor(color.r / count);
+          color.g = Math.floor(color.g / count);
+          color.b = Math.floor(color.b / count);
+          color.a = Math.floor(color.a / count);
+        }
+
+        for(let i=startX;i<endX;i++) {
+          for (let j=startY;j<endY;j++) {
+            const index = i * 4 + j * imgData.width * 4;
+            masaicImgData.data[index] = color.r;
+            masaicImgData.data[index + 1] = color.g;
+            masaicImgData.data[index + 2] = color.b;
+            masaicImgData.data[index + 3] = color.a;
+          }
+        }
+
+      }
+    }
+
+    this.mosaicCanvas2.getContext("2d")!.putImageData(masaicImgData, 0, 0);
+    const t11 = performance.now();
+    console.log(`mosaic cost ${t11 - t00} ms`);
   }
 
   setShape(shape = "rect") {

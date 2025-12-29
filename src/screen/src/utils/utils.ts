@@ -358,7 +358,7 @@ export function interpolatePoints(x1: number, y1: number, x2: number, y2: number
   // 根据半径计算需要的插值点数量，确保圆之间有一定重叠
   // 重叠因子设为0.5，确保相邻圆之间有50%的重叠区域
   // 两个圆的中心距离应该是：2 * radius * (1 - overlapFactor)
-  const overlapFactor = 0.3;
+  const overlapFactor = 0.6;
   const step = 2 * radius * (1 - overlapFactor);
   const numPoints = Math.max(2, Math.ceil(distance / step));
 
